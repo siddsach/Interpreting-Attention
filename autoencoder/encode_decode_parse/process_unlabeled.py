@@ -101,8 +101,6 @@ class PrepareData:
         return input_lang, output_lang, pairs
 
 
-    input_lang, output_lang, pairs = prepareData('eng', 'fra', True)
-    print(random.choice(pairs))
 
     def readLangs(self, lang1, lang2, reverse=False):
         print("Reading lines...")
@@ -115,6 +113,8 @@ class PrepareData:
         pairs = [[normalizeString(s) for s in l.split('\t')] for l in lines]
 
         # Reverse pairs, make Lang instances
+        input_lang = None
+        output_lang = None
         if reverse:
             pairs = [list(reversed(p)) for p in pairs]
             input_lang = Lang(lang2)
@@ -150,8 +150,6 @@ class PrepareData:
 
 
 
-    input_lang, output_lang, pairs = prepareData('eng', 'fra', True)
-    print(random.choice(pairs))
 
 SOS_token = 0
 EOS_token = 1
@@ -167,8 +165,11 @@ class Lang:
         self.n_words = 2  # Count SOS and EOS
 
     def addSentence(self, sentence):
+        words = []
         for word in sentence.split(' '):
             self.addWord(word)
+            words.append(word)
+        return words
 
     def addWord(self, word):
         if word not in self.word2index:
