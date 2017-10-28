@@ -28,6 +28,6 @@ for i in range(len(articles)):
     else:
         pass
 
-f = open('all_sentences.csv')
+f = open('all_sentences.csv', 'w')
 
 f.write(out_str)

@@ -18,11 +18,13 @@ class LangModel(nn.Module):
         ):
 
         super(LangModel, self).__init__()
+        self.embed = nn.Embedding(vocab_size, input_size) # this creates a layer
 
         self.model = getattr(nn, model_type)(input_size, hidden_size, num_layers, dropout = rnn_dropout)
 
         self.drop = nn.Dropout(linear_dropout)
         self.linear = nn.Linear(hidden_size, vocab_size)
+        self.normalize = nn.Softmax()
 
         if tie_weights:
             assert hidden_size == input_size
@@ -34,6 +36,9 @@ class LangModel(nn.Module):
         self.hidden_size = hidden_size
         self.num_layers = num_layers
 
+    def init_embedding(self, pretrained_embeddings):
+        self.embed.weight.data.copy_(pretrained_embeddings)# this provides the values
+
     def init_weights(self, init_range):
         self.linear.bias.data.fill_(0)
         self.linear.weight.data.uniform_(-init_range, init_range)
@@ -43,13 +48,15 @@ class LangModel(nn.Module):
         if self.model_type == 'LSTM':
             num_states = 2
 
-        return (Variable(torch.zeros(1, 1, self.hidden_size)).type(torch.LongTensor) for i in range(num_states))
+        return (Variable(torch.zeros(self.num_layers, batch_size,
+                        self.hidden_size), requires_grad=False)
+                        .type(torch.LongTensor) for i in range(num_states))
 
 
     def forward(self, inp, h):
-        out, h = self.model(inp, h)
+        vectors = self.embed(inp)
+        out, h = self.model(vectors, h)
         out = self.drop(out)
 
-        predictions = self.linear(out.view(out.size(0)*out.size(1), out.size(2)))
-
-        return predictions.view(out.size(0), out.size(1), out.size(2))
+        predictions = self.linear(out) #self.normalize(self.linear(out))
+        return predictions, h
