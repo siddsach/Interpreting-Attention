@@ -38,6 +38,7 @@ class LangModel(nn.Module):
 
     def init_embedding(self, pretrained_embeddings):
         self.embed.weight.data.copy_(pretrained_embeddings)# this provides the values
+        self.embed.weight.requires_grad = False
 
     def init_weights(self, init_range):
         self.linear.bias.data.fill_(0)
