@@ -17,14 +17,15 @@ class VanillaRNN(nn.Module):
             linear_dropout = 0.5,
             tie_weights = False,
             init_range = 0.1,
-            num_classes = 2
+            num_classes = 2,
+            bidirectional = True
         ):
 
         super(VanillaRNN, self).__init__()
         self.embed = nn.Embedding(vocab_size, input_size) # this creates a layer
         self.init_embedding(vectors)
 
-        self.model = getattr(nn, model_type)(input_size, hidden_size, num_layers, dropout = rnn_dropout)
+        self.model = getattr(nn, model_type)(input_size, hidden_size, num_layers, dropout = rnn_dropout, bidirectional = bidirectional)
 
         self.drop = nn.Dropout(linear_dropout)
         self.linear = nn.Linear(hidden_size, num_classes)
