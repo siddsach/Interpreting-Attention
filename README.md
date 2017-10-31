@@ -1,1 +1,6 @@
-Recurrent Language Model and AutoEncoder for larger news and opinion dataset (In progress)
+(In Progress) Pytorch implementation of my research in applying self-attention to what models learn. Trying to see whether one 
+can use learned attention weights to understand:
+    -->dataset for unsupervised pretraining via language model
+    -->choice of word embeddings
+    -->hyperpameter choice
+    -->what subjective language is
