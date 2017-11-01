@@ -17,6 +17,7 @@ BATCH_SIZE =5
 LOG_INTERVAL = 5
 BPTT_SEQUENCE_LENGTH = 2
 WORD_VEC_DIM = 300
+MODEL_SAVE_PATH = 'langmodel.pt'
 
 '''
 CREATING A POSTPROCESSING FUNCTION TO TURN SEQUENCES OF
@@ -62,12 +63,14 @@ class TrainLangModel:
                     objective = 'crossentropy',
                     train = False,
                     log_interval = LOG_INTERVAL,
-                    model_type = "LSTM"
+                    model_type = "LSTM",
+                    savepath = MODEL_SAVE_PATH
                 ):
         if torch.cuda.is_available():
             self.cuda = True
         else:
             self.cuda = False
+        self.savepath = savepath
         self.lr = lr
         self.datapath = datapath
         self.batch_size = batch_size
@@ -171,6 +174,16 @@ class TrainLangModel:
         start_time = time.time()
         for epoch in range(self.n_epochs):
             self.train_step(optimizer, self.model, start_time)
+
+    def save_model(self):
+        self.model.save_state_dict(self.savepath)
+
+if __name__ == '__main__':
+
+    trainer = TrainLangModel(batch_size=5, seq_len=3)
+    trainer.load_data()
+    trainer.train()
+    trainer.save_model()
 
 
 '''
