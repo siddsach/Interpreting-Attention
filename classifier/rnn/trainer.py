@@ -6,7 +6,7 @@ from torch.optim import Adam
 from model import VanillaRNN, SelfAttentiveRNN
 import time
 
-RAW_TEXTDATA_PATH = '/Users/siddharth/flipsideML/ML-research/deep/semi-supervised_clf/data/more_sentences.csv' #DATA MUST BE IN CSV FORMAT WITH ONE FIELD TITLED SENTENCES CONTANING ONE LINE PER SENTENCE
+RAW_TEXTDATA_PATH = 'sentence_subjectivity.csv' #DATA MUST BE IN CSV FORMAT WITH ONE FIELD TITLED SENTENCES CONTANING ONE LINE PER SENTENCE
 VECTOR_CACHE = 'vectors'
 SAVED_VECTORS = False
 NUM_EPOCHS = 10
@@ -74,8 +74,8 @@ class TrainClassifier:
                             path = self.datapath,
                             format = 'csv',
                             fields =
-                                    [('text', self.sentence_field),
-                                    ('label', self.target_field)]
+                                    [('labels', self.target_field),
+                                    ('sentences', self.sentence_field)]
                         )
 
         self.sentence_field.build_vocab(self.sentences)
@@ -160,6 +160,10 @@ class TrainClassifier:
         for epoch in range(self.n_epochs):
             self.train_step(optimizer, self.model, start_time)
 
+if __name__ == '__main__':
+    trainer = TrainClassifier()
+    trainer.load_data()
+    trainer.train()
 
 '''
 print("DATA")
