@@ -7,14 +7,16 @@ class LangModel(nn.Module):
     def __init__(
             self,
             vocab_size,
+            pretrained_vecs = None,
             model_type = 'LSTM',
             input_size = 300,
             hidden_size = 4096,
-            num_layers = 1,
+            num_layers = 2,
             rnn_dropout = 0.5,
             linear_dropout = 0.5,
             tie_weights = False,
-            init_range = 0.1
+            init_range = 0.1,
+            tune_wordvecs = False
         ):
 
         super(LangModel, self).__init__()
@@ -35,10 +37,14 @@ class LangModel(nn.Module):
         self.model_type = model_type
         self.hidden_size = hidden_size
         self.num_layers = num_layers
+        self.tune_wordvecs = tune_wordvecs
+
+        self.init_embedding(pretrained_vecs)
 
     def init_embedding(self, pretrained_embeddings):
         self.embed.weight.data.copy_(pretrained_embeddings)# this provides the values
-        self.embed.weight.requires_grad = False
+        if not self.tune_wordvecs:
+            self.embed.weight.requires_grad = False
 
     def init_weights(self, init_range):
         self.linear.bias.data.fill_(0)
