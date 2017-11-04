@@ -32,8 +32,8 @@ class TrainClassifier:
                     train = False,
                     log_interval = LOG_INTERVAL,
                     model_type = "LSTM",
-                    attention_dim = None, #None if not using attention
-                    mlp_hidden = None,
+                    attention_dim = 2, #None if not using attention
+                    mlp_hidden = 100,
                     num_aspects = None,
                     word_vec_dim = WORD_VEC_DIM,
                     wordvec_source = WORDVEC_SOURCE
@@ -47,6 +47,7 @@ class TrainClassifier:
         self.batch_size = batch_size
         self.n_epochs = n_epochs
         self.vector_cache = vector_cache
+        self.num_aspects = num_aspects
         if objective == 'crossentropy':
             self.objective = CrossEntropyLoss()
         self.log_interval = log_interval
@@ -141,15 +142,17 @@ class TrainClassifier:
         if num_tokens is None:
             self.ntokens = len(self.sentence_field.vocab)
             if self.attention_dim is not None:
+                print('Using Attention model with {} dimensions'.format(self.attention_dim))
                 self.model = SelfAttentiveRNN(vocab_size = self.ntokens,
                                                 cuda = self.cuda,
                                                 num_classes = self.num_classes,
                                                vectors = self.sentence_field.vocab.vectors,
-                                                attention_dim = self.attention,
+                                                attention_dim = self.attention_dim,
                                                 mlp_hidden = self.mlp_hidden,
                                                 num_aspects = self.num_aspects
                                         )
             else:
+                print('Using Vanilla RNN with {} dimensions')
                 self.model = VanillaRNN(vocab_size = self.ntokens,
                                                 cuda = self.cuda,
                                                 num_classes = self.num_classes,
@@ -173,13 +176,13 @@ class TrainClassifier:
             optimizer.zero_grad()
             hidden = self.repackage_hidden(hidden)
             data, targets = batch.text, batch.label.view(-1)
-            print('DATA')
-            print(type(data.data))
-            print(data.data.shape)
-            print('HIDDEN')
-            print(type(hidden[0].data))
-            print(hidden[0].data.shape)
             output, h, penal, weights = model(data, hidden)
+            print('OUTPUT')
+            print(type(output))
+            print(output.data.shape)
+            print('WEIGHTS')
+            print(type(weights))
+            print(weights[0].data.shape)
             predictions = output.view(-1, self.num_classes)
             loss = self.objective(predictions, targets)
             loss.backward()

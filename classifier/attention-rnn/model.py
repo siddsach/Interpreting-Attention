@@ -105,25 +105,24 @@ class SelfAttentiveRNN(VanillaRNN):
 
         # ATTENTION LAYERS
         self.W1 = nn.Linear(self.input_hidden_size, attention_dim, bias=False)
-        self.W2 = nn.Linear(attention_dim, num_aspects, bias=False )
+        self.W2 = nn.Linear(self.attention_dim, self.num_aspects, bias=False )
 
         # MLP AND DECODER TO OUTPUT
-        self.MLP = nn.Linear(num_aspects * self.input_hidden_size, mlp_hidden)
+        self.MLP = nn.Linear(self.num_aspects * self.input_hidden_size, mlp_hidden)
         self.decoder = nn.Linear(mlp_hidden, self.num_classes)
 
-    def forward(self, inp, h, lens):
-        print('one')
+    def forward(self, inp, h):
+        lens = [inp.size(0)] * inp.size(1)
         rnn_input = self.embed(inp)
-        print('two')
 
         #rnn_input = torch.nn.utils.rnn.pack_padded_sequence( emb, list( len_li.data ), batch_first=True )
-        output, h = self.rnn(rnn_input , h)
-        print('three')
+        output, h = self.model(rnn_input, h)
 
         #depacked_output, lens = torch.nn.utils.rnn.pad_packed_sequence( output, batch_first=True )
 
-        Batched_Attentions = Variable(torch.zeros(input.size(0), self.num_aspects * self.input_hidden_size))
-
+        Batched_Attentions = Variable(torch.zeros(inp.size(1), self.num_aspects * self.input_hidden_size))
+        I = None
+        penal = None
         if self.num_aspects > 1:
             penal = Variable(torch.zeros(1))
             I = Variable(torch.eye(self.num_aspects))
@@ -139,10 +138,10 @@ class SelfAttentiveRNN(VanillaRNN):
 
         print('finished sequence component')
         # ATTENTION CALCULATIONS
-        for i in range( input.size( 0 ) ):
+        for i in range( inp.size( 1 ) ):
 
             #GETTING HIDDEN STATES FOR iTH EXAMPLE IN BATCH
-            H = output[i, :lens[ i ], :]
+            H = output[:lens[ i ], i, :]
 
             # GET SELF-ATTENTION WEIGHTS FOR THIS HIDDEN WEIGHT
             s1 = self.W1(H)
@@ -153,14 +152,16 @@ class SelfAttentiveRNN(VanillaRNN):
             M = torch.mm(A, H)
             Batched_Attentions[i, :] = M.view(-1)
 
-            # PENALIZATION = FrobNorm((A*A^T) - I)
-            AAT = torch.mm(A, A.t())
-            P = torch.norm( AAT - I, 2 )
-            penal += P * P
             weights[i] = A
+            if self.num_aspects > 1:
+                # PENALIZATION = FrobNorm((A*A^T) - I)
+                AAT = torch.mm(A, A.t())
+                P = torch.norm( AAT - I, 2 )
+                penal += P * P
 
-        # Penalization Term
-        penal /= input.size( 0 )
+        if self.num_aspects > 1:
+            # Penalization Term
+            penal /= inp.size( 1 )
 
         # DECODING ATTENTION EMBEDDED MATRICES TO OUTPUT
         MLPhidden = self.MLP(Batched_Attentions)
