@@ -27,13 +27,15 @@ class VanillaRNN(nn.Module):
 
         self.model = getattr(nn, model_type)(input_size, hidden_size, num_layers, dropout = rnn_dropout, bidirectional = bidirectional)
 
-        self.drop = nn.Dropout(linear_dropout)
-        self.linear = nn.Linear(hidden_size, num_classes)
+        self.drop = nn.Dropout(p = linear_dropout)
+        self.decode_dim = hidden_size * 2 if bidirectional else hidden_size
+        self.linear = nn.Linear(self.decode_dim, num_classes)
         self.normalize = nn.Softmax()
 
         self.init_weights(init_range)
 
         self.model_type = model_type
+        self.bidirectional = bidirectional
         self.hidden_size = hidden_size
         self.num_layers = num_layers
         self.cuda = cuda
@@ -55,18 +57,21 @@ class VanillaRNN(nn.Module):
         num_states = 1
         if self.model_type == 'LSTM':
             num_states = 2
-
-        return (Variable(torch.zeros(self.num_layers, batch_size,
-                        self.hidden_size), requires_grad=False)
+        num_directions = 1
+        if self.bidirectional:
+            num_directions = 2
+        return (Variable(torch.zeros(self.num_layers * num_directions,
+                        batch_size, self.hidden_size), requires_grad=False)
                         .type(torch.LongTensor) for i in range(num_states))
 
 
     def forward(self, inp, h):
         vectors = self.embed(inp)
         out, h = self.model(vectors, h)
-        out = self.drop(out)
-
-        predictions = self.normalize(self.linear(out))
+        features = out[-1].view(-1, self.decode_dim)
+        features = self.drop(features)
+        proj = self.linear(features)
+        predictions = self.normalize(proj)
         return predictions, h, None, None
 
 class SelfAttentiveRNN(VanillaRNN):

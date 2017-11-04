@@ -202,6 +202,7 @@ class TrainClassifier:
         self.get_vectors()
         self.get_batches()
         self.get_model()
+        self.model.train()
         parameters = filter(lambda p: p.requires_grad, self.model.parameters())
         optimizer = Adam(parameters)
         start_time = time.time()
