@@ -1,12 +1,11 @@
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
-from torch import optim
-import torch.nn.Functional as F
 
 
 #HYPERPARAMS
-HIDDEN_DIM = 4096
+ENCODE_HIDDEN_DIM = 4096
+DECODE_HIDDEN_DIM = 2048
 WORD_VEC_SIZE = 300
 DROPOUT = 0.5
 BATCH_SIZE = 128
@@ -17,89 +16,125 @@ BIDIRECTIONAL = False
 USE_CUDA = torch.cuda.is_available()
 
 class Encoder(nn.Module):
-        
-        super(Encoder, self).__init__()
-        
+
+
         def __init__(
-                self, 
-                hidden_dim = hidden_dim, 
-                input_size = word_vec_size, 
-                dropout = dropout, 
-                n_layers = num_layers, 
-                bid = bidirectional
-                hidden_state = None
+                self,
+                vocab_size,
+                hidden_size = ENCODE_HIDDEN_DIM,
+                input_size = WORD_VEC_SIZE,
+                rnn_dropout = DROPOUT,
+                num_layers = NUM_LAYERS,
+                model_type = 'ARCHITECTURE',
+                bid = BIDIRECTIONAL,
+                use_cuda = USE_CUDA
             ):
-        #define NN
-        self.enc_lstm = nn.LSTM(
-                            input_size = input_size, 
-                            hidden_size = hidden_dim, 
-                            num_layers = n_layers, 
-                            dropout = dropout, 
-                            bidirectional = bid
-                        )
+            super(Encoder, self).__init__()
+
+            self.embed = nn.Embedding(vocab_size, input_size)
+            #define NN
+            self.model = getattr(nn, model_type)(
+                                        input_size,
+                                        hidden_size,
+                                        num_layers,
+                                        dropout = rnn_dropout,
+                                        bidirectional = bid
+                                    )
 
 
-        self.hidden_dim = hidden_dim
-        if hidden_state is not None:
-            self.hidden = hidden_state
-        else:
-            self.hidden = self.init_hidden()
-        
-    def init_hidden(self):
-        #INITIALIZING HIDDEN AND CELL STATE
-        cell = autograd.Variable(torch.zeros(1, 1, self.hidden_dim))
-        hidden = autograd.Variable(torch.zeros(1, 1, self.hidden_dim)))
-        if use_cuda:
-            return (cell.cuda(), hidden.cuda())
-        else
-            return (cell, hidden)
+            self.hidden_dim = hidden_size
+            self.use_cuda = use_cuda
 
-    def forward(self, inp, hidden):
-        out, hidden = self.enc_lstm(inp, hidden)
-        if use_cuda:
-            return out.cuda(), hidden.cuda()
-        else:
-            return out, hidden
+        def init_hidden(self, batch_size):
+            num_states = 1
+            if self.model_type == 'LSTM':
+                num_states = 2
+            num_directions = 1
+            if self.bidirectional:
+                num_directions = 2
+            return (Variable(torch.zeros(self.num_layers * num_directions,
+                            batch_size, self.hidden_size), requires_grad=False)
+                            .type(torch.LongTensor) for i in range(num_states))
+
+        def forward(self, inp, hidden):
+            out, hidden = self.enc_lstm(inp, hidden)
+            if self.use_cuda:
+                return out.cuda(), hidden.cuda()
+            else:
+                return out, hidden
 
 class Decoder(nn.Module):
 
-    super(Decoder, self).__init__()
-
-    def __init__(
-            self, 
-            hidden_dim = hidden_dim, 
-            input_size = word_vec_size, 
-            dropout = dropout, 
-            n_layers = num_layers, 
-            hidden_state = None
-            vocab_size
+    def __init__(self,
+            vocab_size,
+            hidden_size = DECODE_HIDDEN_DIM,
+            output_size = ENCODE_HIDDEN_DIM,
+            dropout = DROPOUT,
+            num_layers = NUM_LAYERS,
+            model_type = ARCHITECTURE,
+            hidden_state = None,
+            use_cuda = USE_CUDA
         ):
 
+            super(Decoder, self).__init__()
+            self.hidden_size = hidden_size
+            self.output_size = output_size
 
-        self.dec_lstm = nn.LSTM(
-                            input_size = hidden_dim
-                            hidden_size = hidden_dim,
-                            num_layers = n_layers,
-                            dropout = dropout,
-                        )
-        
-        self.linear2vocab = nn.Linear(hidden_dim, vocab_size)
-        self.activation = nn.LogSoftmax()
+            self.embed = nn.Embedding(vocab_size, hidden_size)
+            self.model = getattr(nn, model_type)(
+                                        hidden_size,
+                                        hidden_size,
+                                        num_layers,
+                                        dropout = dropout,
+                                    )
+
+            self.linear2vocab = nn.Linear(hidden_size, vocab_size)
+            self.activation = nn.LogSoftmax()
+            self.use_cuda = use_cuda
 
 
-    def init_hidden(self):
-        #INITIALIZING HIDDEN AND CELL STATE
-        cell = autograd.Variable(torch.zeros(1, 1, self.hidden_dim))
-        hidden = autograd.Variable(torch.zeros(1, 1, self.hidden_dim)))
-        if use_cuda:
-            return (cell.cuda(), hidden.cuda())
-        else
-            return (cell, hidden)
+    def init_hidden(self, batch_size):
+        num_states = 1
+        if self.model_type == 'LSTM':
+            num_states = 2
+        return (Variable(torch.zeros(self.num_layers,
+                        batch_size, self.hidden_size), requires_grad=False)
+                        .type(torch.LongTensor) for i in range(num_states))
 
     def forward(self, inp, hidden):
-        out, hidden = self.enc_lstm(inp, hidden)
-        probs = self.linear2vocab(self.activation(hidden))
+        input_embeddings = self.embed(inp)
+        out, hidden = self.enc_lstm(input_embeddings, hidden)
+        scores = self.activation(self.linear2vocab(hidden))
         if self.use_cuda:
-            return probs.cuda()
-        else:   
-            return probs
+            return scores.cuda()
+        else:
+            return scores
+
+class AttentionDecoder(Decoder):
+
+    def __init__(self,
+            attention_dim,
+            **kwargs
+            ):
+
+        super(AttentionDecoder, self).__init__()
+        self.attention_dim = attention_dim
+
+        self.attn = nn.Linear(self.output_size, attention_dim)
+
+    def forward(self, inp, encoder_outputs):
+
+        #hidden_all (seq_len, bsz, hidden_size)
+
+        attn_weights = self.attn(encoder_outputs).unsqueeze(0)
+        norm_hidden = torch.mm(attn_weights, encoder_outputs) #Output of dim (1, bsz, hidden_size)
+
+        input_embeddings = self.model(inp)
+
+        out, hidden = self.enc_lstm(input_embeddings, norm_hidden)
+        scores = self.activation(self.linear2vocab(hidden))
+
+        if self.use_cuda:
+            return scores.cuda()
+        else:
+            return scores

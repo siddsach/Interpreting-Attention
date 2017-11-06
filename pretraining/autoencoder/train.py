@@ -3,7 +3,7 @@ from utils import preprocess
 import torch
 from torch.nn import CrossEntropyLoss
 from torch.autograd import Variable
-from model import LangModel 
+from model import LangModel
 
 RAW_TEXTDATA_PATH = '' #DATA MUST BE IN CSV FORMAT WITH ONE FIELD TITLED SENTENCES CONTANING ONE LINE PER SENTENCE
 VECTOR_CACHE = None
@@ -11,16 +11,16 @@ NUM_EPOCHS = 40
 MAX_LENGTH = 50
 LEARNING_RATE = 0.5
 
-class TrainLangModel:
+class TrainAutoEncoder:
     def __init__(
-                    self, 
-                    datapath = RAW_TEXTDATA_PATH, 
-                    n_epochs = NUM_EPOCHS, 
-                    seq_len = MAX_LENGTH, 
+                    self,
+                    datapath = RAW_TEXTDATA_PATH,
+                    n_epochs = NUM_EPOCHS,
+                    seq_len = MAX_LENGTH,
                     lr = LEARNING_RATE
                     objective = CrossEntropyLoss
                     train = False
-                ): 
+                ):
         if torch.cuda.is_available:
             self.cuda = True
         self.lr = lr
@@ -30,7 +30,7 @@ class TrainLangModel:
         self.objective = objective
         if train:
             self.train()
-        
+
     def load_data(self, datapath):
         self.sentence_field = data.Field(
                             sequential = True,
@@ -86,7 +86,7 @@ class TrainLangModel:
                 current_loss - total_loss[0]/ log_interval
                 elapsed = time.time() - start_time
                 #OTHER STUFFFFFF
-                print('At time: {elapsed} loss is {current_loss}'.format(elapsed=elapsed, current_loss = current_loss))    
+                print('At time: {elapsed} loss is {current_loss}'.format(elapsed=elapsed, current_loss = current_loss))
 
     def train(self, n_epoch)
         for epoch in n_epoch:

@@ -7,7 +7,7 @@ class LangModel(nn.Module):
     def __init__(
             self,
             vocab_size,
-            pretrained_vecs = None,
+            pretrained_vecs,
             model_type = 'LSTM',
             input_size = 300,
             hidden_size = 4096,
@@ -64,6 +64,7 @@ class LangModel(nn.Module):
         vectors = self.embed(inp)
         out, h = self.model(vectors, h)
         out = self.drop(out)
+
 
         predictions = self.linear(out) #self.normalize(self.linear(out))
         return predictions, h

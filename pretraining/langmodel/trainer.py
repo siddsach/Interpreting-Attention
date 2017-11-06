@@ -1,60 +1,69 @@
-from torchtext import data
+from torchtext import data, datasets
+from torchtext.vocab import Vectors, GloVe, CharNGram
 import torch
 from torch.nn import CrossEntropyLoss
 from torch.autograd import Variable
 from torch.optim import Adam
 from model import LangModel
 import time
-import pickle
 
-RAW_TEXTDATA_PATH = '/Users/siddharth/flipsideML/ML-research/deep/semi-supervised_clf/data/more_sentences.csv' #DATA MUST BE IN CSV FORMAT WITH ONE FIELD TITLED SENTENCES CONTANING ONE LINE PER SENTENCE
+RAW_TEXTDATA_PATH = '/Users/siddharth/flipsideML/ML-research/deep/semi-supervised_clf/pretraining/data/more_sentences.csv' #DATA MUST BE IN CSV FORMAT WITH ONE FIELD TITLED SENTENCES CONTANING ONE LINE PER SENTENCE
+VECTOR_FOLDER = '/Users/siddharth/flipsideML/ML-research/deep/semi-supervised_clf/pretraining/langmodel/vectors.bin'
 VECTOR_CACHE = 'vectors'
-SAVED_VECTORS = False
+SAVED_VECTORS = True
 NUM_EPOCHS = 10
-BPTT_LENGTH = 3
+BPTT_LENGTH = 35
 LEARNING_RATE = 0.5
-BATCH_SIZE =5
+BATCH_SIZE = 50
 LOG_INTERVAL = 5
 BPTT_SEQUENCE_LENGTH = 2
-WORD_VEC_DIM = 300
+WORDVEC_DIM = 300
+WORDVEC_SOURCE = ['GloVe']# charLevel']
+DEFAULT_DATAPATH = 'wikitext-2/wiki.train.tokens'
 MODEL_SAVE_PATH = 'langmodel.pt'
 
 '''
 CREATING A POSTPROCESSING FUNCTION TO TURN SEQUENCES OF
 INDEXES FOR EACH WORD INTO WORD VECTORS
 '''
-def convert_token(x, vocab, train):
-    out = torch.zeros(len(x), WORD_VEC_DIM)
-    if train:
-        c = 0
-        for i, word in enumerate(x):
-            out[i] = vocab.vectors[word]
-            c+= 1
-            if c > 128:
-                break
-        print('FINISHED TURNING INTO VECTORS')
-        print(type(out))
-        print(out.shape)
-        pickle.dump(out, open('weird_tensor.p', 'wb'))
-        out = [torch.FloatTensor(out) for el in out]
-        print('FINISHED CONVERTING')
-        return out
-        '''
-        out = arr
-        for i, example in enumerate(arr):
-            new_example = len(example) * [None]
-            for j, word in enumerate(example):
-                vec = vocab.vectors[word]
-                new_example[j] = vec
-            out[i] = new_example
-        print('Done preprocessing')
-        return out
-        '''
+def preprocess(x):
+
+    try:
+        return x.encode('utf-8').decode('utf-8').lower()
+    except ValueError:
+        print(type(x))
+        print(x)
+    #out = torch.zeros(len(x), WORD_VEC_DIM)
+    #if train:
+    #    c = 0
+    #    for i, word in enumerate(x):
+    #        out[i] = vocab.vectors[word]
+    #        c+= 1
+    #        if c > 128:
+    #            break
+    #    print('FINISHED TURNING INTO VECTORS')
+    #    print(type(out))
+    #    print(out.shape)
+    #    pickle.dump(out, open('weird_tensor.p', 'wb'))
+    #    out = [torch.FloatTensor(out) for el in out]
+    #    print('FINISHED CONVERTING')
+    #    return out
+    # '''
+    #out = arr
+    #for i, example in enumerate(arr):
+    #    new_example = len(example) * [None]
+    #    for j, word in enumerate(example):
+    #        vec = vocab.vectors[word]
+    #        new_example[j] = vec
+    #    out[i] = new_example
+    #print('Done preprocessing')
+    #return out
+    #'''
 
 class TrainLangModel:
     def __init__(
                     self,
-                    datapath = RAW_TEXTDATA_PATH,
+                    datapath = None, #RAW_TEXTDATA_PATH,
                     n_epochs = NUM_EPOCHS,
                     seq_len = BPTT_SEQUENCE_LENGTH,
                     lr = LEARNING_RATE,
@@ -64,7 +73,9 @@ class TrainLangModel:
                     train = False,
                     log_interval = LOG_INTERVAL,
                     model_type = "LSTM",
-                    savepath = MODEL_SAVE_PATH
+                    savepath = MODEL_SAVE_PATH,
+                    wordvec_dim = WORDVEC_DIM,
+                    wordvec_source = WORDVEC_SOURCE
                 ):
         if torch.cuda.is_available():
             self.cuda = True
@@ -81,43 +92,65 @@ class TrainLangModel:
             self.objective = CrossEntropyLoss()
         self.log_interval = log_interval
         self.model_type = model_type
+        self.wordvec_source = wordvec_source
+        self.wordvec_dim = wordvec_dim
 
 
     def load_data(self):
 
-        print(self.vector_cache)
-        print("Retrieving Data from file: {}...".format(self.datapath))
+        print("Preparing Data Loaders")
         self.sentence_field = data.Field(
                             sequential = True,
                             use_vocab = True,
                             init_token = '<BOS>',
                             eos_token = '<EOS>',
                             fix_length = 100,
-                            preprocessing = None, #function to preprocess if needed, already converted to lower, probably need to strip stuff
-                            #postprocessing = data.Pipeline(convert_token = convert_token),
+                            preprocessing = data.Pipeline(convert_token = preprocess), #function to preprocess if needed, already converted to lower, probably need to strip stuff
                             tensor_type = torch.LongTensor,
                             lower = True,
                             tokenize = 'spacy',
                         )
+        if self.datapath is not None:
+            print(self.vector_cache)
+            print("Retrieving Data from file: {}...".format(self.datapath))
+            self.raw_sentences = datasets.LanguageModelingDataset(self.datapath, self.sentence_field, newline_eos = False)
+            print('done.')
 
-        self.raw_sentences = data.TabularDataset(
-                            path = self.datapath,
-                            format = 'csv',
-                            fields = [('text', self.sentence_field)]
-                        )
-
-        self.sentence_field.build_vocab(self.raw_sentences)
-
-        if SAVED_VECTORS:
-            self.sentence_field.vocab.vectors = torch.load(self.vector_cache)
+#            self.raw_sentences = data.TabularDataset(
+#                                path = self.datapath,
+#                                format = 'csv',
+#                                fields = [('text', self.sentence_field)]
+#                            )
+#
         else:
-            self.sentence_field.vocab.load_vectors('fasttext.simple.300d')
-            #os.makedirs(self.vector_cache)
-            torch.save(self.sentence_field.vocab.vectors, open(self.vector_cache, 'wb'))
+            print('Downloading Data Remotely....')
+            self.raw_sentences = datasets.WikiText2.splits(self.sentence_field, root = 'data', train = 'wikitext-2/wiki.train.tokens', validation = None, test = None)[0]
+            print('done.')
 
-        print("Done.")
 
-        #POTENTIALLY USEFUL LINK IN CASE I HAVE TROUBLE HERE: https://github.com/pytorch/text/issues/70
+    def get_vectors(self):
+        vecs = []
+        if SAVED_VECTORS:
+            print('Loading Vectors From Memory...')
+            for source in self.wordvec_source:
+                if source == 'GloVe':
+                    glove = Vectors(name = 'glove.6B.{}d.txt'.format(self.wordvec_dim), cache = self.vector_cache)
+                    vecs.append(glove)
+                if source == 'charLevel':
+                    charVec = Vectors(name = 'charNgram.txt',cache = self.vector_cache)
+                    vecs.append(charVec)
+        else:
+            print('Downloading Vectors...')
+            for source in self.wordvec_source:
+                if source == 'GloVe':
+                    glove = GloVe(name = '6B', dim = self.wordvec_dim, cache = self.vector_cache)
+                    vecs.append(glove)
+                if source == 'charLevel':
+                    charVec = CharNGram(cache = self.vector_cache)
+                    vecs.append(charVec)
+        print('Building Vocab...')
+        self.sentence_field.build_vocab(self.raw_sentences, vectors = vecs)
+        print('Done.')
 
 
     def get_iterator(self):
@@ -132,14 +165,13 @@ class TrainLangModel:
         print("Done.")
 
     def get_model(self):
-
+        print('Initializing Model parameters...')
         self.ntokens = self.sentence_field.vocab.__len__()
         if self.model_type == "LSTM":
-            self.model = LangModel(self.ntokens)
-        self.model.init_embedding(self.sentence_field.vocab.vectors)
+            self.model = LangModel(vocab_size = self.ntokens, pretrained_vecs = self.sentence_field.vocab.vectors)
 
     def repackage_hidden(self, h):
-        '''Wraps hidden states in new Variables, to detach them from their history.'''
+        #Erasing hidden state history
         if type(h) == Variable:
             return Variable(h.data.type(torch.FloatTensor))
         else:
@@ -168,22 +200,26 @@ class TrainLangModel:
 
     def train(self):
         print('Begin Training...')
+        self.load_data()
+        self.get_vectors()
         self.get_iterator()
         self.get_model()
-        optimizer = Adam(self.model.parameters())
+        self.model.train()
+        parameters = filter(lambda p: p.requires_grad, self.model.parameters())
+        optimizer = Adam(parameters)
         start_time = time.time()
         for epoch in range(self.n_epochs):
+            print('Finished {} epochs...'.format(epoch))
             self.train_step(optimizer, self.model, start_time)
 
-    def save_model(self):
-        self.model.save_state_dict(self.savepath)
+    def save_model(self, savepath):
+        self.model.save_state_dict(savepath)
 
 if __name__ == '__main__':
 
-    trainer = TrainLangModel(batch_size=5, seq_len=3)
-    trainer.load_data()
+    trainer = TrainLangModel()
     trainer.train()
-    trainer.save_model()
+    trainer.save_model(trainer.savepath)
 
 
 '''
