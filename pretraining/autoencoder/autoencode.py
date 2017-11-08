@@ -17,21 +17,30 @@ USE_CUDA = torch.cuda.is_available()
 
 class Encoder(nn.Module):
 
-
         def __init__(
                 self,
                 vocab_size,
+                vectors = None,
+                attention_dim = None,
+                tune_wordvecs = False,
                 hidden_size = ENCODE_HIDDEN_DIM,
                 input_size = WORD_VEC_SIZE,
                 rnn_dropout = DROPOUT,
                 num_layers = NUM_LAYERS,
-                model_type = 'ARCHITECTURE',
+                model_type = ARCHITECTURE,
                 bid = BIDIRECTIONAL,
                 use_cuda = USE_CUDA
             ):
             super(Encoder, self).__init__()
 
+            self.hidden_dim = hidden_size
+            self.use_cuda = use_cuda
+            self.tune_wordvecs = tune_wordvecs
+
             self.embed = nn.Embedding(vocab_size, input_size)
+
+            if vectors is not None:
+                self.init_embedding(vectors)
             #define NN
             self.model = getattr(nn, model_type)(
                                         input_size,
@@ -41,9 +50,17 @@ class Encoder(nn.Module):
                                         bidirectional = bid
                                     )
 
+            if attention_dim is not None:
+                self.attention_dim = attention_dim
 
-            self.hidden_dim = hidden_size
-            self.use_cuda = use_cuda
+                self.W1 = nn.Linear(hidden_size, attention_dim)
+                self.W2 = nn.Linear(attention_dim, 1)
+
+
+        def init_embedding(self, pretrained_embeddings):
+            self.embed.weight.data.copy_(pretrained_embeddings)# this provides the values
+            if not self.tune_wordvecs:
+                self.embed.weight.requires_grad = False
 
         def init_hidden(self, batch_size):
             num_states = 1
@@ -57,11 +74,26 @@ class Encoder(nn.Module):
                             .type(torch.LongTensor) for i in range(num_states))
 
         def forward(self, inp, hidden):
-            out, hidden = self.enc_lstm(inp, hidden)
+            embedded = self.embed(inp)
+            out, hidden = self.enc_lstm(embedded, hidden)
+
+            if self.attention_dim is None:
+                if self.use_cuda:
+                    return out.cuda(), hidden.cuda()
+                else:
+                    return out, hidden
+
+            #GLOBAL ATTENTION WEIGHTING FOR AUTOENCODER
+            S1 = nn.functional.tanh(self.W1(out))
+            attn_weights = nn.functonal.softmax(self.W2(S1))
+
+            weighted_hidden = torch.matmul(out, attn_weights.t())
+
             if self.use_cuda:
-                return out.cuda(), hidden.cuda()
+                return out.cuda(), weighted_hidden.cuda()
             else:
-                return out, hidden
+                return out, weighted_hidden
+
 
 class Decoder(nn.Module):
 
@@ -102,39 +134,10 @@ class Decoder(nn.Module):
                         .type(torch.LongTensor) for i in range(num_states))
 
     def forward(self, inp, hidden):
-        input_embeddings = self.embed(inp)
-        out, hidden = self.enc_lstm(input_embeddings, hidden)
-        scores = self.activation(self.linear2vocab(hidden))
+        inp = self.embed(inp)
+        out, hidden = self.enc_lstm(inp, hidden)
+        scores, hidden = self.activation(self.linear2vocab(hidden))
         if self.use_cuda:
-            return scores.cuda()
+            return scores.cuda(), hidden.cuda()
         else:
-            return scores
-
-class AttentionDecoder(Decoder):
-
-    def __init__(self,
-            attention_dim,
-            **kwargs
-            ):
-
-        super(AttentionDecoder, self).__init__()
-        self.attention_dim = attention_dim
-
-        self.attn = nn.Linear(self.output_size, attention_dim)
-
-    def forward(self, inp, encoder_outputs):
-
-        #hidden_all (seq_len, bsz, hidden_size)
-
-        attn_weights = self.attn(encoder_outputs).unsqueeze(0)
-        norm_hidden = torch.mm(attn_weights, encoder_outputs) #Output of dim (1, bsz, hidden_size)
-
-        input_embeddings = self.model(inp)
-
-        out, hidden = self.enc_lstm(input_embeddings, norm_hidden)
-        scores = self.activation(self.linear2vocab(hidden))
-
-        if self.use_cuda:
-            return scores.cuda()
-        else:
-            return scores
+            return scores, hidden
