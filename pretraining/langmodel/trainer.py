@@ -6,11 +6,13 @@ from torch.autograd import Variable
 from torch.optim import Adam
 from model import LangModel
 import time
+#GET THAT FINE-ASS NOISE CONTRASTIVE SAMPLING MMMM YOU TRAIN MY LANGUAGE MODELS SO GOOD
+from nce import NCELoss
 
 RAW_TEXTDATA_PATH = '/Users/siddharth/flipsideML/ML-research/deep/semi-supervised_clf/pretraining/data/more_sentences.csv' #DATA MUST BE IN CSV FORMAT WITH ONE FIELD TITLED SENTENCES CONTANING ONE LINE PER SENTENCE
-VECTOR_FOLDER = '/Users/siddharth/flipsideML/ML-research/deep/semi-supervised_clf/pretraining/langmodel/vectors.bin'
+VECTOR_FOLDER = '/Users/siddharth/flipsideML/ML-research/deep/semi-supervised_clf/vectors'
 VECTOR_CACHE = 'vectors'
-SAVED_VECTORS = True
+SAVED_VECTORS = False
 NUM_EPOCHS = 10
 BPTT_LENGTH = 35
 LEARNING_RATE = 0.5
@@ -60,6 +62,32 @@ def preprocess(x):
     #return out
     #'''
 
+def get_freqs(vocab_object):
+
+    num_specials = 4
+    vocab_size = len(vocab_object.itos) - num_specials
+    out = torch.zeros(vocab_size)
+
+    for i in range(num_specials, vocab_size + num_specials):
+        out[i] = vocab_object.freqs[vocab_object.itos[i]]
+
+    return out
+
+
+def build_unigram_noise(freq):
+    """build the unigram noise from a list of frequency
+    Parameters:
+        freq: a tensor of #occurrences of the corresponding index
+    Return:
+        unigram_noise: a torch.Tensor with size ntokens,
+        elements indicate the probability distribution
+    """
+    total = freq.sum()
+    noise = freq / total
+    assert abs(noise.sum() - 1) < 0.001
+    return noise
+
+
 class TrainLangModel:
     def __init__(
                     self,
@@ -69,7 +97,7 @@ class TrainLangModel:
                     lr = LEARNING_RATE,
                     batch_size = BATCH_SIZE,
                     vector_cache = VECTOR_CACHE,
-                    objective = 'crossentropy',
+                    objective = 'nce',
                     train = False,
                     log_interval = LOG_INTERVAL,
                     model_type = "LSTM",
@@ -88,8 +116,8 @@ class TrainLangModel:
         self.bptt_len = seq_len
         self.n_epochs = n_epochs
         self.vector_cache = vector_cache
-        if objective == 'crossentropy':
-            self.objective = CrossEntropyLoss()
+        self.objective_function = objective
+
         self.log_interval = log_interval
         self.model_type = model_type
         self.wordvec_source = wordvec_source
@@ -169,6 +197,13 @@ class TrainLangModel:
         self.ntokens = self.sentence_field.vocab.__len__()
         if self.model_type == "LSTM":
             self.model = LangModel(vocab_size = self.ntokens, pretrained_vecs = self.sentence_field.vocab.vectors)
+            if self.objective_function == 'crossentropy':
+                self.objective = CrossEntropyLoss()
+            elif self.objective_function == 'nce':
+                freqs = get_freqs(self.sentence_field.vocab)
+                noise = build_unigram_noise(freqs)
+                self.objective = NCELoss(self.ntokens, self.model.hidden_size, noise)
+
 
     def repackage_hidden(self, h):
         #Erasing hidden state history

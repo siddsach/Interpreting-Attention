@@ -138,10 +138,10 @@ class SelfAttentiveRNN(VanillaRNN):
 
         print('finished sequence component')
         # ATTENTION CALCULATIONS
-        for i in range( inp.size( 1 ) ):
+        for i in range(inp.size(1)):
 
-            #GETTING HIDDEN STATES FOR iTH EXAMPLE IN BATCH
-            H = output[:lens[ i ], i, :]
+            #GETTING HIDDEN STATES FOR ith BATCH
+            H = output[:lens[i], i, :]
 
             # GET SELF-ATTENTION WEIGHTS FOR THIS HIDDEN WEIGHT
             s1 = self.W1(H)
