@@ -12,7 +12,7 @@ from nce import NCELoss
 RAW_TEXTDATA_PATH = '/Users/siddharth/flipsideML/ML-research/deep/semi-supervised_clf/pretraining/data/more_sentences.csv' #DATA MUST BE IN CSV FORMAT WITH ONE FIELD TITLED SENTENCES CONTANING ONE LINE PER SENTENCE
 VECTOR_FOLDER = '/Users/siddharth/flipsideML/ML-research/deep/semi-supervised_clf/vectors'
 VECTOR_CACHE = 'vectors'
-SAVED_VECTORS = False
+SAVED_VECTORS = True
 NUM_EPOCHS = 10
 BPTT_LENGTH = 35
 LEARNING_RATE = 0.5
@@ -21,8 +21,10 @@ LOG_INTERVAL = 5
 BPTT_SEQUENCE_LENGTH = 2
 WORDVEC_DIM = 300
 WORDVEC_SOURCE = ['GloVe']# charLevel']
-DEFAULT_DATAPATH = 'wikitext-2/wiki.train.tokens'
+DEFAULT_DATAPATH = 'data/wikitext-2/wikitext-2/wiki.train.tokens'
 MODEL_SAVE_PATH = 'langmodel.pt'
+NUM_LAYERS = 1
+HIDDEN_SIZE = 4096
 
 '''
 CREATING A POSTPROCESSING FUNCTION TO TURN SEQUENCES OF
@@ -65,10 +67,10 @@ def preprocess(x):
 def get_freqs(vocab_object):
 
     num_specials = 4
-    vocab_size = len(vocab_object.itos) - num_specials
+    vocab_size = len(vocab_object.itos)
     out = torch.zeros(vocab_size)
 
-    for i in range(num_specials, vocab_size + num_specials):
+    for i in range(num_specials, vocab_size):
         out[i] = vocab_object.freqs[vocab_object.itos[i]]
 
     return out
@@ -91,7 +93,7 @@ def build_unigram_noise(freq):
 class TrainLangModel:
     def __init__(
                     self,
-                    datapath = None, #RAW_TEXTDATA_PATH,
+                    datapath = DEFAULT_DATAPATH, #RAW_TEXTDATA_PATH,
                     n_epochs = NUM_EPOCHS,
                     seq_len = BPTT_SEQUENCE_LENGTH,
                     lr = LEARNING_RATE,
@@ -103,7 +105,9 @@ class TrainLangModel:
                     model_type = "LSTM",
                     savepath = MODEL_SAVE_PATH,
                     wordvec_dim = WORDVEC_DIM,
-                    wordvec_source = WORDVEC_SOURCE
+                    wordvec_source = WORDVEC_SOURCE,
+                    num_layers = NUM_LAYERS,
+                    hidden_size = HIDDEN_SIZE
                 ):
         if torch.cuda.is_available():
             self.cuda = True
@@ -117,6 +121,10 @@ class TrainLangModel:
         self.n_epochs = n_epochs
         self.vector_cache = vector_cache
         self.objective_function = objective
+
+        self.num_layers = num_layers
+        self.hidden_size = hidden_size
+
 
         self.log_interval = log_interval
         self.model_type = model_type
@@ -162,7 +170,7 @@ class TrainLangModel:
             print('Loading Vectors From Memory...')
             for source in self.wordvec_source:
                 if source == 'GloVe':
-                    glove = Vectors(name = 'glove.6B.{}d.txt'.format(self.wordvec_dim), cache = self.vector_cache)
+                    glove = Vectors(name = 'glove.6B.{}d.txt'.format(self.wordvec_dim), cache = VECTOR_FOLDER)
                     vecs.append(glove)
                 if source == 'charLevel':
                     charVec = Vectors(name = 'charNgram.txt',cache = self.vector_cache)
@@ -196,13 +204,29 @@ class TrainLangModel:
         print('Initializing Model parameters...')
         self.ntokens = self.sentence_field.vocab.__len__()
         if self.model_type == "LSTM":
-            self.model = LangModel(vocab_size = self.ntokens, pretrained_vecs = self.sentence_field.vocab.vectors)
+            print('Constructing LSTM with {} layers and {} hidden size...'.format(self.num_layers, self.hidden_size))
             if self.objective_function == 'crossentropy':
+                print('Using Cross Entropy Loss and Softmax activation...')
                 self.objective = CrossEntropyLoss()
+
+                self.model = LangModel(vocab_size = self.ntokens,
+                                    pretrained_vecs = self.sentence_field.vocab.vectors,
+                                    decoder = 'softmax',
+                                    num_layers = self.num_layers,
+                                    hidden_size = self.hidden_size
+                                )
+
             elif self.objective_function == 'nce':
+                print('Using Cross Entropy Loss and Softmax activation...')
                 freqs = get_freqs(self.sentence_field.vocab)
-                noise = build_unigram_noise(freqs)
-                self.objective = NCELoss(self.ntokens, self.model.hidden_size, noise)
+                self.noise = build_unigram_noise(freqs)
+                self.model = LangModel(vocab_size = self.ntokens,
+                                    pretrained_vecs = self.sentence_field.vocab.vectors,
+                                    decoder = 'nce',
+                                    num_layers = self.num_layers,
+                                    hidden_size = self.hidden_size
+                                )
+                self.objective = NCELoss(self.ntokens, self.model.hidden_size, self.noise, self.cuda)
 
 
     def repackage_hidden(self, h):
@@ -221,8 +245,20 @@ class TrainLangModel:
             hidden = self.repackage_hidden(hidden)
             data, targets = batch.text, batch.target.view(-1)
             output, hidden = model(data, hidden)
-            predictions = output.view(-1, self.ntokens)
-            loss = self.objective(predictions, targets)
+            print(output.data.shape)
+            if self.objective_function == 'crossentropy':
+                output = output.view(-1, self.ntokens)
+            else:
+                output = output.view(output.size(0) * output.size(1), output.size(2))
+            print("ntokens")
+            print(self.ntokens)
+            print('hidden')
+            print(self.model.hidden_size)
+            print('noise')
+            print(self.noise.shape)
+            print('targets')
+            print(targets.data.shape)
+            loss = self.objective(output, targets)
             loss.backward()
             total_loss += loss.data
             optimizer.step()

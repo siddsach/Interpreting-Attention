@@ -8,6 +8,7 @@ class LangModel(nn.Module):
             self,
             vocab_size,
             pretrained_vecs,
+            decoder = 'softmax',
             model_type = 'LSTM',
             input_size = 300,
             hidden_size = 4096,
@@ -25,14 +26,17 @@ class LangModel(nn.Module):
         self.model = getattr(nn, model_type)(input_size, hidden_size, num_layers, dropout = rnn_dropout)
 
         self.drop = nn.Dropout(linear_dropout)
-        self.linear = nn.Linear(hidden_size, vocab_size)
-        self.normalize = nn.Softmax()
+        self.decoder = decoder
+        if decoder == 'softmax':
+            self.linear = nn.Linear(hidden_size, vocab_size)
+            self.normalize = nn.Softmax()
+            self.init_weights(init_range)
+
 
         if tie_weights:
-            assert hidden_size == input_size
+            assert hidden_size == input_size, "If you tie weights you gott have the same embedding and hidden size, stupid!"
             self.decoder.weight = self.encoder.weight
 
-        self.init_weights(init_range)
 
         self.model_type = model_type
         self.hidden_size = hidden_size
@@ -65,6 +69,8 @@ class LangModel(nn.Module):
         out, h = self.model(vectors, h)
         out = self.drop(out)
 
-
-        predictions = self.linear(out) #self.normalize(self.linear(out))
+        if self.decoder == 'softmax':
+            predictions = self.normalize(self.linear(out))
+        else:
+            predictions = out
         return predictions, h

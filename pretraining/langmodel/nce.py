@@ -35,14 +35,16 @@ class NCELoss(nn.Module):
                  ntokens,
                  nhidden,
                  noise,
+                 cuda,
                  noise_ratio=10,
                  norm_term=9,
                  size_average=True,
                  decoder_weight=None,
                  per_word=True,
-                 ):
+            ):
         super(NCELoss, self).__init__()
 
+        self.cuda = cuda
         self.noise = noise
         self.alias = AliasMethod(noise)
         self.noise_ratio = noise_ratio
@@ -69,15 +71,27 @@ class NCELoss(nn.Module):
         Return:
             the scalar NCELoss Variable ready for backward
         """
+        print("input")
+        print(input.data.shape)
+        print("target")
+        print(target.data.shape)
 
         length = target.size(0)
         if self.training:
             assert input.size(0) == target.size(0)
 
             if self.per_word:
-                noise_samples = self.alias.draw(self.noise_ratio * length).cuda().view(length, -1)
+                if self.cuda:
+                    noise_samples = self.alias.draw(self.noise_ratio * length).cuda().view(length, -1)
+                else:
+                    noise_samples = self.alias.draw(self.noise_ratio * length).view(length, -1)
             else:
-                noise_samples = self.alias.draw(self.noise_ratio).cuda().unsqueeze(0).repeat(length, 1)
+                if self.cuda:
+                    noise_samples = self.alias.draw(self.noise_ratio).cuda().unsqueeze(0).repeat(length, 1)
+                else:
+                    noise_samples = self.alias.draw(self.noise_ratio).unsqueeze(0).repeat(length, 1)
+            print("noise_samples")
+            print(noise_samples.shape)
             data_prob, noise_in_data_probs = self._get_prob(input, target.data, noise_samples)
             noise_probs = Variable(
                 self.noise[noise_samples.view(-1)].view_as(noise_in_data_probs)
