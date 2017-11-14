@@ -13,7 +13,7 @@ RAW_TEXTDATA_PATH = '/Users/siddharth/flipsideML/ML-research/deep/semi-supervise
 VECTOR_FOLDER = '/Users/siddharth/flipsideML/ML-research/deep/semi-supervised_clf/vectors'
 VECTOR_CACHE = 'vectors'
 SAVED_VECTORS = True
-NUM_EPOCHS = 10
+NUM_EPOCHS = 1
 BPTT_LENGTH = 35
 LEARNING_RATE = 0.5
 BATCH_SIZE = 50
@@ -21,8 +21,10 @@ LOG_INTERVAL = 5
 BPTT_SEQUENCE_LENGTH = 2
 WORDVEC_DIM = 300
 WORDVEC_SOURCE = ['GloVe']# charLevel']
-DEFAULT_DATAPATH = 'data/wikitext-2/wikitext-2/wiki.train.tokens'
-MODEL_SAVE_PATH = 'langmodel.pt'
+TRAIN_PATH = 'data/wikitext-2/wikitext-2/wiki.train.tokens'
+VALID_PATH = 'data/wikitext-2/wikitext-2/wiki.valid.tokens'
+TEST_PATH = 'data/wikitext-2/wikitext-2/wiki.test.tokens'
+MODEL_SAVE_PATH = '/Users/siddharth/flipsideML/ML-research/deep/semi-supervised_clf/trained_models/trained_rnn.pt'
 NUM_LAYERS = 1
 HIDDEN_SIZE = 4096
 
@@ -30,6 +32,7 @@ HIDDEN_SIZE = 4096
 CREATING A POSTPROCESSING FUNCTION TO TURN SEQUENCES OF
 INDEXES FOR EACH WORD INTO WORD VECTORS
 '''
+
 def preprocess(x):
 
     try:
@@ -37,32 +40,6 @@ def preprocess(x):
     except ValueError:
         print(type(x))
         print(x)
-    #out = torch.zeros(len(x), WORD_VEC_DIM)
-    #if train:
-    #    c = 0
-    #    for i, word in enumerate(x):
-    #        out[i] = vocab.vectors[word]
-    #        c+= 1
-    #        if c > 128:
-    #            break
-    #    print('FINISHED TURNING INTO VECTORS')
-    #    print(type(out))
-    #    print(out.shape)
-    #    pickle.dump(out, open('weird_tensor.p', 'wb'))
-    #    out = [torch.FloatTensor(out) for el in out]
-    #    print('FINISHED CONVERTING')
-    #    return out
-    # '''
-    #out = arr
-    #for i, example in enumerate(arr):
-    #    new_example = len(example) * [None]
-    #    for j, word in enumerate(example):
-    #        vec = vocab.vectors[word]
-    #        new_example[j] = vec
-    #    out[i] = new_example
-    #print('Done preprocessing')
-    #return out
-    #'''
 
 def get_freqs(vocab_object):
 
@@ -93,7 +70,9 @@ def build_unigram_noise(freq):
 class TrainLangModel:
     def __init__(
                     self,
-                    datapath = DEFAULT_DATAPATH, #RAW_TEXTDATA_PATH,
+                    trainpath = TRAIN_PATH,#RAW_TEXTDATA_PATH,
+                    validpath = VALID_PATH,
+                    testpath = TEST_PATH,
                     n_epochs = NUM_EPOCHS,
                     seq_len = BPTT_SEQUENCE_LENGTH,
                     lr = LEARNING_RATE,
@@ -115,7 +94,9 @@ class TrainLangModel:
             self.cuda = False
         self.savepath = savepath
         self.lr = lr
-        self.datapath = datapath
+        self.trainpath = trainpath
+        self.validpath = validpath
+        self.testpath = testpath
         self.batch_size = batch_size
         self.bptt_len = seq_len
         self.n_epochs = n_epochs
@@ -140,27 +121,28 @@ class TrainLangModel:
                             use_vocab = True,
                             init_token = '<BOS>',
                             eos_token = '<EOS>',
-                            fix_length = 100,
                             preprocessing = data.Pipeline(convert_token = preprocess), #function to preprocess if needed, already converted to lower, probably need to strip stuff
                             tensor_type = torch.LongTensor,
                             lower = True,
                             tokenize = 'spacy',
                         )
-        if self.datapath is not None:
-            print(self.vector_cache)
-            print("Retrieving Data from file: {}...".format(self.datapath))
-            self.raw_sentences = datasets.LanguageModelingDataset(self.datapath, self.sentence_field, newline_eos = False)
+        if self.trainpath is not None:
+
+            print("Retrieving Train Data from file: {}...".format(self.trainpath))
+            self.train_sentences = datasets.LanguageModelingDataset(self.trainpath, self.sentence_field, newline_eos = False)
             print('done.')
 
-#            self.raw_sentences = data.TabularDataset(
-#                                path = self.datapath,
-#                                format = 'csv',
-#                                fields = [('text', self.sentence_field)]
-#                            )
-#
+            print("Retrieving Valid Data from file: {}...".format(self.validpath))
+            self.valid_sentences = datasets.LanguageModelingDataset(self.validpath, self.sentence_field, newline_eos = False)
+            print('done.')
+
+            print("Retrieving Test Data from file: {}...".format(self.testpath))
+            self.test_sentences = datasets.LanguageModelingDataset(self.testpath, self.sentence_field, newline_eos = False)
+            print('done.')
+
         else:
             print('Downloading Data Remotely....')
-            self.raw_sentences = datasets.WikiText2.splits(self.sentence_field, root = 'data', train = 'wikitext-2/wiki.train.tokens', validation = None, test = None)[0]
+            self.train_sentences, self.valid_sentences, self.test_sentences = datasets.WikiText2.splits(self.sentence_field, root = 'data', train = 'wikitext-2/wiki.train.tokens', validation = 'wikitext-2/wiki.valid.tokens', test = 'wikitext-2/wiki.test.tokens')
             print('done.')
 
 
@@ -185,20 +167,22 @@ class TrainLangModel:
                     charVec = CharNGram(cache = self.vector_cache)
                     vecs.append(charVec)
         print('Building Vocab...')
-        self.sentence_field.build_vocab(self.raw_sentences, vectors = vecs)
+        self.sentence_field.build_vocab(self.train_sentences, vectors = vecs)
         print('Done.')
 
 
-    def get_iterator(self):
+    def get_iterator(self, dataset):
         print('Getting Batches...')
+
         if self.cuda:
-            self.batch_iterator = data.BPTTIterator(self.raw_sentences, sort_key = None, bptt_len = self.bptt_len, batch_size = self.batch_size)
-            self.batch_iterator.repeat = False
+            iterator = data.BPTTIterator(dataset, sort_key = None, bptt_len = self.bptt_len, batch_size = self.batch_size)
+            iterator.repeat = False
         else:
-            self.batch_iterator = data.BPTTIterator(self.raw_sentences, sort_key = None, bptt_len = self.bptt_len,  batch_size = self.batch_size, device = -1)
-            self.batch_iterator.repeat = False
+            iterator = data.BPTTIterator(dataset, sort_key = None, bptt_len = self.bptt_len,  batch_size = self.batch_size, device = -1)
+            iterator.repeat = False
 
         print("Done.")
+        return iterator
 
     def get_model(self):
         print('Initializing Model parameters...')
@@ -236,44 +220,59 @@ class TrainLangModel:
         else:
             return tuple(self.repackage_hidden(v) for v in h)
 
-
     def train_step(self, optimizer, model, start_time):
+        print('Completing Train Step...')
         hidden = self.model.init_hidden(self.batch_size)
         total_loss = 0
-        for i, batch in enumerate(self.batch_iterator):
+        for i, batch in enumerate(self.train_iterator):
             optimizer.zero_grad()
             hidden = self.repackage_hidden(hidden)
             data, targets = batch.text, batch.target.view(-1)
             output, hidden = model(data, hidden)
-            print(output.data.shape)
             if self.objective_function == 'crossentropy':
                 output = output.view(-1, self.ntokens)
             else:
                 output = output.view(output.size(0) * output.size(1), output.size(2))
-            print("ntokens")
-            print(self.ntokens)
-            print('hidden')
-            print(self.model.hidden_size)
-            print('noise')
-            print(self.noise.shape)
-            print('targets')
-            print(targets.data.shape)
             loss = self.objective(output, targets)
             loss.backward()
             total_loss += loss.data
             optimizer.step()
+            if i > 5:
+                break
             if i % self.log_interval == 0:
                 current_loss = total_loss / self.log_interval
                 elapsed = time.time() - start_time
-                #OTHER STUFFFFFF
                 total_loss = 0
-                print('At time: {elapsed} loss is {current_loss}'.format(elapsed=elapsed, current_loss = current_loss))
+                print('At time: {elapsed} loss is {current_loss}'.format(elapsed=elapsed, current_loss = current_loss[0]))
+        print('Finished Train Step')
+
+
+
+    def evaluate(self):
+        print('Begin Evaluating...')
+        self.model.eval()
+        hidden = self.model.init_hidden(self.batch_size)
+        total_loss = 0
+        self.valid_iterator = self.get_iterator(self.valid_sentences)
+        for i, batch in enumerate(self.valid_iterator):
+            hidden = self.repackage_hidden(hidden)
+            data, targets = batch.text, batch.target.view(-1)
+            output, hidden = self.model(data, hidden)
+            if self.objective_function == 'crossentropy':
+                output = output.view(-1, self.ntokens)
+            else:
+                output = output.view(output.size(0) * output.size(1), output.size(2))
+            loss = self.objective(output, targets)
+            total_loss += len(data) * loss.data
+            if i > 5:
+                break
+        print('Done Evaluating: Achieved loss of {}'.format(total_loss[0]))
 
     def train(self):
         print('Begin Training...')
         self.load_data()
         self.get_vectors()
-        self.get_iterator()
+        self.train_iterator = self.get_iterator(self.train_sentences)
         self.get_model()
         self.model.train()
         parameters = filter(lambda p: p.requires_grad, self.model.parameters())
@@ -282,15 +281,18 @@ class TrainLangModel:
         for epoch in range(self.n_epochs):
             print('Finished {} epochs...'.format(epoch))
             self.train_step(optimizer, self.model, start_time)
+        print('Finished Training.')
 
     def save_model(self, savepath):
-        self.model.save_state_dict(savepath)
+        torch.save(self.model.model.state_dict(), savepath)
 
 if __name__ == '__main__':
 
     trainer = TrainLangModel()
     trainer.train()
+    trainer.evaluate()
     trainer.save_model(trainer.savepath)
+
 
 
 '''

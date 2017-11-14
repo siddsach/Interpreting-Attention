@@ -117,7 +117,8 @@ class TrainAutoencoder:
                     vecs.append(charVec)
         print('Building Vocab...')
         self.sentence_field.build_vocab(self.sentences, vectors = vecs)
-        self.sos_token = self.sentences.vocab.stoi[self.bos_token]
+        print('Built vocab')
+        self.sos_token = self.sentence.vocab.stoi[self.bos_token]
         print('Done.')
 
 

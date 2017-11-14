@@ -36,6 +36,8 @@ class Encoder(nn.Module):
             self.hidden_dim = hidden_size
             self.use_cuda = use_cuda
             self.tune_wordvecs = tune_wordvecs
+            self.model_type = model_type
+            self.bidirectional = bid
 
             self.embed = nn.Embedding(vocab_size, input_size)
 
