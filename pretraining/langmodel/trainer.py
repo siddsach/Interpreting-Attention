@@ -4,14 +4,15 @@ import torch
 from torch.nn import CrossEntropyLoss
 from torch.autograd import Variable
 from torch.optim import Adam
-from model import LangModel
+from .model import LangModel
 import time
-#GET THAT FINE-ASS NOISE CONTRASTIVE SAMPLING MMMM YOU TRAIN MY LANGUAGE MODELS SO GOOD
-from nce import NCELoss
+from .nce import NCELoss
+import os
 
-RAW_TEXTDATA_PATH = '/Users/siddharth/flipsideML/ML-research/deep/semi-supervised_clf/pretraining/data/more_sentences.csv' #DATA MUST BE IN CSV FORMAT WITH ONE FIELD TITLED SENTENCES CONTANING ONE LINE PER SENTENCE
-VECTOR_FOLDER = '/Users/siddharth/flipsideML/ML-research/deep/semi-supervised_clf/vectors'
-VECTOR_CACHE = 'vectors'
+current_path = os.getcwd()
+project_path = current_path#[:len(current_path)-len('/pretraining/langmodel')]
+
+VECTOR_CACHE = project_path + '/vectors'
 SAVED_VECTORS = True
 NUM_EPOCHS = 1
 BPTT_LENGTH = 35
@@ -20,24 +21,22 @@ BATCH_SIZE = 50
 LOG_INTERVAL = 5
 BPTT_SEQUENCE_LENGTH = 2
 WORDVEC_DIM = 300
-WORDVEC_SOURCE = ['GloVe']# charLevel']
-TRAIN_PATH = 'data/wikitext-2/wikitext-2/wiki.train.tokens'
-VALID_PATH = 'data/wikitext-2/wikitext-2/wiki.valid.tokens'
-TEST_PATH = 'data/wikitext-2/wikitext-2/wiki.test.tokens'
-MODEL_SAVE_PATH = '/Users/siddharth/flipsideML/ML-research/deep/semi-supervised_clf/trained_models/trained_rnn.pt'
+WORDVEC_SOURCE = ['GloVe']# 'googlenews', 'charLevel']
+
+#TRAIN_PATH = project_path + 'data/gigaword/gigaword_cleaned_small.txt'#'data/wikitext-2/wikitext-2/wiki.train.tokens'
+
+DATASET = 'wiki'
+WIKI_PATH = project_path + '/data/wikitext-2/wikitext-2/'
+MODEL_SAVE_PATH = project_path + '/trained_models/trained_rnn.pt'
 NUM_LAYERS = 1
 HIDDEN_SIZE = 4096
 
-'''
-CREATING A POSTPROCESSING FUNCTION TO TURN SEQUENCES OF
-INDEXES FOR EACH WORD INTO WORD VECTORS
-'''
-
 def preprocess(x):
-
+    #ENSURE ENCODING IS RIGHT
     try:
         return x.encode('utf-8').decode('utf-8').lower()
     except ValueError:
+        print("COULD NOT DECODE FOR EXAMPLE:")
         print(type(x))
         print(x)
 
@@ -70,9 +69,7 @@ def build_unigram_noise(freq):
 class TrainLangModel:
     def __init__(
                     self,
-                    trainpath = TRAIN_PATH,#RAW_TEXTDATA_PATH,
-                    validpath = VALID_PATH,
-                    testpath = TEST_PATH,
+                    data = DATASET,
                     n_epochs = NUM_EPOCHS,
                     seq_len = BPTT_SEQUENCE_LENGTH,
                     lr = LEARNING_RATE,
@@ -94,9 +91,7 @@ class TrainLangModel:
             self.cuda = False
         self.savepath = savepath
         self.lr = lr
-        self.trainpath = trainpath
-        self.validpath = validpath
-        self.testpath = testpath
+        self.data = data
         self.batch_size = batch_size
         self.bptt_len = seq_len
         self.n_epochs = n_epochs
@@ -126,46 +121,47 @@ class TrainLangModel:
                             lower = True,
                             tokenize = 'spacy',
                         )
-        if self.trainpath is not None:
 
-            print("Retrieving Train Data from file: {}...".format(self.trainpath))
-            self.train_sentences = datasets.LanguageModelingDataset(self.trainpath, self.sentence_field, newline_eos = False)
+        datapath = None
+        if self.data == 'wikitext':
+            datapath = WIKI_PATH
+
+            paths = [datapath + 'wiki.' + s + '.tokens' for s in ['train', 'valid', 'test']]
+
+        trainpath, validpath, testpath = paths[0], paths[1], paths[2]
+
+        print("Retrieving Train Data from file: {}...".format(trainpath))
+        self.train_sentences = datasets.LanguageModelingDataset(trainpath, self.sentence_field, newline_eos = False)
+        print('done.')
+
+
+        if validpath is not None:
+
+            print("Retrieving Valid Data from file: {}...".format(validpath))
+            self.valid_sentences = datasets.LanguageModelingDataset(validpath, self.sentence_field, newline_eos = False)
             print('done.')
 
-            print("Retrieving Valid Data from file: {}...".format(self.validpath))
-            self.valid_sentences = datasets.LanguageModelingDataset(self.validpath, self.sentence_field, newline_eos = False)
+        if testpath is not None:
+
+            print("Retrieving Test Data from file: {}...".format(testpath))
+            self.test_sentences = datasets.LanguageModelingDataset(testpath, self.sentence_field, newline_eos = False)
             print('done.')
 
-            print("Retrieving Test Data from file: {}...".format(self.testpath))
-            self.test_sentences = datasets.LanguageModelingDataset(self.testpath, self.sentence_field, newline_eos = False)
-            print('done.')
-
-        else:
-            print('Downloading Data Remotely....')
-            self.train_sentences, self.valid_sentences, self.test_sentences = datasets.WikiText2.splits(self.sentence_field, root = 'data', train = 'wikitext-2/wiki.train.tokens', validation = 'wikitext-2/wiki.valid.tokens', test = 'wikitext-2/wiki.test.tokens')
-            print('done.')
 
 
     def get_vectors(self):
         vecs = []
-        if SAVED_VECTORS:
-            print('Loading Vectors From Memory...')
-            for source in self.wordvec_source:
-                if source == 'GloVe':
-                    glove = Vectors(name = 'glove.6B.{}d.txt'.format(self.wordvec_dim), cache = VECTOR_FOLDER)
-                    vecs.append(glove)
-                if source == 'charLevel':
-                    charVec = Vectors(name = 'charNgram.txt',cache = self.vector_cache)
-                    vecs.append(charVec)
-        else:
-            print('Downloading Vectors...')
-            for source in self.wordvec_source:
-                if source == 'GloVe':
-                    glove = GloVe(name = '6B', dim = self.wordvec_dim, cache = self.vector_cache)
-                    vecs.append(glove)
-                if source == 'charLevel':
-                    charVec = CharNGram(cache = self.vector_cache)
-                    vecs.append(charVec)
+        print('Loading Vectors From Memory...')
+        for source in self.wordvec_source:
+            if source == 'GloVe':
+                glove = Vectors(name = 'glove.6B.{}d.txt'.format(self.wordvec_dim), cache = self.vector_cache)
+                vecs.append(glove)
+            if source == 'charLevel':
+                charVec = Vectors(name = 'charNgram.txt',cache = self.vector_cache)
+                vecs.append(charVec)
+            if source == 'googlenews':
+                googlenews = Vectors(name = 'googlenews.txt', cache = self.vector_cache)
+                vecs.append(googlenews)
         print('Building Vocab...')
         self.sentence_field.build_vocab(self.train_sentences, vectors = vecs)
         print('Done.')
@@ -237,8 +233,6 @@ class TrainLangModel:
             loss.backward()
             total_loss += loss.data
             optimizer.step()
-            if i > 5:
-                break
             if i % self.log_interval == 0:
                 current_loss = total_loss / self.log_interval
                 elapsed = time.time() - start_time
@@ -264,12 +258,9 @@ class TrainLangModel:
                 output = output.view(output.size(0) * output.size(1), output.size(2))
             loss = self.objective(output, targets)
             total_loss += len(data) * loss.data
-            if i > 5:
-                break
         print('Done Evaluating: Achieved loss of {}'.format(total_loss[0]))
 
     def train(self):
-        print('Begin Training...')
         self.load_data()
         self.get_vectors()
         self.train_iterator = self.get_iterator(self.train_sentences)
@@ -278,6 +269,7 @@ class TrainLangModel:
         parameters = filter(lambda p: p.requires_grad, self.model.parameters())
         optimizer = Adam(parameters)
         start_time = time.time()
+        print('Begin Training...')
         for epoch in range(self.n_epochs):
             print('Finished {} epochs...'.format(epoch))
             self.train_step(optimizer, self.model, start_time)

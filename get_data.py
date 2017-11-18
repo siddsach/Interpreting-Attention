@@ -1,8 +1,22 @@
 from torchtext import datasets
 from torchtext import data
+from torchtext.vocab import GloVe, CharNGram
+
 
 ################################################
-#LANGUAGE MODELING DATASETS HERE
+#GET VECTORS HERE
+################################################
+
+#GloVe
+print('Downloading GloVe Vectors...')
+glove = GloVe(name = '6B', cache = 'vectors')
+
+#CharNGram
+print('Downloading CharNGram Vectors')
+charVec = CharNGram(cache = 'vectors')
+
+################################################
+#LANGUAGE MODELING DATASETS HERE###########
 ################################################
 
 
@@ -26,6 +40,12 @@ train_sentences, valid_sentences, test_sentences = datasets.WikiText2.splits(
                                                                 validation = 'wikitext-2/wiki.valid.tokens',
                                                                 test = 'wikitext-2/wiki.test.tokens'
                                                             )
+
+
+
+################################################
+#LABELED TEXT CLASSIFICATION DATASETS HERE #####
+################################################
 
 #IMDB
 print('Downloading IMDB data...')

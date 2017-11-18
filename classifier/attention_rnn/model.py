@@ -54,6 +54,10 @@ class VanillaRNN(nn.Module):
         self.cuda = cuda
         self.num_classes = num_classes
         self.train_word_vecs = train_word_vecs
+
+        print("EMBED")
+        print(self.embed)
+        print(vectors.shape)
         self.init_embedding(vectors)
 
     def init_embedding(self, pretrained_embeddings):

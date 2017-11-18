@@ -1,27 +1,35 @@
-from torchtext import data, datasets
+from torchtext import data
 from torchtext.vocab import Vectors, GloVe, CharNGram
 import torch
 from torch.nn import CrossEntropyLoss
 from torch.autograd import Variable
 from torch.optim import Adam
-from model import VanillaRNN, SelfAttentiveRNN
+from .model import VanillaRNN, SelfAttentiveRNN
 import time
 import glob
 import os
 
-RAW_TEXTDATA_PATH = '/Users/siddharth/flipsideML/ML-research/deep/semi-supervised_clf/classifier/attention-rnn/data/imdb/aclImdb'# 'sentence_subjectivity.csv' #DATA MUST BE IN CSV FORMAT WITH ONE FIELD TITLED SENTENCES CONTANING ONE LINE PER SENTENCE
-VECTOR_CACHE = '/Users/siddharth/flipsideML/ML-research/deep/semi-supervised_clf/vectors'
+current_path = os.getcwd()
+
+print("CURRENT PATH:{}".format(current_path))
+root_path = current_path#[:len(current_path) - len('classifier/attention_rnn') + 1]
+
+print("ROOT PATH:{}".format(root_path))
+
+DATASET = 'IMDB'
+IMDB_PATH = current_path + '/data/imdb/aclImdb'# 'sentence_subjectivity.csv' #DATA MUST BE IN CSV FORMAT WITH ONE FIELD TITLED SENTENCES CONTANING ONE LINE PER SENTENCE
+VECTOR_CACHE = root_path + '/vectors'
 SAVED_VECTORS = True
 NUM_EPOCHS = 10
 LEARNING_RATE = 0.5
 BATCH_SIZE = 5
 LOG_INTERVAL = 5
 WORD_VEC_DIM = 300
-WORDVEC_SOURCE = ['GloVe']# charLevel']
+WORDVEC_SOURCE = ['GloVe'] #['GloVe']# charLevel']
 SAVED_MODEL_PATH = 'saved_model.pt'
 IMDB = True
 HIDDEN_SIZE = 4096
-PRETRAINED = '/Users/siddharth/flipsideML/ML-research/deep/semi-supervised_clf/trained_models/trained_rnn.pt'
+PRETRAINED = root_path + '/trained_models/trained_rnn.pt'
 MAX_LENGTH = 100
 
 def sorter(example):
@@ -32,7 +40,7 @@ class TrainClassifier:
                     self,
                     num_classes = 2,
                     pretrained_modelpath = PRETRAINED,
-                    datapath = RAW_TEXTDATA_PATH,
+                    datapath = DATASET,
                     n_epochs = NUM_EPOCHS,
                     lr = LEARNING_RATE,
                     batch_size = BATCH_SIZE,
@@ -43,7 +51,7 @@ class TrainClassifier:
                     model_type = "LSTM",
                     attention_dim = 10, #None if not using attention
                     mlp_hidden = 100,
-                    word_vec_dim = WORD_VEC_DIM,
+                    wordvec_dim = WORD_VEC_DIM,
                     wordvec_source = WORDVEC_SOURCE,
                     hidden_dim = HIDDEN_SIZE,
                     max_length = MAX_LENGTH
@@ -56,8 +64,10 @@ class TrainClassifier:
             self.cuda = False
         self.lr = lr
 
-        self.trainpath = datapath + "/train"
-        self.testpath = datapath + "/test"
+        self.datapath = datapath
+        if datapath == 'IMDB':
+            self.trainpath = IMDB_PATH + "/train"
+            self.testpath = IMDB_PATH + "/test"
 
         self.batch_size = batch_size
         self.n_epochs = n_epochs
@@ -75,7 +85,7 @@ class TrainClassifier:
 
         self.log_interval = log_interval
         self.wordvec_source = wordvec_source
-        self.wordvec_dim = word_vec_dim
+        self.wordvec_dim = wordvec_dim
         self.hidden_dim = hidden_dim
         self.pretrained_modelpath = pretrained_modelpath
         self.max_length = max_length
@@ -118,22 +128,11 @@ class TrainClassifier:
         fields = [('text', self.sentence_field),
                   ('label', self.target_field)]
 
-        if IMDB:
-            if self.trainpath is not None:
-                self.train_data = self.get_data(self.trainpath)
+        if self.trainpath is not None:
+            self.train_data = self.get_data(self.trainpath)
 
-            if self.testpath is not None:
-                self.test_data = self.get_data(self.testpath)
-
-
-            else:
-                print('Downloading IMDB data...')
-                self.train_data, self.test_data = datasets.IMDB.splits(text_field = self.sentence_field,
-                                                label_field = self.target_field,
-                                                root = 'data', test = None)
-                self.target_field.build_vocab()
-
-                print("Done.")
+        if self.testpath is not None:
+            self.test_data = self.get_data(self.testpath)
 
 
         else:
@@ -147,13 +146,20 @@ class TrainClassifier:
         vecs = []
         if SAVED_VECTORS:
             print('Loading Vectors From Memory...')
+            print(self.wordvec_source)
             for source in self.wordvec_source:
                 if source == 'GloVe':
+                    print('Getting GloVe Vectors with {} dims'.format(self.wordvec_dim))
                     glove = Vectors(name = 'glove.6B.{}d.txt'.format(self.wordvec_dim), cache = self.vector_cache)
                     vecs.append(glove)
                 if source == 'charLevel':
-                    charVec = Vectors(name = 'charNgram.txt',cache = self.vector_cache)
+                    print('Getting charLevel Vectors')
+                    charVec = Vectors(name = 'charNgram.txt', cache = self.vector_cache)
                     vecs.append(charVec)
+                if source == 'googlenews':
+                    print('Getting google news vectors')
+                    google = Vectors(name = 'googlenews.bin', cache = self.vector_cache)
+                    vecs.append(google)
         else:
             print('Downloading Vectors...')
             for source in self.wordvec_source:
@@ -211,7 +217,7 @@ class TrainClassifier:
                                             vectors = self.sentence_field.vocab.vectors,
                                             pretrained_rnn = pretrained_model,
                                             attention_dim = self.attention_dim,
-                                            mlp_hidden = self.mlp_hidden,
+                                            mlp_hidden = self.mlp_hidden
                                         )
 
             #MAKING MATRIX TO SAVE ATTENTION WEIGHTS
@@ -265,7 +271,7 @@ class TrainClassifier:
             #CALCULATING LOSS
             loss = self.objective(predictions, targets)
             total_loss += loss.data
-        return total_loss / i
+        return total_loss
 
     def train_step(self, optimizer, start_time):
         hidden = self.model.init_hidden(self.batch_size)
