@@ -4,7 +4,7 @@ import torch
 from torch.nn import CrossEntropyLoss
 from torch.autograd import Variable
 from torch.optim import Adam
-from .model import VanillaRNN, SelfAttentiveRNN
+from model import VanillaRNN, SelfAttentiveRNN
 import time
 import glob
 import os
@@ -26,7 +26,7 @@ BATCH_SIZE = 5
 LOG_INTERVAL = 5
 WORD_VEC_DIM = 300
 WORDVEC_SOURCE = ['GloVe'] #['GloVe']# charLevel']
-SAVED_MODEL_PATH = 'saved_model.pt'
+SAVED_MODEL_PATH = None#'saved_model.pt'
 IMDB = True
 HIDDEN_SIZE = 4096
 PRETRAINED = root_path + '/trained_models/trained_rnn.pt'
@@ -54,9 +54,10 @@ class TrainClassifier:
                     wordvec_dim = WORD_VEC_DIM,
                     wordvec_source = WORDVEC_SOURCE,
                     hidden_dim = HIDDEN_SIZE,
-                    max_length = MAX_LENGTH
+                    max_length = MAX_LENGTH,
+                    use_cuda = True
                 ):
-        if torch.cuda.is_available():
+        if torch.cuda.is_available() and use_cuda:
             print("Using CUDA!")
             self.cuda = True
         else:
@@ -179,14 +180,19 @@ class TrainClassifier:
     def build_batches(self, dataset):
         print('Getting Batches...')
         if self.cuda:
-            iterator_object = data.Iterator(dataset, sort_key = sorter,
-                                                batch_size = self.batch_size,
-                                                sort = True)
+            iterator_object = data.Iterator(dataset,
+                                            sort_key = sorter,
+                                            batch_size = self.batch_size,
+                                            sort = True
+                                        )
             iterator_object.repeat = False
         else:
-            iterator_object = data.Iterator(dataset, sort_key = sorter,
-                                                sort = True,batch_size = self.batch_size,
-                                                device = -1)
+            iterator_object = data.Iterator(dataset,
+                                            sort_key = sorter,
+                                            sort = True,
+                                            batch_size = self.batch_size,
+                                            device = -1
+                                        )
             iterator_object.repeat = False
 
         print("Done.")
@@ -232,6 +238,8 @@ class TrainClassifier:
                                     vectors = self.sentence_field.vocab.vectors,
                                     pretrained_rnn = pretrained_model.model.model
                                 )
+        if self.cuda:
+            self.model.cuda()
         print('Done.')
 
 
@@ -261,6 +269,12 @@ class TrainClassifier:
             targets = targets - 1 #NEED TO INDEX FROM ZERO
             data, lengths = data[0], data[1]
 
+            #CONVERTING TO CUDA IF ON NEEDED
+            if self.cuda:
+                data = data.cuda()
+                targets = targets.cuda()
+                lengths = lengths.cuda()
+
             #GETTING PREDICTIONS
             output, h, A = self.model(data, hidden, lengths = lengths)
             predictions = output.view(-1, self.num_classes)
@@ -285,6 +299,12 @@ class TrainClassifier:
             data, targets = batch.text, batch.label.view(-1)
             targets = targets - 1 #NEED TO INDEX FROM ZERO
             data, lengths = data[0], data[1]
+
+            #CONVERTING TO CUDA IF ON NEEDED
+            if self.cuda:
+                data = data.cuda()
+                targets = targets.cuda()
+                lengths = lengths.cuda()
 
             #GETTING PREDICTIONS
             output, h, A = self.model(data, hidden, lengths = lengths)

@@ -1,5 +1,5 @@
 from torchtext import data, datasets
-from torchtext.vocab import Vectors, GloVe, CharNGram
+from torchtext.vocab import Vectors
 import torch
 from torch.nn import CrossEntropyLoss
 from torch.autograd import Variable
@@ -83,9 +83,10 @@ class TrainLangModel:
                     wordvec_dim = WORDVEC_DIM,
                     wordvec_source = WORDVEC_SOURCE,
                     num_layers = NUM_LAYERS,
-                    hidden_size = HIDDEN_SIZE
+                    hidden_size = HIDDEN_SIZE,
+                    use_cuda = True
                 ):
-        if torch.cuda.is_available():
+        if torch.cuda.is_available() and use_cuda:
             self.cuda = True
         else:
             self.cuda = False
@@ -182,37 +183,42 @@ class TrainLangModel:
 
     def get_model(self):
         print('Initializing Model parameters...')
-        self.ntokens = self.sentence_field.vocab.__len__()
-        if self.model_type == "LSTM":
-            print('Constructing LSTM with {} layers and {} hidden size...'.format(self.num_layers, self.hidden_size))
-            if self.objective_function == 'crossentropy':
-                print('Using Cross Entropy Loss and Softmax activation...')
-                self.objective = CrossEntropyLoss()
+        self.ntokens = len(self.sentence_field.vocab)
+        print('Constructing {} with {} layers and {} hidden size...'.format(self.model_type, self.num_layers, self.hidden_size))
+        if self.objective_function == 'crossentropy':
+            print('Using Cross Entropy Loss and Softmax activation...')
+            self.objective = CrossEntropyLoss()
 
-                self.model = LangModel(vocab_size = self.ntokens,
-                                    pretrained_vecs = self.sentence_field.vocab.vectors,
-                                    decoder = 'softmax',
-                                    num_layers = self.num_layers,
-                                    hidden_size = self.hidden_size
-                                )
+            self.model = LangModel(vocab_size = self.ntokens,
+                                pretrained_vecs = self.sentence_field.vocab.vectors,
+                                decoder = 'softmax',
+                                num_layers = self.num_layers,
+                                hidden_size = self.hidden_size
+                            )
 
-            elif self.objective_function == 'nce':
-                print('Using Cross Entropy Loss and Softmax activation...')
-                freqs = get_freqs(self.sentence_field.vocab)
-                self.noise = build_unigram_noise(freqs)
-                self.model = LangModel(vocab_size = self.ntokens,
-                                    pretrained_vecs = self.sentence_field.vocab.vectors,
-                                    decoder = 'nce',
-                                    num_layers = self.num_layers,
-                                    hidden_size = self.hidden_size
-                                )
-                self.objective = NCELoss(self.ntokens, self.model.hidden_size, self.noise, self.cuda)
+        elif self.objective_function == 'nce':
+            print('Using Cross Entropy Loss and Softmax activation...')
+            freqs = get_freqs(self.sentence_field.vocab)
+            self.noise = build_unigram_noise(freqs)
+            self.model = LangModel(vocab_size = self.ntokens,
+                                pretrained_vecs = self.sentence_field.vocab.vectors,
+                                decoder = 'nce',
+                                num_layers = self.num_layers,
+                                hidden_size = self.hidden_size
+                            )
+            self.objective = NCELoss(self.ntokens, self.model.hidden_size, self.noise, self.cuda)
+
+        if self.cuda:
+            self.model.cuda()
 
 
     def repackage_hidden(self, h):
         #Erasing hidden state history
         if type(h) == Variable:
-            return Variable(h.data.type(torch.FloatTensor))
+            if self.cuda:
+                return Variable(h.data.type(torch.FloatTensor).cuda())
+            else:
+                return Variable(h.data.type(torch.FloatTensor))
         else:
             return tuple(self.repackage_hidden(v) for v in h)
 
@@ -224,6 +230,11 @@ class TrainLangModel:
             optimizer.zero_grad()
             hidden = self.repackage_hidden(hidden)
             data, targets = batch.text, batch.target.view(-1)
+
+            if self.cuda:
+                data = data.cuda()
+                targets = targets.cuda()
+
             output, hidden = model(data, hidden)
             if self.objective_function == 'crossentropy':
                 output = output.view(-1, self.ntokens)
@@ -251,7 +262,13 @@ class TrainLangModel:
         for i, batch in enumerate(self.valid_iterator):
             hidden = self.repackage_hidden(hidden)
             data, targets = batch.text, batch.target.view(-1)
+
+            if self.cuda:
+                data = data.cuda()
+                targets = targets.cuda()
+
             output, hidden = self.model(data, hidden)
+
             if self.objective_function == 'crossentropy':
                 output = output.view(-1, self.ntokens)
             else:

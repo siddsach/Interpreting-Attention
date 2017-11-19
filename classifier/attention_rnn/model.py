@@ -7,7 +7,6 @@ class VanillaRNN(nn.Module):
     def __init__(
             self,
             vocab_size,
-            cuda,
             vectors,
             pretrained_rnn = None,
             model_type = 'LSTM',
@@ -51,7 +50,6 @@ class VanillaRNN(nn.Module):
         self.bidirectional = bidirectional
         self.hidden_size = hidden_size
         self.num_layers = num_layers
-        self.cuda = cuda
         self.num_classes = num_classes
         self.train_word_vecs = train_word_vecs
 
@@ -84,14 +82,10 @@ class VanillaRNN(nn.Module):
         num_directions = 1
         if self.bidirectional:
             num_directions = 2
-        if self.cuda:
-            return (Variable(torch.zeros(self.num_layers * num_directions,
-                        batch_size, self.hidden_size).cuda(), requires_grad=False)
-                        .type(torch.LongTensor) for i in range(num_states))
-        else:
-            return (Variable(torch.zeros(self.num_layers * num_directions,
-                        batch_size, self.hidden_size), requires_grad=False)
-                        .type(torch.LongTensor) for i in range(num_states))
+
+        return (Variable(torch.zeros(self.num_layers * num_directions,
+                    batch_size, self.hidden_size), requires_grad=False)
+                    .type(torch.LongTensor) for i in range(num_states))
 
     def forward(self, inp, h, lengths = None):
         vectors = self.embed(inp)
