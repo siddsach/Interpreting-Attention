@@ -10,10 +10,12 @@ from torchtext.vocab import GloVe, CharNGram
 #GloVe
 print('Downloading GloVe Vectors...')
 glove = GloVe(name = '6B', cache = 'vectors')
+print('Done.')
 
 #CharNGram
-print('Downloading CharNGram Vectors')
+print('Downloading CharNGram Vectors...')
 charVec = CharNGram(cache = 'vectors')
+print('Done.')
 
 ################################################
 #LANGUAGE MODELING DATASETS HERE###########
@@ -36,10 +38,11 @@ print("Downloading wikitext data...")
 train_sentences, valid_sentences, test_sentences = datasets.WikiText2.splits(
                                                                 sentence_field,
                                                                 root = 'data',
-                                                                train = 'wikitext-2/wiki.train.tokens',
-                                                                validation = 'wikitext-2/wiki.valid.tokens',
-                                                                test = 'wikitext-2/wiki.test.tokens'
+                                                                train = 'wiki.train.tokens',
+                                                                validation = 'wiki.valid.tokens',
+                                                                test = 'wiki.test.tokens'
                                                             )
+print("Done.")
 
 
 
