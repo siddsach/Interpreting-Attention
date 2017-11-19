@@ -18,6 +18,7 @@ pip3 install http://download.pytorch.org/whl/cu80/torch-0.2.0.post3-cp36-cp36m-m
 
 cd Interpreting-Attention
 pip3 install -r requirements.txt
+python3 -m spacy download en
 
 python3 get_data.py
 python3 experiments.py

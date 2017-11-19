@@ -55,6 +55,8 @@ print('Downloading IMDB data...')
 train_data, test_data = datasets.IMDB.splits(
                                 text_field = sentence_field,
                                 label_field = target_field,
-                                root = 'data', test = None
+                                root = 'data',
+                                train = None,
+                                test = None
                             )
 print("Done.")
