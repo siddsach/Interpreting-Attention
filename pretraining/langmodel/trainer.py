@@ -4,32 +4,37 @@ import torch
 from torch.nn import CrossEntropyLoss
 from torch.autograd import Variable
 from torch.optim import Adam
-from .model import LangModel
+from model import LangModel
 import time
-from .nce import NCELoss
+from nce import NCELoss
 import os
 
 current_path = os.getcwd()
 project_path = current_path#[:len(current_path)-len('/pretraining/langmodel')]
 
-VECTOR_CACHE = project_path + '/vectors'
-SAVED_VECTORS = True
-NUM_EPOCHS = 1
-BPTT_LENGTH = 35
-LEARNING_RATE = 0.5
-BATCH_SIZE = 50
-LOG_INTERVAL = 5
-BPTT_SEQUENCE_LENGTH = 2
-WORDVEC_DIM = 300
-WORDVEC_SOURCE = ['GloVe']# 'googlenews', 'charLevel']
-
-#TRAIN_PATH = project_path + 'data/gigaword/gigaword_cleaned_small.txt'#'data/wikitext-2/wikitext-2/wiki.train.tokens'
-
 DATASET = 'wikitext'
 WIKI_PATH = project_path + '/data/wikitext-2/wikitext-2/'
 MODEL_SAVE_PATH = project_path + '/trained_models/trained_rnn.pt'
-NUM_LAYERS = 1
-HIDDEN_SIZE = 4096
+VECTOR_CACHE = project_path + '/vectors'
+
+#TRAIN_PATH = project_path + 'data/gigaword/gigaword_cleaned_small.txt'#'data/wikitext-2/wikitext-2/wiki.train.tokens'
+
+NUM_EPOCHS = 10
+BPTT_LENGTH = 35
+LEARNING_RATE = 0.5
+BATCH_SIZE = 50
+LOG_INTERVAL = 200
+BPTT_SEQUENCE_LENGTH = 2
+WORDVEC_DIM = 300
+WORDVEC_SOURCE = ['GloVe']# 'googlenews', 'charLevel']
+CLIP = 0.25
+NUM_LAYERS = 2
+TIE_WEIGHTS = True
+
+if TIE_WEIGHTS:
+    HIDDEN_SIZE = WORDVEC_DIM
+else:
+    HIDDEN_SIZE = 4096
 
 def preprocess(x):
     #ENSURE ENCODING IS RIGHT
@@ -73,6 +78,7 @@ class TrainLangModel:
                     n_epochs = NUM_EPOCHS,
                     seq_len = BPTT_SEQUENCE_LENGTH,
                     lr = LEARNING_RATE,
+                    clip = CLIP,
                     batch_size = BATCH_SIZE,
                     vector_cache = VECTOR_CACHE,
                     objective = 'crossentropy',
@@ -84,7 +90,8 @@ class TrainLangModel:
                     wordvec_source = WORDVEC_SOURCE,
                     num_layers = NUM_LAYERS,
                     hidden_size = HIDDEN_SIZE,
-                    use_cuda = True
+                    use_cuda = True,
+                    tie_weights = TIE_WEIGHTS
                 ):
         if torch.cuda.is_available() and use_cuda:
             self.cuda = True
@@ -93,20 +100,27 @@ class TrainLangModel:
         self.savepath = savepath
         self.lr = lr
         self.data = data
+
+        self.model_type = model_type
         self.batch_size = batch_size
         self.bptt_len = seq_len
+
         self.n_epochs = n_epochs
-        self.vector_cache = vector_cache
-        self.objective_function = objective
 
         self.num_layers = num_layers
         self.hidden_size = hidden_size
+        self.tie_weights = tie_weights
 
+        self.clip = clip
 
-        self.log_interval = log_interval
-        self.model_type = model_type
         self.wordvec_source = wordvec_source
         self.wordvec_dim = wordvec_dim
+
+        self.objective_function = objective
+
+        self.vector_cache = vector_cache
+
+        self.log_interval = log_interval
 
 
     def load_data(self):
@@ -202,6 +216,7 @@ class TrainLangModel:
             self.noise = build_unigram_noise(freqs)
             self.model = LangModel(vocab_size = self.ntokens,
                                 pretrained_vecs = self.sentence_field.vocab.vectors,
+                                tie_weights = self.tie_weights,
                                 decoder = 'nce',
                                 num_layers = self.num_layers,
                                 hidden_size = self.hidden_size
@@ -242,9 +257,10 @@ class TrainLangModel:
                 output = output.view(output.size(0) * output.size(1), output.size(2))
             loss = self.objective(output, targets)
             loss.backward()
+            torch.nn.utils.clip_grad_norm(self.model.parameters(), self.clip)
             total_loss += loss.data
             optimizer.step()
-            if i % self.log_interval == 0:
+            if i + 1 % self.log_interval == 0:
                 current_loss = total_loss / self.log_interval
                 elapsed = time.time() - start_time
                 total_loss = 0
@@ -292,6 +308,7 @@ class TrainLangModel:
         for epoch in range(self.n_epochs):
             print('Finished {} epochs...'.format(epoch))
             self.train_step(optimizer, self.model, start_time)
+            self.evaluate()
         print('Finished Training.')
 
     def save_model(self, savepath):
@@ -301,7 +318,6 @@ if __name__ == '__main__':
 
     trainer = TrainLangModel()
     trainer.train()
-    trainer.evaluate()
     trainer.save_model(trainer.savepath)
 
 

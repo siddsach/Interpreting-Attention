@@ -13,8 +13,8 @@ class LangModel(nn.Module):
             input_size = 300,
             hidden_size = 4096,
             num_layers = 2,
-            rnn_dropout = 0.5,
-            linear_dropout = 0.5,
+            rnn_dropout = 0.2,
+            linear_dropout = 0.22,
             tie_weights = False,
             init_range = 0.1,
             tune_wordvecs = False
@@ -65,12 +65,13 @@ class LangModel(nn.Module):
 
 
     def forward(self, inp, h):
-        vectors = self.embed(inp)
+        vectors = self.drop(self.embed(inp))
         out, h = self.model(vectors, h)
         out = self.drop(out)
 
         if self.decoder == 'softmax':
-            predictions = self.normalize(self.linear(out.view(out.size(0)* out.size(1) , out.size(2))))
+            squeezed = out.view(out.size(0) * out.size(1) , out.size(2))
+            predictions = self.normalize(self.linear(squeezed))
         else:
             predictions = out
         return predictions, h
