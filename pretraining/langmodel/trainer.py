@@ -25,7 +25,7 @@ WORDVEC_SOURCE = ['GloVe']# 'googlenews', 'charLevel']
 
 #TRAIN_PATH = project_path + 'data/gigaword/gigaword_cleaned_small.txt'#'data/wikitext-2/wikitext-2/wiki.train.tokens'
 
-DATASET = 'wiki'
+DATASET = 'wikitext'
 WIKI_PATH = project_path + '/data/wikitext-2/wikitext-2/'
 MODEL_SAVE_PATH = project_path + '/trained_models/trained_rnn.pt'
 NUM_LAYERS = 1
@@ -75,7 +75,7 @@ class TrainLangModel:
                     lr = LEARNING_RATE,
                     batch_size = BATCH_SIZE,
                     vector_cache = VECTOR_CACHE,
-                    objective = 'nce',
+                    objective = 'crossentropy',
                     train = False,
                     log_interval = LOG_INTERVAL,
                     model_type = "LSTM",
@@ -129,24 +129,24 @@ class TrainLangModel:
 
             paths = [datapath + 'wiki.' + s + '.tokens' for s in ['train', 'valid', 'test']]
 
-        trainpath, validpath, testpath = paths[0], paths[1], paths[2]
+            trainpath, validpath, testpath = paths[0], paths[1], paths[2]
 
-        print("Retrieving Train Data from file: {}...".format(trainpath))
-        self.train_sentences = datasets.LanguageModelingDataset(trainpath, self.sentence_field, newline_eos = False)
-        print('done.')
-
-
-        if validpath is not None:
-
-            print("Retrieving Valid Data from file: {}...".format(validpath))
-            self.valid_sentences = datasets.LanguageModelingDataset(validpath, self.sentence_field, newline_eos = False)
+            print("Retrieving Train Data from file: {}...".format(trainpath))
+            self.train_sentences = datasets.LanguageModelingDataset(trainpath, self.sentence_field, newline_eos = False)
             print('done.')
 
-        if testpath is not None:
 
-            print("Retrieving Test Data from file: {}...".format(testpath))
-            self.test_sentences = datasets.LanguageModelingDataset(testpath, self.sentence_field, newline_eos = False)
-            print('done.')
+            if validpath is not None:
+
+                print("Retrieving Valid Data from file: {}...".format(validpath))
+                self.valid_sentences = datasets.LanguageModelingDataset(validpath, self.sentence_field, newline_eos = False)
+                print('done.')
+
+            if testpath is not None:
+
+                print("Retrieving Test Data from file: {}...".format(testpath))
+                self.test_sentences = datasets.LanguageModelingDataset(testpath, self.sentence_field, newline_eos = False)
+                print('done.')
 
 
 
