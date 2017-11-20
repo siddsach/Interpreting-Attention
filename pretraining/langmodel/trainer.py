@@ -197,7 +197,7 @@ class TrainLangModel:
                             )
 
         elif self.objective_function == 'nce':
-            print('Using Cross Entropy Loss and Softmax activation...')
+            print('Using Noise Contrastive Estimation...')
             freqs = get_freqs(self.sentence_field.vocab)
             self.noise = build_unigram_noise(freqs)
             self.model = LangModel(vocab_size = self.ntokens,
@@ -270,9 +270,11 @@ class TrainLangModel:
             output, hidden = self.model(data, hidden)
 
             if self.objective_function == 'crossentropy':
+                print('here')
                 output = output.view(-1, self.ntokens)
             else:
                 output = output.view(output.size(0) * output.size(1), output.size(2))
+
             loss = self.objective(output, targets)
             total_loss += len(data) * loss.data
         print('Done Evaluating: Achieved loss of {}'.format(total_loss[0]))
@@ -304,14 +306,3 @@ if __name__ == '__main__':
 
 
 
-'''
-print("DATA")
-print(type(data.data), type(targets.data))
-print(data.data.shape, targets.data.shape)
-print("HIDDEN")
-print([type(hidden[i].data) for i in range(2)])
-print([vec.data.shape for vec in hidden])
-print('PREDICTIONS')
-print(type(output))
-print(output.data.shape)
-'''
