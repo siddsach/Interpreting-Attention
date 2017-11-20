@@ -260,7 +260,7 @@ class TrainLangModel:
             torch.nn.utils.clip_grad_norm(self.model.parameters(), self.clip)
             total_loss += loss.data
             optimizer.step()
-            if i + 1 % self.log_interval == 0:
+            if ((i + 1) % self.log_interval) == 0:
                 current_loss = total_loss / self.log_interval
                 elapsed = time.time() - start_time
                 total_loss = 0
