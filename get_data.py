@@ -3,7 +3,7 @@ from torchtext import data
 from torchtext.vocab import GloVe, CharNGram
 import subprocess
 
-GIGAWORD_PATH = "https://s3.amazonaws.com/gigaword/thread1.txt"
+GIGAWORD_PATH = "pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_md-1.2.0/en_core_web_md-1.2.0.tar.gz"
 DATA_DIR = "data"
 
 class Download:
