@@ -24,7 +24,7 @@ BPTT_LENGTH = 35
 LEARNING_RATE = 0.5
 BATCH_SIZE = 50
 LOG_INTERVAL = 20
-BPTT_SEQUENCE_LENGTH = 2
+BPTT_SEQUENCE_LENGTH = 35
 WORDVEC_DIM = 300
 WORDVEC_SOURCE = ['GloVe']# 'googlenews', 'charLevel']
 CLIP = 0.25
@@ -147,6 +147,7 @@ class TrainLangModel:
 
             print("Retrieving Train Data from file: {}...".format(trainpath))
             self.train_sentences = datasets.LanguageModelingDataset(trainpath, self.sentence_field, newline_eos = False)
+            print("Got Train Dataset with {n_tokens} words".format(n_tokens=len(self.train_sentences)))
             print('done.')
 
 
@@ -192,7 +193,7 @@ class TrainLangModel:
             iterator = data.BPTTIterator(dataset, sort_key = None, bptt_len = self.bptt_len,  batch_size = self.batch_size, device = -1)
             iterator.repeat = False
 
-        print("Done.")
+        print("Done Creating Iterator with {num} batches".format(num = len(iterator)))
         return iterator
 
     def get_model(self):
@@ -251,20 +252,24 @@ class TrainLangModel:
                 targets = targets.cuda()
 
             output, hidden = model(data, hidden)
+
             if self.objective_function == 'crossentropy':
                 output = output.view(-1, self.ntokens)
             else:
                 output = output.view(output.size(0) * output.size(1), output.size(2))
+
             loss = self.objective(output, targets)
             loss.backward()
             torch.nn.utils.clip_grad_norm(self.model.parameters(), self.clip)
             total_loss += loss.data
+
             optimizer.step()
+
             if ((i + 1) % self.log_interval) == 0:
                 current_loss = total_loss / self.log_interval
                 elapsed = time.time() - start_time
                 total_loss = 0
-                print('At time: {elapsed} loss is {current_loss}'.format(elapsed=elapsed, current_loss = current_loss[0]))
+                print('At time: {elapsed} and batch: {i} loss is {current_loss}'.format(i=i+1, elapsed=elapsed, current_loss = current_loss[0]))
         print('Finished Train Step')
 
 
