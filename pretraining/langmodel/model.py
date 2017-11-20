@@ -70,7 +70,7 @@ class LangModel(nn.Module):
         out = self.drop(out)
 
         if self.decoder == 'softmax':
-            predictions = self.normalize(self.linear(out))
+            predictions = self.normalize(self.linear(out.view(out.size(0)* out.size(1) , out.size(2))))
         else:
             predictions = out
         return predictions, h

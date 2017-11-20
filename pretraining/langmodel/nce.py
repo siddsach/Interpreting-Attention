@@ -123,6 +123,11 @@ class NCELoss(nn.Module):
         indices = Variable(
             torch.cat([target_idx.unsqueeze(1), noise_idx], dim=1)
         )
+
+        if self.cuda:
+            indices = indices.cuda()
+        print(type(embedding))
+        print(type(indices))
         probs = self.decoder(embedding, indices)
 
         probs = probs.sub(self.norm_term).exp()
