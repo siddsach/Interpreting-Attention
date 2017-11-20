@@ -4,9 +4,9 @@ import torch
 from torch.nn import CrossEntropyLoss
 from torch.autograd import Variable
 from torch.optim import Adam
-from model import LangModel
+from .model import LangModel
 import time
-from nce import NCELoss
+from .nce import NCELoss
 import os
 
 current_path = os.getcwd()
