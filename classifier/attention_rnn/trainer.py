@@ -1,10 +1,10 @@
 from torchtext import data
-from torchtext.vocab import Vectors, GloVe, CharNGram
+from torchtext.vocab import Vectors
 import torch
 from torch.nn import CrossEntropyLoss
 from torch.autograd import Variable
 from torch.optim import Adam
-from .model import VanillaRNN, SelfAttentiveRNN
+from model import VanillaRNN, SelfAttentiveRNN
 import time
 import glob
 import os
@@ -40,6 +40,7 @@ class TrainClassifier:
                     self,
                     num_classes = 2,
                     pretrained_modelpath = PRETRAINED,
+                    checkpoint = None,
                     datapath = DATASET,
                     n_epochs = NUM_EPOCHS,
                     lr = LEARNING_RATE,
@@ -89,6 +90,7 @@ class TrainClassifier:
         self.wordvec_dim = wordvec_dim
         self.hidden_dim = hidden_dim
         self.pretrained_modelpath = pretrained_modelpath
+        self.checkpoint_path = checkpoint
         self.max_length = max_length
 
         self.sentence_field = data.Field(
@@ -145,31 +147,21 @@ class TrainClassifier:
 
     def get_vectors(self):
         vecs = []
-        if SAVED_VECTORS:
-            print('Loading Vectors From Memory...')
-            print(self.wordvec_source)
-            for source in self.wordvec_source:
-                if source == 'GloVe':
-                    print('Getting GloVe Vectors with {} dims'.format(self.wordvec_dim))
-                    glove = Vectors(name = 'glove.6B.{}d.txt'.format(self.wordvec_dim), cache = self.vector_cache)
-                    vecs.append(glove)
-                if source == 'charLevel':
-                    print('Getting charLevel Vectors')
-                    charVec = Vectors(name = 'charNgram.txt', cache = self.vector_cache)
-                    vecs.append(charVec)
-                if source == 'googlenews':
-                    print('Getting google news vectors')
-                    google = Vectors(name = 'googlenews.bin', cache = self.vector_cache)
-                    vecs.append(google)
-        else:
-            print('Downloading Vectors...')
-            for source in self.wordvec_source:
-                if source == 'GloVe':
-                    glove = GloVe(name = '6B', dim = self.wordvec_dim, cache = self.vector_cache)
-                    vecs.append(glove)
-                if source == 'charLevel':
-                    charVec = CharNGram(cache = self.vector_cache)
-                    vecs.append(charVec)
+        print('Loading Vectors From Memory...')
+        print(self.wordvec_source)
+        for source in self.wordvec_source:
+            if source == 'GloVe':
+                print('Getting GloVe Vectors with {} dims'.format(self.wordvec_dim))
+                glove = Vectors(name = 'glove.6B.{}d.txt'.format(self.wordvec_dim), cache = self.vector_cache)
+                vecs.append(glove)
+            if source == 'charLevel':
+                print('Getting charLevel Vectors')
+                charVec = Vectors(name = 'charNgram.txt', cache = self.vector_cache)
+                vecs.append(charVec)
+            if source == 'googlenews':
+                print('Getting google news vectors')
+                google = Vectors(name = 'googlenews.bin', cache = self.vector_cache)
+                vecs.append(google)
         print('Building Vocab...')
         self.sentence_field.build_vocab(self.train_data, vectors = vecs)
         self.target_field.build_vocab(self.train_data)
@@ -205,42 +197,48 @@ class TrainClassifier:
             self.test_iterator = self.build_batches(self.test_data)
 
     def get_model(self, num_tokens = None):
-        print('Building model...')
+        if self.checkpoint_path is None:
+            print('Building model...')
 
-        self.ntokens = len(self.sentence_field.vocab)
+            self.ntokens = len(self.sentence_field.vocab)
 
-        pretrained_model = None
+            pretrained_model = None
 
-        if self.pretrained_modelpath is not None:
-            pretrained_model = torch.load(self.pretrained_modelpath)
-            print('Using Pretrained RNN from path: {}'.format(self.pretrained_modelpath))
+            if self.pretrained_modelpath is not None:
+                pretrained_model = torch.load(self.pretrained_modelpath)
+                print('Using Pretrained RNN from path: {}'.format(self.pretrained_modelpath))
 
-        if self.attention_dim is not None:
-            print('Using Attention model with {} dimensions'.format(self.attention_dim))
-            self.model = SelfAttentiveRNN(vocab_size = self.ntokens,
-                                            cuda = self.cuda,
-                                            num_classes = self.num_classes,
-                                            vectors = self.sentence_field.vocab.vectors,
-                                            pretrained_rnn = pretrained_model,
-                                            attention_dim = self.attention_dim,
-                                            mlp_hidden = self.mlp_hidden
-                                        )
+            if self.attention_dim is not None:
+                print('Using Attention model with {} dimensions'.format(self.attention_dim))
+                self.model = SelfAttentiveRNN(vocab_size = self.ntokens,
+                                                cuda = self.cuda,
+                                                num_classes = self.num_classes,
+                                                vectors = self.sentence_field.vocab.vectors,
+                                                pretrained_rnn = pretrained_model,
+                                                attention_dim = self.attention_dim,
+                                                mlp_hidden = self.mlp_hidden
+                                            )
 
-            #MAKING MATRIX TO SAVE ATTENTION WEIGHTS
-            self.train_attns = torch.zeros(2, len(self.train_data), self.max_length)
-            self.eval_attns = torch.zeros(2, len(self.test_data), self.max_length)
+                #MAKING MATRIX TO SAVE ATTENTION WEIGHTS
+                self.train_attns = torch.zeros(2, len(self.train_data), self.max_length)
+                self.eval_attns = torch.zeros(2, len(self.test_data), self.max_length)
+            else:
+                print('Using Vanilla RNN with {} dimensions'.format(self.hidden_dim))
+                self.model = VanillaRNN(vocab_size = self.ntokens,
+                                        cuda = self.cuda,
+                                        num_classes = self.num_classes,
+                                        hidden_size = self.hidden_dim,
+                                        vectors = self.sentence_field.vocab.vectors,
+                                        pretrained_rnn = pretrained_model.model.model
+                                    )
+            if self.cuda:
+                self.model.cuda()
+            print('Done.')
         else:
-            print('Using Vanilla RNN with {} dimensions'.format(self.hidden_dim))
-            self.model = VanillaRNN(vocab_size = self.ntokens,
-                                    cuda = self.cuda,
-                                    num_classes = self.num_classes,
-                                    hidden_size = self.hidden_dim,
-                                    vectors = self.sentence_field.vocab.vectors,
-                                    pretrained_rnn = pretrained_model.model.model
-                                )
-        if self.cuda:
-            self.model.cuda()
-        print('Done.')
+            print('Loading Model from checkpoint')
+            self.model = torch.load(self.checkpoint_path)
+
+
 
 
     def repackage_hidden(self, h):
@@ -285,14 +283,14 @@ class TrainClassifier:
             #CALCULATING LOSS
             loss = self.objective(predictions, targets)
             total_loss += loss.data
-        return total_loss
+        self.eval_loss = total_loss
 
     def train_step(self, optimizer, start_time):
         hidden = self.model.init_hidden(self.batch_size)
         total_loss = 0
         for i, batch in enumerate(self.train_iterator):
             #CLEARING HISTORY
-            optimizer.zero_grad()
+            self.optimizer.zero_grad()
             hidden = self.repackage_hidden(hidden)
 
             #GETTING TENSORS
@@ -317,7 +315,9 @@ class TrainClassifier:
             loss = self.objective(predictions, targets)
             loss.backward()
             total_loss += loss.data
-            optimizer.step()
+            self.optimizer.step()
+
+            #$self.optimizer = optimizer
 
 
             if i % self.log_interval == 0:
@@ -345,6 +345,16 @@ class TrainClassifier:
     def save_model(self, savepath):
         self.model.save_state_dict(savepath)
 
+    def save_checkpoint(self, checkpointpath):
+        state = {
+                    'epoch': self.epoch + 1,
+                    'state_dict': self.model.state_dict(),
+                    'best_valid_loss': self.eval_loss,
+                    'optimizer': self.optimizer.state_dict()
+                }
+        torch.save(state, checkpointpath)
+
+
     def dump_attns(self, attn_path):
         if self.test_attns is not None:
             torch.save(self.test_attns, attn_path)
@@ -357,16 +367,17 @@ class TrainClassifier:
         self.get_model()
         self.model.train()
         parameters = filter(lambda p: p.requires_grad, self.model.parameters())
-        optimizer = Adam(parameters)
+        self.optimizer = Adam(parameters)
         start_time = time.time()
         print('Begin Training...')
         for epoch in range(self.n_epochs):
-            self.train_step(optimizer, start_time)
+            self.train_step(start_time)
 
 if __name__ == '__main__':
     trainer = TrainClassifier()
     trainer.train()
-    print("Evaluation loss is: {}".format(trainer.evaluate()))
+    trainer.evaluate()
+    print("Evaluation loss is: {}".format(trainer.eval_loss))
     trainer.save_model(trainer.savepath)
 
 

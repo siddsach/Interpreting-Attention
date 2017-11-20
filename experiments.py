@@ -12,31 +12,6 @@ vector_cache = os.path.join(project_path, 'vectors')
 
 labeled_datasets = ['IMDB']
 
-#VECTOR EXPERIMENTS HERE
-vector_sources = ['GloVe', 'CharLevel', 'googlenews']
-vector_dims = {el: [None] for el in vector_sources}
-vector_dims['GloVe'] = ['300']
-
-vector_savepath = os.path.join(attn_savepath, 'vectors')
-
-for dataset in labeled_datasets:
-    for source in vector_sources:
-        for dim in vector_dims[source]:
-            model = TrainClassifier(
-                        pretrained_modelpath = None,
-                        datapath = dataset,
-                        wordvec_dim = dim,
-                        wordvec_source = [source],
-                        vector_cache = vector_cache
-                    )
-            model.train()
-            loss = model.evaluate()
-            print('WITH {} VECTORS WITH {} DIMS ON THE {} DATASET,\nWE GET LOSS OF {}'.format(source, dim, dataset, loss))
-
-            dirpath = os.path.join(vector_savepath, source + dim + "d", dataset)
-            os.makedirs(dirpath, exist_ok = True)
-            model.dump_attns(os.path.join(dirpath, 'saved_attn_weights.pt'))
-
 
 #UNSUPERVISED PRETRAINING EXPERIMENTS HERE
 unlabeled_datasets = ["wikitext"]
@@ -71,6 +46,32 @@ for dataset in unlabeled_datasets:
     os.makedirs(attn_savepath, exist_ok = True)
 
     classifier.dump_attns(os.path.join(attn_savepath, 'saved_attn_weights.pt'))
+
+
+#VECTOR EXPERIMENTS HERE
+vector_sources = ['GloVe', 'CharLevel', 'googlenews']
+vector_dims = {el: [None] for el in vector_sources}
+vector_dims['GloVe'] = ['300']
+
+vector_savepath = os.path.join(attn_savepath, 'vectors')
+
+for dataset in labeled_datasets:
+    for source in vector_sources:
+        for dim in vector_dims[source]:
+            model = TrainClassifier(
+                        pretrained_modelpath = None,
+                        datapath = dataset,
+                        wordvec_dim = dim,
+                        wordvec_source = [source],
+                        vector_cache = vector_cache
+                    )
+            model.train()
+            loss = model.evaluate()
+            print('WITH {} VECTORS WITH {} DIMS ON THE {} DATASET,\nWE GET LOSS OF {}'.format(source, dim, dataset, loss))
+
+            dirpath = os.path.join(vector_savepath, source + dim + "d", dataset)
+            os.makedirs(dirpath, exist_ok = True)
+            model.dump_attns(os.path.join(dirpath, 'saved_attn_weights.pt'))
 
 
 
