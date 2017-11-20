@@ -4,7 +4,7 @@ import torch
 from torch.nn import CrossEntropyLoss
 from torch.autograd import Variable
 from torch.optim import Adam
-from model import VanillaRNN, SelfAttentiveRNN
+from .model import VanillaRNN, SelfAttentiveRNN
 import time
 import glob
 import os
