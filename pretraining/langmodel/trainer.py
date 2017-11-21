@@ -32,6 +32,7 @@ CLIP = 0.25
 NUM_LAYERS = 2
 TIE_WEIGHTS = True
 MODEL_TYPE = 'LSTM'
+OPTIMIZER = 'vanilla_grad'
 
 if TIE_WEIGHTS:
     HIDDEN_SIZE = WORDVEC_DIM
@@ -93,7 +94,8 @@ class TrainLangModel:
                     num_layers = NUM_LAYERS,
                     hidden_size = HIDDEN_SIZE,
                     use_cuda = True,
-                    tie_weights = TIE_WEIGHTS
+                    tie_weights = TIE_WEIGHTS,
+                    optim = OPTIMIZER
                 ):
         if torch.cuda.is_available() and use_cuda:
             self.cuda = True
@@ -106,6 +108,7 @@ class TrainLangModel:
         self.model_type = model_type
         self.batch_size = batch_size
         self.bptt_len = seq_len
+        self.optim = optim
 
         self.n_epochs = n_epochs
 
@@ -253,7 +256,6 @@ class TrainLangModel:
         hidden = self.model.init_hidden(self.batch_size)
         total_loss = 0
         for i, batch in enumerate(self.train_iterator):
-            optimizer.zero_grad()
             hidden = self.repackage_hidden(hidden)
             data, targets = batch.text, batch.target.view(-1)
 
@@ -273,7 +275,14 @@ class TrainLangModel:
             torch.nn.utils.clip_grad_norm(self.model.parameters(), self.clip)
             total_loss += loss.data
 
-            optimizer.step()
+            if self.optim == 'adam':
+                optimizer.step()
+                optimizer.zero_grad()
+
+            elif self.optim == 'vanilla_grad':
+                parameters = filter(lambda p: p.requires_grad, self.model.parameters())
+                for p in parameters:
+                    p.data.add_(-self.lr, p.grad.data)
 
             if ((i + 1) % self.log_interval) == 0:
                 current_loss = total_loss / self.log_interval
@@ -315,8 +324,12 @@ class TrainLangModel:
         self.train_iterator = self.get_iterator(self.train_sentences)
         self.get_model()
         self.model.train()
-        parameters = filter(lambda p: p.requires_grad, self.model.parameters())
-        optimizer = Adam(parameters)
+
+        optimizer = None
+        if self.optim == 'adam':
+            parameters = filter(lambda p: p.requires_grad, self.model.parameters())
+            optimizer = Adam(parameters)
+
         start_time = time.time()
         print('Begin Training...')
         for epoch in range(self.n_epochs):
