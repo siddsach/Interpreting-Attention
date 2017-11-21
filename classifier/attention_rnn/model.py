@@ -62,7 +62,8 @@ class VanillaRNN(nn.Module):
 
     def init_rnn(self, pretrained_rnn):
         try:
-            self.model.load_state_dict(pretrained_rnn)
+            if pretrained_rnn is not None:
+                self.model.load_state_dict(pretrained_rnn.model.model)
         except:
             print("ERROR LOADING RNN WEIGHTS. PROCEEDING WITHOUT PRETRAINED_WEIGHTS")
 
@@ -87,13 +88,12 @@ class VanillaRNN(nn.Module):
     def forward(self, inp, h, lengths = None):
         vectors = self.embed(inp)
         packed_vecs = torch.nn.utils.rnn.pack_padded_sequence(vectors, list(lengths), batch_first = True)
-        out, h = self.model(packed_vecs, h)
+        out, hiddens = self.model(packed_vecs, h)
 
-        print(h.data.shape)
         if self.bidirectional:
-            hiddens = torch.cat((h[0][0], h[0][1]), 1)
+            hiddens = torch.cat((hiddens[0][0], hiddens[0][1]), 1)
 
-        proj = self.linear(hiddens)
+        proj = self.linear(hiddens[0])
         predictions = self.normalize(proj)
         return predictions, h, None
 

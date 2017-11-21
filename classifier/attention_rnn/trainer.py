@@ -31,6 +31,7 @@ IMDB = True
 HIDDEN_SIZE = 4096
 PRETRAINED = root_path + '/trained_models/trained_rnn.pt'
 MAX_LENGTH = 100
+SAVE_CHECKPOINT = root_path + '/trained_models/classifier/model.pt'
 
 def sorter(example):
     return len(example.text)
@@ -56,8 +57,12 @@ class TrainClassifier:
                     wordvec_source = WORDVEC_SOURCE,
                     hidden_dim = HIDDEN_SIZE,
                     max_length = MAX_LENGTH,
-                    use_cuda = True
+                    use_cuda = True,
+                    savepath = SAVE_CHECKPOINT
                 ):
+
+        self.savepath = savepath
+
         if torch.cuda.is_available() and use_cuda:
             print("Using CUDA!")
             self.cuda = True
@@ -65,6 +70,7 @@ class TrainClassifier:
             print("Not Using CUDA")
             self.cuda = False
         self.lr = lr
+
 
         self.datapath = datapath
         if datapath == 'IMDB':
@@ -342,9 +348,6 @@ class TrainClassifier:
             self.test_attns[1, index: index + self.batch_size, :attns.size(1)] = attns.data
 
 
-    def save_model(self, savepath):
-        self.model.save_state_dict(savepath)
-
     def save_checkpoint(self, checkpointpath):
         state = {
                     'epoch': self.epoch + 1,
@@ -378,6 +381,6 @@ if __name__ == '__main__':
     trainer.train()
     trainer.evaluate()
     print("Evaluation loss is: {}".format(trainer.eval_loss))
-    trainer.save_model(trainer.savepath)
+    trainer.save_checkpoint(trainer.savepath)
 
 
