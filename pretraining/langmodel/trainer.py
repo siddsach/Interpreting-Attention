@@ -23,7 +23,6 @@ VECTOR_CACHE = project_path + '/vectors'
 
 NUM_EPOCHS = 40
 LEARNING_RATE = 0.5
-uATCH_SIZE = 20
 LOG_INTERVAL = 50
 BPTT_SEQUENCE_LENGTH = 35
 BATCH_SIZE = 20
@@ -38,7 +37,7 @@ MODEL_TYPE = 'LSTM'
 OPTIMIZER = 'vanilla_grad'
 DROPOUT = 0.2
 HIDDEN_SIZE = 4096
-FEW_BATCHES = None
+FEW_BATCHES = 5
 
 def preprocess(x):
     #ENSURE ENCODING IS RIGHT
@@ -424,7 +423,7 @@ class TrainLangModel:
                     'epoch': self.epoch + 1,
                     'state_dict': self.best_model.state_dict(),
                     'best_valid_loss': self.best_eval_perplexity,
-                    'optimizer': None if self.optimizer is None else optimizer.state_dict()
+                    'optimizer': None if optimizer is None else optimizer.state_dict()
                 }
         if title is None:
             torch.save(state, self.savepath + self.data + "/trained_rnn.pt")
