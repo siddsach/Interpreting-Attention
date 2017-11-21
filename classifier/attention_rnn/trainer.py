@@ -21,10 +21,10 @@ DATASET = 'IMDB'
 IMDB_PATH = current_path + '/data/imdb/aclImdb'# 'sentence_subjectivity.csv' #DATA MUST BE IN CSV FORMAT WITH ONE FIELD TITLED SENTENCES CONTANING ONE LINE PER SENTENCE
 VECTOR_CACHE = root_path + '/vectors'
 SAVED_VECTORS = True
-NUM_EPOCHS = 10
+NUM_EPOCHS = 3
 LEARNING_RATE = 0.5
-BATCH_SIZE = 5
-LOG_INTERVAL = 5
+BATCH_SIZE = 2
+LOG_INTERVAL = 1
 WORD_VEC_DIM = 300
 WORDVEC_SOURCE = ['GloVe'] #['GloVe']# charLevel']
 SAVED_MODEL_PATH = None#'saved_model.pt'
@@ -33,10 +33,12 @@ HIDDEN_SIZE = 300
 PRETRAINED = None #root_path + '/trained_models/trained_rnn.pt'
 MAX_LENGTH = 100
 SAVE_CHECKPOINT = root_path + '/trained_models/classifier/'
-USE_ATTENTION = False
+USE_ATTENTION = True
 ATTENTION_DIM = 10 if USE_ATTENTION else None
 MLP_HIDDEN = 100
 OPTIMIZER = 'adam'
+MAX_DATA_LEN = 10
+
 
 def sorter(example):
     return len(example.text)
@@ -64,7 +66,8 @@ class TrainClassifier:
                     max_length = MAX_LENGTH,
                     use_cuda = True,
                     savepath = SAVE_CHECKPOINT,
-                    optim = 'adam'
+                    optim = 'adam',
+                    max_data_len = MAX_DATA_LEN
                 ):
 
         self.savepath = savepath
@@ -84,6 +87,7 @@ class TrainClassifier:
         if datapath == 'IMDB':
             self.trainpath = IMDB_PATH + "/train"
             self.testpath = IMDB_PATH + "/test"
+        self.max_data_len = max_data_len
 
         self.batch_size = batch_size
         self.n_epochs = n_epochs
@@ -139,8 +143,9 @@ class TrainClassifier:
             c = 0
             for fname in glob.iglob(os.path.join(path, label, '*.txt')):
 
-                if c > 10:
-                    break
+                if self.max_data_len is not None:
+                    if c > self.max_data_len:
+                        break
 
                 with open(fname, 'r') as f:
                     text = f.readline()
@@ -211,6 +216,7 @@ class TrainClassifier:
                                         )
             iterator_object.repeat = False
 
+        print("Done Creating Iterator with {num} batches".format(num = len(iterator_object)))
         print("Done.")
         return iterator_object
 
@@ -239,7 +245,8 @@ class TrainClassifier:
                                                 vectors = self.sentence_field.vocab.vectors,
                                                 pretrained_rnn = pretrained_model,
                                                 attention_dim = self.attention_dim,
-                                                mlp_hidden = self.mlp_hidden
+                                                mlp_hidden = self.mlp_hidden,
+                                                input_size = self.wordvec_dim
                                             )
 
                 #MAKING MATRIX TO SAVE ATTENTION WEIGHTS
@@ -251,7 +258,8 @@ class TrainClassifier:
                                         num_classes = self.num_classes,
                                         hidden_size = self.hidden_dim,
                                         vectors = self.sentence_field.vocab.vectors,
-                                        pretrained_rnn = pretrained_model
+                                        pretrained_rnn = pretrained_model,
+                                        input_size = self.wordvec_dim
                                     )
             if self.cuda:
                 self.model.cuda()

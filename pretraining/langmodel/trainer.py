@@ -27,8 +27,9 @@ uATCH_SIZE = 20
 LOG_INTERVAL = 50
 BPTT_SEQUENCE_LENGTH = 35
 BATCH_SIZE = 20
-WORDVEC_DIM = 100
+WORDVEC_DIM = 300
 WORDVEC_SOURCE = ['GloVe', 'charLevel']#, 'googlenews']
+CHARNGRAM_DIM = 100
 TUNE_WORDVECS = False
 CLIP = 0.25
 NUM_LAYERS = 2
@@ -92,7 +93,7 @@ class TrainLangModel:
                     log_interval = LOG_INTERVAL,
                     model_type = MODEL_TYPE,
                     savepath = MODEL_SAVE_PATH,
-                    wordvec_dim = WORDVEC_DIM,
+                    glove_dim = WORDVEC_DIM,
                     wordvec_source = WORDVEC_SOURCE,
                     tune_wordvecs = TUNE_WORDVECS,
                     num_layers = NUM_LAYERS,
@@ -125,7 +126,17 @@ class TrainLangModel:
         self.clip = clip
 
         self.wordvec_source = wordvec_source
-        self.wordvec_dim = wordvec_dim
+        self.glove_dim = glove_dim
+        self.wordvec_dim = 0
+
+        for src in self.wordvec_source:
+            if src == 'GloVe':
+                self.wordvec_dim += self.glove_dim
+            if src == 'CharNGram':
+                self.wordvec_dim += CHARNGRAM_DIM
+            if src == 'googlenews':
+                pass
+
         self.tune_wordvecs = tune_wordvecs
 
         self.objective_function = objective
@@ -188,9 +199,10 @@ class TrainLangModel:
     def get_vectors(self):
         vecs = []
         print('Loading Vectors From Memory...')
+        print('Using these vectors: ' + str(self.wordvec_source))
         for source in self.wordvec_source:
             if source == 'GloVe':
-                glove = Vectors(name = 'glove.6B.{}d.txt'.format(self.wordvec_dim), cache = self.vector_cache)
+                glove = Vectors(name = 'glove.6B.{}d.txt'.format(self.glove_dim), cache = self.vector_cache)
                 vecs.append(glove)
             if source == 'charLevel':
                 charVec = Vectors(name = 'charNgram.txt',cache = self.vector_cache)
@@ -342,7 +354,8 @@ class TrainLangModel:
                 .format(avg_loss, perplexity))
         return perplexity
 
-    def train(self):
+
+    def start_train(self):
         self.load_data()
         self.get_vectors()
         self.train_iterator = self.get_iterator(self.train_sentences)
@@ -353,6 +366,12 @@ class TrainLangModel:
         if self.optim == 'adam':
             parameters = filter(lambda p: p.requires_grad, self.model.parameters())
             optimizer = Adam(parameters)
+
+        return optimizer
+
+
+    def train(self):
+        optimizer = self.start_train()
 
         start_time = time.time()
         print('Begin Training...')
