@@ -48,6 +48,12 @@ class LangModel(nn.Module):
         self.init_embedding(pretrained_vecs)
 
     def init_embedding(self, pretrained_embeddings):
+        print("EMBED DIM")
+        print(self.embed.weight.data.shape)
+
+        print("PRETRAINED DIM")
+        print(pretrained_embeddings.shape)
+
         # INIT EMBEDDING WITH PRE-TRAINED WORD VECTORS
         self.embed.weight.data.copy_(pretrained_embeddings)
         if not self.tune_wordvecs:

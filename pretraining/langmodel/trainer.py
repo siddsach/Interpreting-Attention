@@ -37,11 +37,8 @@ TIE_WEIGHTS = True
 MODEL_TYPE = 'LSTM'
 OPTIMIZER = 'vanilla_grad'
 DROPOUT = 0.2
-
-if TIE_WEIGHTS:
-    HIDDEN_SIZE = WORDVEC_DIM
-else:
-    HIDDEN_SIZE = 4096
+HIDDEN_SIZE = 4096
+FEW_BATCHES = None
 
 def preprocess(x):
     #ENSURE ENCODING IS RIGHT
@@ -120,8 +117,7 @@ class TrainLangModel:
         self.n_epochs = n_epochs
 
         self.num_layers = num_layers
-        self.hidden_size = hidden_size
-        self.tie_weights = tie_weights
+
 
         self.clip = clip
 
@@ -132,10 +128,17 @@ class TrainLangModel:
         for src in self.wordvec_source:
             if src == 'GloVe':
                 self.wordvec_dim += self.glove_dim
-            if src == 'CharNGram':
+            if src == 'charLevel':
                 self.wordvec_dim += CHARNGRAM_DIM
             if src == 'googlenews':
                 pass
+
+        self.tie_weights = tie_weights
+
+        if self.tie_weights:
+            self.hidden_size = self.wordvec_dim
+        else:
+            self.hidden_size = hidden_size
 
         self.tune_wordvecs = tune_wordvecs
 
@@ -232,9 +235,12 @@ class TrainLangModel:
         print('Initializing Model parameters...')
         self.ntokens = len(self.sentence_field.vocab)
         print('Constructing {} with {} layers and {} hidden size...'.format(self.model_type, self.num_layers, self.hidden_size))
+        print("WORDVEC DIM")
+        print(self.wordvec_dim)
         if self.objective_function == 'crossentropy':
             print('Cross Entropy Loss ...')
             self.objective = CrossEntropyLoss()
+
 
             self.model = LangModel(vocab_size = self.ntokens,
                                 pretrained_vecs = self.sentence_field.vocab.vectors,
@@ -311,6 +317,10 @@ class TrainLangModel:
                 for p in parameters:
                     p.data.add_(-self.lr, p.grad.data)
 
+            if FEW_BATCHES is not None:
+                if i >= FEW_BATCHES:
+                    break
+
             if ((i + 1) % self.log_interval) == 0:
                 current_loss = total_loss / self.log_interval
                 elapsed = time.time() - start_time
@@ -347,6 +357,10 @@ class TrainLangModel:
 
             loss = self.objective(output, targets)
             total_loss += loss.data
+
+            if FEW_BATCHES is not None:
+                if i >= FEW_BATCHES:
+                    break
 
         avg_loss = total_loss[0] / i
         perplexity = math.exp(avg_loss)
