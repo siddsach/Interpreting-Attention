@@ -4,16 +4,17 @@ import torch
 from torch.nn import CrossEntropyLoss
 from torch.autograd import Variable
 from torch.optim import Adam
-from .model import LangModel
+from model import LangModel
 import time
-from .nce import NCELoss
+from nce import NCELoss
 import os
 
 current_path = os.getcwd()
 project_path = current_path#[:len(current_path)-len('/pretraining/langmodel')]
 
-DATASET = 'wikitext'
+DATASET = 'ptb'
 WIKI_PATH = project_path + '/data/wikitext-2/wikitext-2/'
+PTB_PATH = project_path + '/data/penn/'
 MODEL_SAVE_PATH = project_path + '/trained_models/trained_rnn.pt'
 VECTOR_CACHE = project_path + '/vectors'
 
@@ -30,6 +31,7 @@ WORDVEC_SOURCE = ['GloVe']# 'googlenews', 'charLevel']
 CLIP = 0.25
 NUM_LAYERS = 2
 TIE_WEIGHTS = True
+MODEL_TYPE = 'LSTM'
 
 if TIE_WEIGHTS:
     HIDDEN_SIZE = WORDVEC_DIM
@@ -84,7 +86,7 @@ class TrainLangModel:
                     objective = 'crossentropy',
                     train = False,
                     log_interval = LOG_INTERVAL,
-                    model_type = "LSTM",
+                    model_type = MODEL_TYPE,
                     savepath = MODEL_SAVE_PATH,
                     wordvec_dim = WORDVEC_DIM,
                     wordvec_source = WORDVEC_SOURCE,
@@ -138,6 +140,8 @@ class TrainLangModel:
                         )
 
         datapath = None
+        trainpath, validpath, testpath = None, None, None
+
         if self.data == 'wikitext':
             datapath = WIKI_PATH
 
@@ -145,23 +149,29 @@ class TrainLangModel:
 
             trainpath, validpath, testpath = paths[0], paths[1], paths[2]
 
-            print("Retrieving Train Data from file: {}...".format(trainpath))
-            self.train_sentences = datasets.LanguageModelingDataset(trainpath, self.sentence_field, newline_eos = False)
-            print("Got Train Dataset with {n_tokens} words".format(n_tokens=len(self.train_sentences)))
+        elif self.data == 'ptb':
+            datapath = PTB_PATH
+            paths = [datapath + s + '.txt' for s in ['train', 'valid', 'test']]
+
+            trainpath, validpath, testpath = paths[0], paths[1], paths[2]
+
+        print("Retrieving Train Data from file: {}...".format(trainpath))
+        self.train_sentences = datasets.LanguageModelingDataset(trainpath, self.sentence_field, newline_eos = False)
+        print("Got Train Dataset with {n_tokens} words".format(n_tokens=len(self.train_sentences)))
+        print('done.')
+
+
+        if validpath is not None:
+
+            print("Retrieving Valid Data from file: {}...".format(validpath))
+            self.valid_sentences = datasets.LanguageModelingDataset(validpath, self.sentence_field, newline_eos = False)
             print('done.')
 
+        if testpath is not None:
 
-            if validpath is not None:
-
-                print("Retrieving Valid Data from file: {}...".format(validpath))
-                self.valid_sentences = datasets.LanguageModelingDataset(validpath, self.sentence_field, newline_eos = False)
-                print('done.')
-
-            if testpath is not None:
-
-                print("Retrieving Test Data from file: {}...".format(testpath))
-                self.test_sentences = datasets.LanguageModelingDataset(testpath, self.sentence_field, newline_eos = False)
-                print('done.')
+            print("Retrieving Test Data from file: {}...".format(testpath))
+            self.test_sentences = datasets.LanguageModelingDataset(testpath, self.sentence_field, newline_eos = False)
+            print('done.')
 
 
 
