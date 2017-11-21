@@ -37,7 +37,7 @@ MODEL_TYPE = 'LSTM'
 OPTIMIZER = 'vanilla_grad'
 DROPOUT = 0.2
 HIDDEN_SIZE = 4096
-FEW_BATCHES = 5
+FEW_BATCHES = None
 
 def preprocess(x):
     #ENSURE ENCODING IS RIGHT
