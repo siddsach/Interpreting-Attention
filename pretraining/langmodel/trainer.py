@@ -29,7 +29,8 @@ LOG_INTERVAL = 200
 BPTT_SEQUENCE_LENGTH = 35
 WORDVEC_DIM = 300
 WORDVEC_SOURCE = ['GloVe']# 'googlenews', 'charLevel']
-CLIP = 0.25
+TUNE_WORDVECS = False
+CLIP = None
 NUM_LAYERS = 2
 TIE_WEIGHTS = True
 MODEL_TYPE = 'LSTM'
@@ -93,6 +94,7 @@ class TrainLangModel:
                     savepath = MODEL_SAVE_PATH,
                     wordvec_dim = WORDVEC_DIM,
                     wordvec_source = WORDVEC_SOURCE,
+                    tune_wordvecs = TUNE_WORDVECS,
                     num_layers = NUM_LAYERS,
                     hidden_size = HIDDEN_SIZE,
                     use_cuda = True,
@@ -124,6 +126,7 @@ class TrainLangModel:
 
         self.wordvec_source = wordvec_source
         self.wordvec_dim = wordvec_dim
+        self.tune_wordvecs = tune_wordvecs
 
         self.objective_function = objective
 
@@ -241,7 +244,8 @@ class TrainLangModel:
                                 num_layers = self.num_layers,
                                 hidden_size = self.hidden_size,
                                 rnn_dropout = self.dropout,
-                                linear_dropout = self.dropout
+                                linear_dropout = self.dropout,
+                                tune_wordvecs = self.tune_wordvecs
                             )
             self.objective = NCELoss(self.ntokens, self.model.hidden_size, self.noise, self.cuda)
 
@@ -280,7 +284,8 @@ class TrainLangModel:
 
             loss = self.objective(output, targets)
             loss.backward()
-            torch.nn.utils.clip_grad_norm(self.model.parameters(), self.clip)
+            if self.clip is not None:
+                torch.nn.utils.clip_grad_norm(self.model.parameters(), self.clip)
             total_loss += loss.data
 
             if self.optim == 'adam':
