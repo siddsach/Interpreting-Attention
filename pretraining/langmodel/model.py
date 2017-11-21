@@ -14,10 +14,11 @@ class LangModel(nn.Module):
             hidden_size = 4096,
             num_layers = 2,
             rnn_dropout = 0.2,
-            linear_dropout = 0.22,
+            linear_dropout = 0.2,
             tie_weights = False,
             init_range = 0.1,
-            tune_wordvecs = False
+            tune_wordvecs = True,
+            drop_embed = False
         ):
 
         super(LangModel, self).__init__()
@@ -26,10 +27,11 @@ class LangModel(nn.Module):
         self.model = getattr(nn, model_type)(input_size, hidden_size, num_layers, dropout = rnn_dropout)
 
         self.drop = nn.Dropout(linear_dropout)
+        self.drop_embed = drop_embed
+
         self.decoder = decoder
         if decoder == 'softmax':
             self.linear = nn.Linear(hidden_size, vocab_size)
-            self.normalize = nn.Softmax()
             self.init_weights(init_range)
 
 
@@ -46,7 +48,8 @@ class LangModel(nn.Module):
         self.init_embedding(pretrained_vecs)
 
     def init_embedding(self, pretrained_embeddings):
-        self.embed.weight.data.copy_(pretrained_embeddings)# this provides the values
+        # INIT EMBEDDING WITH PRE-TRAINED WORD VECTORS
+        self.embed.weight.data.copy_(pretrained_embeddings)
         if not self.tune_wordvecs:
             self.embed.weight.requires_grad = False
 
@@ -65,13 +68,21 @@ class LangModel(nn.Module):
 
 
     def forward(self, inp, h):
-        vectors = self.drop(self.embed(inp))
+        vectors = self.embed(inp)
+        if self.drop_embed:
+            vectors = self.drop(vectors)
+
         out, h = self.model(vectors, h)
         out = self.drop(out)
 
         if self.decoder == 'softmax':
             squeezed = out.view(out.size(0) * out.size(1) , out.size(2))
-            predictions = self.normalize(self.linear(squeezed))
+            predictions = self.linear(squeezed)
+
+
+            return predictions, h
+
         else:
             predictions = out
-        return predictions, h
+            return predictions
+

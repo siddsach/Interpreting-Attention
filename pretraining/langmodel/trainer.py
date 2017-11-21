@@ -20,11 +20,11 @@ VECTOR_CACHE = project_path + '/vectors'
 
 #TRAIN_PATH = project_path + 'data/gigaword/gigaword_cleaned_small.txt'#'data/wikitext-2/wikitext-2/wiki.train.tokens'
 
-NUM_EPOCHS = 10
+NUM_EPOCHS = 40
 BPTT_LENGTH = 35
 LEARNING_RATE = 0.5
-BATCH_SIZE = 50
-LOG_INTERVAL = 20
+BATCH_SIZE = 20
+LOG_INTERVAL = 200
 BPTT_SEQUENCE_LENGTH = 35
 WORDVEC_DIM = 300
 WORDVEC_SOURCE = ['GloVe']# 'googlenews', 'charLevel']
@@ -33,6 +33,7 @@ NUM_LAYERS = 2
 TIE_WEIGHTS = True
 MODEL_TYPE = 'LSTM'
 OPTIMIZER = 'vanilla_grad'
+DROPOUT = 0.2
 
 if TIE_WEIGHTS:
     HIDDEN_SIZE = WORDVEC_DIM
@@ -95,7 +96,8 @@ class TrainLangModel:
                     hidden_size = HIDDEN_SIZE,
                     use_cuda = True,
                     tie_weights = TIE_WEIGHTS,
-                    optim = OPTIMIZER
+                    optim = OPTIMIZER,
+                    dropout = DROPOUT
                 ):
         if torch.cuda.is_available() and use_cuda:
             self.cuda = True
@@ -109,6 +111,7 @@ class TrainLangModel:
         self.batch_size = batch_size
         self.bptt_len = seq_len
         self.optim = optim
+        self.dropout = dropout
 
         self.n_epochs = n_epochs
 
@@ -193,7 +196,7 @@ class TrainLangModel:
                 vecs.append(googlenews)
         print('Building Vocab...')
         self.sentence_field.build_vocab(self.train_sentences, vectors = vecs)
-        print('Done.')
+        print('Found {} tokens'.format(len(self.sentence_field.vocab)))
 
 
     def get_iterator(self, dataset):
@@ -221,7 +224,9 @@ class TrainLangModel:
                                 pretrained_vecs = self.sentence_field.vocab.vectors,
                                 decoder = 'softmax',
                                 num_layers = self.num_layers,
-                                hidden_size = self.hidden_size
+                                hidden_size = self.hidden_size,
+                                rnn_dropout = self.dropout,
+                                linear_dropout = self.dropout,
                             )
 
         elif self.objective_function == 'nce':
@@ -233,7 +238,9 @@ class TrainLangModel:
                                 tie_weights = self.tie_weights,
                                 decoder = 'nce',
                                 num_layers = self.num_layers,
-                                hidden_size = self.hidden_size
+                                hidden_size = self.hidden_size,
+                                rnn_dropout = self.dropout,
+                                linear_dropout = self.dropout
                             )
             self.objective = NCELoss(self.ntokens, self.model.hidden_size, self.noise, self.cuda)
 
