@@ -17,7 +17,7 @@ class LangModel(nn.Module):
             linear_dropout = 0.2,
             tie_weights = False,
             init_range = 0.1,
-            tune_wordvecs = True,
+            tune_wordvecs = False,
             drop_embed = False
         ):
 
