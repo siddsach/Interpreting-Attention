@@ -3,7 +3,7 @@ from torchtext.vocab import Vectors
 import torch
 from torch.nn import CrossEntropyLoss
 from torch.autograd import Variable
-from torch.optim import Adam
+from torch.optim import Adam, lr_scheduler
 from model import LangModel
 import time
 from nce import NCELoss
@@ -378,13 +378,15 @@ class TrainLangModel:
         optimizer = None
         if self.optim == 'adam':
             parameters = filter(lambda p: p.requires_grad, self.model.parameters())
-            optimizer = Adam(parameters)
+            optimizer = Adam(parameters, lr = self.lr, betas = (0, 0.999), eps = 10**-9)
 
-        return optimizer
+        scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode = 'min', factor = 0.1)
+
+        return optimizer, scheduler
 
 
     def train(self):
-        optimizer = self.start_train()
+        optimizer, scheduler = self.start_train()
 
         start_time = time.time()
         print('Begin Training...')
@@ -400,10 +402,8 @@ class TrainLangModel:
             self.epoch = epoch
             if this_perplexity > self.best_eval_perplexity:
                 not_better += 1
-                if not_better >= 2:
-                    if self.optim == 'vanilla_grad':
-                        #Annealing
-                        self.lr /= 4
+
+                scheduler.step(this_perplexity)
 
                 if not_better >= 10:
                     print('Model not improving. Stopping early with {}'
