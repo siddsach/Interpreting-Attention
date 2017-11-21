@@ -8,6 +8,7 @@ from model import LangModel
 import time
 from nce import NCELoss
 import os
+import math
 
 current_path = os.getcwd()
 project_path = current_path#[:len(current_path)-len('/pretraining/langmodel')]
@@ -32,7 +33,7 @@ CLIP = 0.25
 NUM_LAYERS = 2
 TIE_WEIGHTS = True
 MODEL_TYPE = 'LSTM'
-OPTIMIZER = 'vanilla_grad'
+OPTIMIZER = 'adam'
 DROPOUT = 0.2
 
 if TIE_WEIGHTS:
@@ -295,7 +296,9 @@ class TrainLangModel:
                 current_loss = total_loss / self.log_interval
                 elapsed = time.time() - start_time
                 total_loss = 0
-                print('At time: {elapsed} and batch: {i} loss is {current_loss}'.format(i=i+1, elapsed=elapsed, current_loss = current_loss[0]))
+                print('At time: {elapsed} and batch: {i}, loss is {current_loss}'
+                        'and perplexity is {ppl}'.format(i=i+1, elapsed=elapsed,
+                        current_loss = current_loss[0], ppl = math.exp(current_loss[0])))
         print('Finished Train Step')
 
 
@@ -322,8 +325,12 @@ class TrainLangModel:
                 output = output.view(output.size(0) * output.size(1), output.size(2))
 
             loss = self.objective(output, targets)
-            total_loss += len(data) * loss.data
-        print('Done Evaluating: Achieved loss of {}'.format(total_loss[0]))
+            total_loss += loss.data
+
+        avg_loss = total_loss[0] / i
+        print('Done Evaluating: Achieved loss of {} and perplexity of {}'
+                .format(avg_loss, math.exp(avg_loss)))
+        return avg_loss
 
     def train(self):
         self.load_data()
@@ -339,10 +346,28 @@ class TrainLangModel:
 
         start_time = time.time()
         print('Begin Training...')
+
+        not_better = 0
+        best_eval_loss = 1000000
+
         for epoch in range(self.n_epochs):
             print('Finished {} epochs...'.format(epoch))
             self.train_step(optimizer, self.model, start_time)
-            self.evaluate()
+            this_epoch_loss = self.evaluate()
+            if this_epoch_loss > best_eval_loss:
+                not_better += 1
+                if not_better >= 3:
+                    if self.optim == 'vanilla_grad':
+                        #Annealing
+                        self.lr /= 4
+
+                if not_better >= 10:
+                    print('Model not improving. Stopping early with {}'
+                           'loss at {} epochs.'.format(best_eval_loss, epoch))
+                    break
+            else:
+                best_eval_loss = this_epoch_loss
+
         print('Finished Training.')
 
     def save_model(self, savepath):
