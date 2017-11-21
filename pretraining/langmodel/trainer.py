@@ -13,7 +13,7 @@ import math
 current_path = os.getcwd()
 project_path = current_path#[:len(current_path)-len('/pretraining/langmodel')]
 
-DATASET = 'ptb'
+DATASET = 'wikitext'
 WIKI_PATH = project_path + '/data/wikitext-2/wikitext-2/'
 PTB_PATH = project_path + '/data/penn/'
 MODEL_SAVE_PATH = project_path + '/trained_models/trained_rnn.pt'
@@ -297,7 +297,7 @@ class TrainLangModel:
                 elapsed = time.time() - start_time
                 total_loss = 0
                 print('At time: {elapsed} and batch: {i}, loss is {current_loss}'
-                        'and perplexity is {ppl}'.format(i=i+1, elapsed=elapsed,
+                        ' and perplexity is {ppl}'.format(i=i+1, elapsed=elapsed,
                         current_loss = current_loss[0], ppl = math.exp(current_loss[0])))
         print('Finished Train Step')
 
@@ -356,7 +356,7 @@ class TrainLangModel:
             this_epoch_loss = self.evaluate()
             if this_epoch_loss > best_eval_loss:
                 not_better += 1
-                if not_better >= 3:
+                if not_better >= 2:
                     if self.optim == 'vanilla_grad':
                         #Annealing
                         self.lr /= 4
