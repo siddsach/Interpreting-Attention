@@ -37,7 +37,7 @@ USE_ATTENTION = True
 ATTENTION_DIM = 10 if USE_ATTENTION else None
 MLP_HIDDEN = 100
 OPTIMIZER = 'adam'
-MAX_DATA_LEN = 10
+MAX_DATA_LEN = None
 
 
 def sorter(example):
