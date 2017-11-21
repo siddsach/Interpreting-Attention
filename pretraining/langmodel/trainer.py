@@ -13,7 +13,7 @@ import math
 current_path = os.getcwd()
 project_path = current_path#[:len(current_path)-len('/pretraining/langmodel')]
 
-DATASET = 'wikitext'
+DATASET = 'ptb'
 WIKI_PATH = project_path + '/data/wikitext-2/wikitext-2/'
 PTB_PATH = project_path + '/data/penn/'
 MODEL_SAVE_PATH = project_path + '/trained_models/langmodel/'
