@@ -16,25 +16,24 @@ project_path = current_path#[:len(current_path)-len('/pretraining/langmodel')]
 DATASET = 'wikitext'
 WIKI_PATH = project_path + '/data/wikitext-2/wikitext-2/'
 PTB_PATH = project_path + '/data/penn/'
-MODEL_SAVE_PATH = project_path + '/trained_models/trained_rnn.pt'
+MODEL_SAVE_PATH = project_path + '/trained_models/langmodel/'
 VECTOR_CACHE = project_path + '/vectors'
 
 #TRAIN_PATH = project_path + 'data/gigaword/gigaword_cleaned_small.txt'#'data/wikitext-2/wikitext-2/wiki.train.tokens'
 
-NUM_EPOCHS = 40
-BPTT_LENGTH = 35
+NUM_EPOCHS = 1
 LEARNING_RATE = 0.5
 BATCH_SIZE = 20
-LOG_INTERVAL = 200
-BPTT_SEQUENCE_LENGTH = 35
+LOG_INTERVAL = 50
+BPTT_SEQUENCE_LENGTH = 32
 WORDVEC_DIM = 300
 WORDVEC_SOURCE = ['GloVe']# 'googlenews', 'charLevel']
 TUNE_WORDVECS = False
 CLIP = 0.25
 NUM_LAYERS = 2
-TIE_WEIGHTS = False
+TIE_WEIGHTS = True
 MODEL_TYPE = 'LSTM'
-OPTIMIZER = 'adam'
+OPTIMIZER = 'vanilla_grad'
 DROPOUT = 0.2
 
 if TIE_WEIGHTS:
@@ -221,7 +220,7 @@ class TrainLangModel:
         self.ntokens = len(self.sentence_field.vocab)
         print('Constructing {} with {} layers and {} hidden size...'.format(self.model_type, self.num_layers, self.hidden_size))
         if self.objective_function == 'crossentropy':
-            print('Using Cross Entropy Loss and Softmax activation...')
+            print('Cross Entropy Loss ...')
             self.objective = CrossEntropyLoss()
 
             self.model = LangModel(vocab_size = self.ntokens,
@@ -297,6 +296,9 @@ class TrainLangModel:
                 for p in parameters:
                     p.data.add_(-self.lr, p.grad.data)
 
+            if i == 5:
+                break
+
             if ((i + 1) % self.log_interval) == 0:
                 current_loss = total_loss / self.log_interval
                 elapsed = time.time() - start_time
@@ -305,6 +307,8 @@ class TrainLangModel:
                         ' and perplexity is {ppl}'.format(i=i+1, elapsed=elapsed,
                         current_loss = current_loss[0], ppl = math.exp(current_loss[0])))
         print('Finished Train Step')
+
+        return optimizer
 
 
 
@@ -333,9 +337,10 @@ class TrainLangModel:
             total_loss += loss.data
 
         avg_loss = total_loss[0] / i
+        perplexity = math.exp(avg_loss)
         print('Done Evaluating: Achieved loss of {} and perplexity of {}'
-                .format(avg_loss, math.exp(avg_loss)))
-        return avg_loss
+                .format(avg_loss, perplexity))
+        return perplexity
 
     def train(self):
         self.load_data()
@@ -353,13 +358,15 @@ class TrainLangModel:
         print('Begin Training...')
 
         not_better = 0
-        best_eval_loss = 1000000
+        self.best_eval_perplexity = 1000000
+        self.best_model = None
 
         for epoch in range(self.n_epochs):
             print('Finished {} epochs...'.format(epoch))
-            self.train_step(optimizer, self.model, start_time)
-            this_epoch_loss = self.evaluate()
-            if this_epoch_loss > best_eval_loss:
+            optimizer = self.train_step(optimizer, self.model, start_time)
+            this_perplexity = self.evaluate()
+            self.epoch = epoch
+            if this_perplexity > self.best_eval_perplexity:
                 not_better += 1
                 if not_better >= 2:
                     if self.optim == 'vanilla_grad':
@@ -368,21 +375,36 @@ class TrainLangModel:
 
                 if not_better >= 10:
                     print('Model not improving. Stopping early with {}'
-                           'loss at {} epochs.'.format(best_eval_loss, epoch))
+                           'loss at {} epochs.'.format(self.best_eval_perplexity), self.epoch)
                     break
             else:
-                best_eval_loss = this_epoch_loss
+                self.best_eval_perplexity = this_perplexity
+                self.best_model = self.model
+
+        self.optimizer = optimizer
+
+        print("Saving Model Parameters and Results...")
+        self.save_checkpoint(optimizer)
 
         print('Finished Training.')
 
-    def save_model(self, savepath):
-        torch.save(self.model.model.state_dict(), savepath)
+    def save_checkpoint(self, optimizer, title = None):
+        state = {
+                    'epoch': self.epoch + 1,
+                    'state_dict': self.best_model.state_dict(),
+                    'best_valid_loss': self.best_eval_perplexity,
+                    'optimizer': None if self.optimizer is None else optimizer.state_dict()
+                }
+        if title is None:
+            torch.save(state, self.savepath + self.data + "/trained_rnn.pt")
+        else:
+            pass
+
 
 if __name__ == '__main__':
 
     trainer = TrainLangModel()
     trainer.train()
-    trainer.save_model(trainer.savepath)
 
 
 
