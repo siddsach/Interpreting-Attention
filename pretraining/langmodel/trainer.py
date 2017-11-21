@@ -301,7 +301,6 @@ class TrainLangModel:
             output, hidden = self.model(data, hidden)
 
             if self.objective_function == 'crossentropy':
-                print('here')
                 output = output.view(-1, self.ntokens)
             else:
                 output = output.view(output.size(0) * output.size(1), output.size(2))
