@@ -21,7 +21,7 @@ VECTOR_CACHE = project_path + '/vectors'
 
 #TRAIN_PATH = project_path + 'data/gigaword/gigaword_cleaned_small.txt'#'data/wikitext-2/wikitext-2/wiki.train.tokens'
 
-NUM_EPOCHS = 40
+NUM_EPOCHS = 100
 LEARNING_RATE = 0.5
 LOG_INTERVAL = 50
 BPTT_SEQUENCE_LENGTH = 35
