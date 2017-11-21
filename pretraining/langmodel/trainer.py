@@ -21,14 +21,14 @@ VECTOR_CACHE = project_path + '/vectors'
 
 #TRAIN_PATH = project_path + 'data/gigaword/gigaword_cleaned_small.txt'#'data/wikitext-2/wikitext-2/wiki.train.tokens'
 
-NUM_EPOCHS = 1
+NUM_EPOCHS = 40
 LEARNING_RATE = 0.5
-BATCH_SIZE = 20
+uATCH_SIZE = 20
 LOG_INTERVAL = 50
 BPTT_SEQUENCE_LENGTH = 35
-
-WORDVEC_DIM = 300
-WORDVEC_SOURCE = ['GloVe']# 'googlenews', 'charLevel']
+BATCH_SIZE = 20
+WORDVEC_DIM = 100
+WORDVEC_SOURCE = ['charLevel']# 'googlenews', 'charLevel']
 TUNE_WORDVECS = False
 CLIP = 0.25
 NUM_LAYERS = 2
@@ -167,7 +167,7 @@ class TrainLangModel:
 
         print("Retrieving Train Data from file: {}...".format(trainpath))
         self.train_sentences = datasets.LanguageModelingDataset(trainpath, self.sentence_field, newline_eos = False)
-        print("Got Train Dataset with {n_tokens} words".format(n_tokens=len(self.train_sentences)))
+        print("Got Train Dataset with {n_tokens} words".format(n_tokens=len(self.train_sentences.examples[0].text)))
         print('done.')
 
 
@@ -231,6 +231,7 @@ class TrainLangModel:
                                 hidden_size = self.hidden_size,
                                 rnn_dropout = self.dropout,
                                 linear_dropout = self.dropout,
+                                input_size = self.wordvec_dim
                             )
 
         elif self.objective_function == 'nce':
@@ -245,6 +246,7 @@ class TrainLangModel:
                                 hidden_size = self.hidden_size,
                                 rnn_dropout = self.dropout,
                                 linear_dropout = self.dropout,
+                                input_size = self.wordvec_dim,
                                 tune_wordvecs = self.tune_wordvecs
                             )
             self.objective = NCELoss(self.ntokens, self.model.hidden_size, self.noise, self.cuda)
@@ -296,9 +298,6 @@ class TrainLangModel:
                 parameters = filter(lambda p: p.requires_grad, self.model.parameters())
                 for p in parameters:
                     p.data.add_(-self.lr, p.grad.data)
-
-            if i == 5:
-                break
 
             if ((i + 1) % self.log_interval) == 0:
                 current_loss = total_loss / self.log_interval
@@ -376,13 +375,11 @@ class TrainLangModel:
 
                 if not_better >= 10:
                     print('Model not improving. Stopping early with {}'
-                           'loss at {} epochs.'.format(self.best_eval_perplexity), self.epoch)
+                           'loss at {} epochs.'.format(self.best_eval_perplexity, self.epoch))
                     break
             else:
                 self.best_eval_perplexity = this_perplexity
                 self.best_model = self.model
-
-        self.optimizer = optimizer
 
         print("Saving Model Parameters and Results...")
         self.save_checkpoint(optimizer)

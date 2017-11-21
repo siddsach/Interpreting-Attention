@@ -8,6 +8,7 @@ from model import VanillaRNN, SelfAttentiveRNN
 import time
 import glob
 import os
+from datetime import datetime
 
 current_path = os.getcwd()
 
@@ -28,13 +29,14 @@ WORD_VEC_DIM = 300
 WORDVEC_SOURCE = ['GloVe'] #['GloVe']# charLevel']
 SAVED_MODEL_PATH = None#'saved_model.pt'
 IMDB = True
-HIDDEN_SIZE = 4096
+HIDDEN_SIZE = 300
 PRETRAINED = None #root_path + '/trained_models/trained_rnn.pt'
 MAX_LENGTH = 100
-SAVE_CHECKPOINT = root_path + '/trained_models/classifier/model.pt'
+SAVE_CHECKPOINT = root_path + '/trained_models/classifier/'
 USE_ATTENTION = False
 ATTENTION_DIM = 10 if USE_ATTENTION else None
 MLP_HIDDEN = 100
+OPTIMIZER = 'adam'
 
 def sorter(example):
     return len(example.text)
@@ -61,7 +63,8 @@ class TrainClassifier:
                     hidden_dim = HIDDEN_SIZE,
                     max_length = MAX_LENGTH,
                     use_cuda = True,
-                    savepath = SAVE_CHECKPOINT
+                    savepath = SAVE_CHECKPOINT,
+                    optim = 'adam'
                 ):
 
         self.savepath = savepath
@@ -75,6 +78,7 @@ class TrainClassifier:
 
         self.lr = lr
 
+        self.optim = optim
 
         self.datapath = datapath
         if datapath == 'IMDB':
@@ -88,7 +92,7 @@ class TrainClassifier:
         if objective == 'crossentropy':
             self.objective = CrossEntropyLoss()
 
-        elif objective == 'NLLLoss':
+        elif objective == 'nllloss':
             self.objective = NLLLoss()
 
         #MODEL SPECS
@@ -97,7 +101,6 @@ class TrainClassifier:
         self.mlp_hidden = mlp_hidden
         self.num_classes = num_classes
 
-
         self.log_interval = log_interval
         self.wordvec_source = wordvec_source
         self.wordvec_dim = wordvec_dim
@@ -105,6 +108,7 @@ class TrainClassifier:
         self.pretrained_modelpath = pretrained_modelpath
         self.checkpoint_path = checkpoint
         self.max_length = max_length
+        self.optim = optim
 
         self.sentence_field = data.Field(
                             sequential = True,
@@ -291,21 +295,22 @@ class TrainClassifier:
                 targets = targets.cuda()
                 lengths = lengths.cuda()
 
-            #GETTING PREDICTIONS
-            output, h, A = self.model(data, hidden, lengths = lengths)
-            predictions = output.view(-1, self.num_classes)
+            if data.size(0) == self.batch_size:
 
-            if i == 5:
+                #GETTING PREDICTIONS
+                output, h, A = self.model(data, hidden, lengths = lengths)
+                predictions = output.view(-1, self.num_classes)
+
+                if A is not None:
+                    #SAVING ATTENTION WEIGHTS
+                    self.save_attns(i, data, A, "test")
+
+                #CALCULATING LOSS
+                loss = self.objective(predictions, targets)
+                total_loss += loss.data
+            else:
                 break
-
-            if A is not None:
-                #SAVING ATTENTION WEIGHTS
-                self.save_attns(i, data, A, "test")
-
-            #CALCULATING LOSS
-            loss = self.objective(predictions, targets)
-            total_loss += loss.data
-        self.eval_loss = total_loss
+        self.eval_loss = total_loss[0]
 
     def train_step(self, optimizer, start_time):
         hidden = self.model.init_hidden(self.batch_size)
@@ -326,23 +331,22 @@ class TrainClassifier:
                 targets = targets.cuda()
                 lengths = lengths.cuda()
 
-            #GETTING PREDICTIONS
-            output, h, A = self.model(data, hidden, lengths = lengths)
-            predictions = output.view(-1, self.num_classes)
+            if data.size(0) == self.batch_size:
+                #GETTING PREDICTIONS
+                output, h, A = self.model(data, hidden, lengths = lengths)
+                predictions = output.view(-1, self.num_classes)
 
-            if A is not None:
-                #SAVING ATTENTION WEIGHTS
-                self.save_attns(i, data, A, 'train')
+                if A is not None:
+                    #SAVING ATTENTION WEIGHTS
+                    self.save_attns(i, data, A, 'train')
 
-            #CALCULATING AND PROPAGATING LOSS
-            loss = self.objective(predictions, targets)
-            loss.backward()
-            total_loss += loss.data
-            optimizer.step()
-
-            if i == 5:
-                break
-
+                #CALCULATING AND PROPAGATING LOSS
+                loss = self.objective(predictions, targets)
+                loss.backward()
+                total_loss += loss.data
+                optimizer.step()
+            else:
+                pass
 
             if i % self.log_interval == 0:
                 current_loss = total_loss / self.log_interval
@@ -368,7 +372,7 @@ class TrainClassifier:
             self.test_attns[1, index: index + self.batch_size, :attns.size(1)] = attns.data
 
 
-    def save_checkpoint(self, optimizer, checkpointpath):
+    def save_checkpoint(self, optimizer, checkpointpath, name = None):
         if optimizer is not None:
             state = {
                         'epoch': self.epoch + 1,
@@ -376,7 +380,12 @@ class TrainClassifier:
                         'best_valid_loss': self.eval_loss,
                         'optimizer': optimizer.state_dict()
                     }
-            torch.save(state, checkpointpath)
+            savepath = checkpointpath + str(datetime.now())
+            if name is not None:
+                savepath = checkpointpath + name
+
+
+            torch.save(state, savepath)
 
 
     def dump_attns(self, attn_path):
@@ -391,7 +400,9 @@ class TrainClassifier:
         self.get_model()
         self.model.train()
         parameters = filter(lambda p: p.requires_grad, self.model.parameters())
-        optimizer = Adam(parameters)
+        optimizer = None
+        if self.optim == 'adam':
+            optimizer = Adam(parameters)
         start_time = time.time()
         print('Begin Training...')
 
