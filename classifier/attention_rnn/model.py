@@ -42,7 +42,7 @@ class VanillaRNN(nn.Module):
 
         self.decode_dim = hidden_size * 2 if bidirectional else hidden_size
         self.linear = nn.Linear(self.decode_dim, num_classes)
-        self.normalize = nn.Softmax()
+        self.normalize = nn.LogSoftmax()
 
         self.init_weights(init_range)
 
@@ -94,7 +94,7 @@ class VanillaRNN(nn.Module):
             hiddens = torch.cat((hiddens[0][0], hiddens[0][1]), 1)
 
         proj = self.linear(hiddens[0])
-        predictions = self.normalize(proj)
+        predictions = self.normalize(proj.view(proj.size(0) * proj.size(1), proj.size(2)))
         return predictions, h, None
 
 class SelfAttentiveRNN(VanillaRNN):

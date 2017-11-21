@@ -1,10 +1,10 @@
 from torchtext import data
 from torchtext.vocab import Vectors
 import torch
-from torch.nn import CrossEntropyLoss
+from torch.nn import CrossEntropyLoss, NLLLoss
 from torch.autograd import Variable
 from torch.optim import Adam
-from .model import VanillaRNN, SelfAttentiveRNN
+from model import VanillaRNN, SelfAttentiveRNN
 import time
 import glob
 import os
@@ -29,9 +29,12 @@ WORDVEC_SOURCE = ['GloVe'] #['GloVe']# charLevel']
 SAVED_MODEL_PATH = None#'saved_model.pt'
 IMDB = True
 HIDDEN_SIZE = 4096
-PRETRAINED = root_path + '/trained_models/trained_rnn.pt'
+PRETRAINED = None #root_path + '/trained_models/trained_rnn.pt'
 MAX_LENGTH = 100
 SAVE_CHECKPOINT = root_path + '/trained_models/classifier/model.pt'
+USE_ATTENTION = False
+ATTENTION_DIM = 10 if USE_ATTENTION else None
+MLP_HIDDEN = 100
 
 def sorter(example):
     return len(example.text)
@@ -47,12 +50,12 @@ class TrainClassifier:
                     lr = LEARNING_RATE,
                     batch_size = BATCH_SIZE,
                     vector_cache = VECTOR_CACHE,
-                    objective = 'crossentropy',
+                    objective = 'nllloss',
                     train = False,
                     log_interval = LOG_INTERVAL,
                     model_type = "LSTM",
-                    attention_dim = 10, #None if not using attention
-                    mlp_hidden = 100,
+                    attention_dim = ATTENTION_DIM, #None if not using attention
+                    mlp_hidden = MLP_HIDDEN,
                     wordvec_dim = WORD_VEC_DIM,
                     wordvec_source = WORDVEC_SOURCE,
                     hidden_dim = HIDDEN_SIZE,
@@ -69,6 +72,7 @@ class TrainClassifier:
         else:
             print("Not Using CUDA")
             self.cuda = False
+
         self.lr = lr
 
 
@@ -83,6 +87,9 @@ class TrainClassifier:
 
         if objective == 'crossentropy':
             self.objective = CrossEntropyLoss()
+
+        elif objective == 'NLLLoss':
+            self.objective = NLLLoss()
 
         #MODEL SPECS
         self.model_type = model_type
@@ -125,10 +132,17 @@ class TrainClassifier:
         examples = []
 
         for label in ['pos', 'neg']:
+            c = 0
             for fname in glob.iglob(os.path.join(path, label, '*.txt')):
+
+                if c > 10:
+                    break
+
                 with open(fname, 'r') as f:
                     text = f.readline()
                 examples.append(data.Example.fromlist([text, label], fields))
+
+                c += 1
 
         return data.Dataset(examples, fields)
 
@@ -217,7 +231,6 @@ class TrainClassifier:
             if self.attention_dim is not None:
                 print('Using Attention model with {} dimensions'.format(self.attention_dim))
                 self.model = SelfAttentiveRNN(vocab_size = self.ntokens,
-                                                cuda = self.cuda,
                                                 num_classes = self.num_classes,
                                                 vectors = self.sentence_field.vocab.vectors,
                                                 pretrained_rnn = pretrained_model,
@@ -231,11 +244,10 @@ class TrainClassifier:
             else:
                 print('Using Vanilla RNN with {} dimensions'.format(self.hidden_dim))
                 self.model = VanillaRNN(vocab_size = self.ntokens,
-                                        cuda = self.cuda,
                                         num_classes = self.num_classes,
                                         hidden_size = self.hidden_dim,
                                         vectors = self.sentence_field.vocab.vectors,
-                                        pretrained_rnn = pretrained_model.model.model
+                                        pretrained_rnn = pretrained_model
                                     )
             if self.cuda:
                 self.model.cuda()
@@ -283,8 +295,12 @@ class TrainClassifier:
             output, h, A = self.model(data, hidden, lengths = lengths)
             predictions = output.view(-1, self.num_classes)
 
-            #SAVING ATTENTION WEIGHTS
-            self.save_attns(i, data, A, "test")
+            if i == 5:
+                break
+
+            if A is not None:
+                #SAVING ATTENTION WEIGHTS
+                self.save_attns(i, data, A, "test")
 
             #CALCULATING LOSS
             loss = self.objective(predictions, targets)
@@ -296,7 +312,7 @@ class TrainClassifier:
         total_loss = 0
         for i, batch in enumerate(self.train_iterator):
             #CLEARING HISTORY
-            self.optimizer.zero_grad()
+            optimizer.zero_grad
             hidden = self.repackage_hidden(hidden)
 
             #GETTING TENSORS
@@ -314,16 +330,18 @@ class TrainClassifier:
             output, h, A = self.model(data, hidden, lengths = lengths)
             predictions = output.view(-1, self.num_classes)
 
-            #SAVING ATTENTION WEIGHTS
-            self.save_attns(i, data, A, 'train')
+            if A is not None:
+                #SAVING ATTENTION WEIGHTS
+                self.save_attns(i, data, A, 'train')
 
             #CALCULATING AND PROPAGATING LOSS
             loss = self.objective(predictions, targets)
             loss.backward()
             total_loss += loss.data
-            self.optimizer.step()
+            optimizer.step()
 
-            #$self.optimizer = optimizer
+            if i == 5:
+                break
 
 
             if i % self.log_interval == 0:
@@ -331,6 +349,8 @@ class TrainClassifier:
                 elapsed = time.time() - start_time
                 total_loss = 0
                 print('At time: {elapsed}\n loss is {current_loss}'.format(elapsed=elapsed, current_loss = current_loss[0]))
+
+        return optimizer
 
     def save_attns(self, i, text, attns, fold = 'train'):
         index = self.batch_size * i
@@ -348,14 +368,15 @@ class TrainClassifier:
             self.test_attns[1, index: index + self.batch_size, :attns.size(1)] = attns.data
 
 
-    def save_checkpoint(self, checkpointpath):
-        state = {
-                    'epoch': self.epoch + 1,
-                    'state_dict': self.model.state_dict(),
-                    'best_valid_loss': self.eval_loss,
-                    'optimizer': self.optimizer.state_dict()
-                }
-        torch.save(state, checkpointpath)
+    def save_checkpoint(self, optimizer, checkpointpath):
+        if optimizer is not None:
+            state = {
+                        'epoch': self.epoch + 1,
+                        'state_dict': self.model.state_dict(),
+                        'best_valid_loss': self.eval_loss,
+                        'optimizer': optimizer.state_dict()
+                    }
+            torch.save(state, checkpointpath)
 
 
     def dump_attns(self, attn_path):
@@ -370,17 +391,40 @@ class TrainClassifier:
         self.get_model()
         self.model.train()
         parameters = filter(lambda p: p.requires_grad, self.model.parameters())
-        self.optimizer = Adam(parameters)
+        optimizer = Adam(parameters)
         start_time = time.time()
         print('Begin Training...')
+
+        not_better = 0
+        self.best_eval_loss = 1000000
+        self.best_model = None
+
         for epoch in range(self.n_epochs):
-            self.train_step(start_time)
+            self.train_step(optimizer, start_time)
+            self.evaluate()
+            self.epoch = epoch
+            if self.eval_loss > self.best_eval_loss:
+                not_better += 1
+                if not_better >= 2:
+                    if self.optim == 'vanilla_grad':
+                        #Annealing
+                        self.lr /= 4
+
+                if not_better >= 10:
+                    print('Model not improving. Stopping early with {}'
+                           'loss at {} epochs.'.format(self.best_eval_loss), self.epoch)
+                    break
+            else:
+                self.best_eval_loss = self.eval_loss
+                self.best_model = self.model
+
+        print("Saving Model Parameters and Results...")
+        self.save_checkpoint(optimizer, self.savepath)
+
+        print('Finished Training.')
 
 if __name__ == '__main__':
     trainer = TrainClassifier()
     trainer.train()
     trainer.evaluate()
-    print("Evaluation loss is: {}".format(trainer.eval_loss))
-    trainer.save_checkpoint(trainer.savepath)
-
 
