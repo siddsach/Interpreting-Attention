@@ -24,7 +24,7 @@ SAVED_VECTORS = True
 NUM_EPOCHS = 40
 LEARNING_RATE = 0.06
 BATCH_SIZE = 32
-LOG_INTERVAL = 10
+LOG_INTERVAL = 5
 WORD_VEC_DIM = 300
 WORDVEC_SOURCE = ['GloVe']
 #['GloVe']# charLevel']
@@ -44,7 +44,7 @@ CLIP = 0.5
 
 MAX_DATA_LEN = 500
 if torch.cuda.is_available():
-    MAX_DATA_LEN = 20000
+    MAX_DATA_LEN = 5000
 
 
 def sorter(example):
@@ -445,7 +445,7 @@ class TrainClassifier:
         self.best_model = None
         for epoch in range(self.n_epochs):
             print("Completing Train Step...")
-            self.train_step(optimizer, start_time)
+            optimizer = self.train_step(optimizer, start_time)
             print("Evaluating...")
             self.evaluate()
             self.losses[epoch] = self.eval_loss
