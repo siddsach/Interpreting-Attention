@@ -106,8 +106,7 @@ class VanillaRNN(nn.Module):
             hiddens = torch.cat((hiddens[0][0], hiddens[0][1]), 1)
 
         proj = torch.squeeze(self.linear(hiddens[0]))
-        predictions = self.normalize(proj)
-        return predictions, hiddens, None
+        return proj, hiddens, None
 
 class SelfAttentiveRNN(VanillaRNN):
 

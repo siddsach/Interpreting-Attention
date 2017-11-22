@@ -23,8 +23,8 @@ VECTOR_CACHE = root_path + '/vectors'
 SAVED_VECTORS = True
 NUM_EPOCHS = 100
 LEARNING_RATE = 0.5
-BATCH_SIZE = 32
-LOG_INTERVAL = 5
+BATCH_SIZE = 2
+LOG_INTERVAL = 4
 WORD_VEC_DIM = 200
 WORDVEC_SOURCE = ['GloVe']
 #['GloVe']# charLevel']
@@ -40,7 +40,7 @@ MLP_HIDDEN = 100
 OPTIMIZER = 'vanilla_grad'
 MAX_DATA_LEN = 500
 if torch.cuda.is_available():
-    MAX_DATA_LEN = 2000
+    MAX_DATA_LEN = 20
 
 
 def sorter(example):
@@ -57,7 +57,7 @@ class TrainClassifier:
                     lr = LEARNING_RATE,
                     batch_size = BATCH_SIZE,
                     vector_cache = VECTOR_CACHE,
-                    objective = 'nllloss',
+                    objective = 'crossentropy',
                     train = False,
                     log_interval = LOG_INTERVAL,
                     model_type = "LSTM",
@@ -297,6 +297,7 @@ class TrainClassifier:
             #GETTING TENSORS
             data, targets = batch.text, batch.label.view(-1)
             data, lengths = data[0], data[1]
+            targets = targets - 1
 
             #CONVERTING TO CUDA IF ON NEEDED
             if self.cuda:
@@ -333,7 +334,7 @@ class TrainClassifier:
 
             #GETTING TENSORS
             data, targets = batch.text, batch.label.view(-1)
-            targets = targets - 1 #NEED TO INDEX FROM ZERO
+            targets = targets - 1 #from zero to one
             data, lengths = data[0], data[1]
 
             #CONVERTING TO CUDA IF ON NEEDED
@@ -354,7 +355,6 @@ class TrainClassifier:
                 #CALCULATING AND PROPAGATING LOSS
                 loss = self.objective(predictions, targets)
                 loss.backward()
-                print(loss.data)
                 total_loss += loss.data
                 if self.optim == 'adam':
                     optimizer.step()
@@ -363,11 +363,15 @@ class TrainClassifier:
                     for p in parameters:
                         p.data.add_(-self.lr, p.grad.data)
 
-                if i + 1 % self.log_interval == 0:
+
+                if i % self.log_interval == 0:
+                    print('here')
                     current_loss = total_loss / self.log_interval
                     elapsed = time.time() - start_time
                     total_loss = 0
                     print('At time: {elapsed}\n loss is {current_loss}'.format(elapsed=elapsed, current_loss = current_loss[0]))
+                else:
+                    print(i, self.log_interval)
 
         return optimizer
 
@@ -429,7 +433,7 @@ class TrainClassifier:
             print("Completing Train Step...")
             self.train_step(optimizer, start_time)
             print("Evaluating...")
-            #self.evaluate()
+            self.evaluate()
             self.losses[epoch] = self.eval_loss
             self.epoch = epoch
             if self.eval_loss > self.best_eval_loss:
