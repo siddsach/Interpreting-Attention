@@ -370,8 +370,6 @@ class TrainClassifier:
                     elapsed = time.time() - start_time
                     total_loss = 0
                     print('At time: {elapsed}\n loss is {current_loss}'.format(elapsed=elapsed, current_loss = current_loss[0]))
-                else:
-                    print(i, self.log_interval)
 
         return optimizer
 
