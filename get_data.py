@@ -3,18 +3,18 @@ from torchtext import data
 from torchtext.vocab import GloVe, CharNGram
 import subprocess
 
-GIGAWORD_PATH = "pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_md-1.2.0/en_core_web_md-1.2.0.tar.gz"
-DATA_DIR = "data"
+GIGAWORD_PATH = "https://s3.amazonaws.com/gigaword/gigaword_thread1_cleaned.txt"
+DATA_DIR = "data/gigaword"
 
 class Download:
     def __init__(self,
                 glove = False,
-                googlenews = True,
-                charngram = True,
-                wiki = True,
-                gigaword = True,
-                imdb = True,
-                mpqa_subj = True
+                googlenews = False,
+                charngram = False,
+                wiki = False,
+                gigaword = False,
+                imdb = False,
+                mpqa_subj = False
             ):
         self.glove = glove
         self.googlenews = googlenews
