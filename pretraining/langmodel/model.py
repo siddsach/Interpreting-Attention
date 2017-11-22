@@ -22,6 +22,10 @@ class LangModel(nn.Module):
         ):
 
         super(LangModel, self).__init__()
+
+        print("INPUT SIZE")
+        print(input_size)
+
         self.embed = nn.Embedding(vocab_size, input_size) # this creates a layer
 
         self.model = getattr(nn, model_type)(input_size, hidden_size, num_layers, dropout = rnn_dropout)
@@ -48,12 +52,6 @@ class LangModel(nn.Module):
         self.init_embedding(pretrained_vecs)
 
     def init_embedding(self, pretrained_embeddings):
-        print("EMBED DIM")
-        print(self.embed.weight.data.shape)
-
-        print("PRETRAINED DIM")
-        print(pretrained_embeddings.shape)
-
         # INIT EMBEDDING WITH PRE-TRAINED WORD VECTORS
         self.embed.weight.data.copy_(pretrained_embeddings)
         if not self.tune_wordvecs:
