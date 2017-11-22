@@ -38,6 +38,8 @@ ATTENTION_DIM = 10 if USE_ATTENTION else None
 MLP_HIDDEN = 100
 OPTIMIZER = 'adam'
 MAX_DATA_LEN = 500
+if torch.cuda.is_available():
+    MAX_DATA_LEN = None
 
 
 def sorter(example):
@@ -303,7 +305,7 @@ class TrainClassifier:
                 output, h, A = self.model(data, lengths = lengths)
                 predictions = output.view(-1, self.num_classes)
 
-                if A is not None:
+                if A is not None and False:
                     #SAVING ATTENTION WEIGHTS
                     self.save_attns(i, data, A, "test")
 
@@ -340,7 +342,7 @@ class TrainClassifier:
                 output, h, A = self.model(data, lengths = lengths)
                 predictions = output.view(-1, self.num_classes)
 
-                if A is not None:
+                if A is not None and False:
                     #SAVING ATTENTION WEIGHTS
                     self.save_attns(i, data, A, 'train')
 
