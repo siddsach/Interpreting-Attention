@@ -23,7 +23,7 @@ VECTOR_CACHE = root_path + '/vectors'
 SAVED_VECTORS = True
 NUM_EPOCHS = 100
 LEARNING_RATE = 0.5
-BATCH_SIZE = 2
+BATCH_SIZE = 20
 LOG_INTERVAL = 4
 WORD_VEC_DIM = 200
 WORDVEC_SOURCE = ['GloVe']
@@ -40,7 +40,7 @@ MLP_HIDDEN = 100
 OPTIMIZER = 'vanilla_grad'
 MAX_DATA_LEN = 500
 if torch.cuda.is_available():
-    MAX_DATA_LEN = 500
+    MAX_DATA_LEN = 1000
 
 
 def sorter(example):
