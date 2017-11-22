@@ -211,7 +211,8 @@ class TrainClassifier:
             iterator_object = data.Iterator(dataset,
                                             sort_key = sorter,
                                             batch_size = self.batch_size,
-                                            sort = True
+                                            sort = True,
+                                            device = 0
                                         )
             iterator_object.repeat = False
         else:
