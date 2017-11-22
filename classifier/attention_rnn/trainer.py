@@ -116,6 +116,7 @@ class TrainClassifier:
         self.checkpoint_path = checkpoint
         self.max_length = max_length
         self.optim = optim
+        self.losses = torch.zeros(self.n_epochs)
 
         self.sentence_field = data.Field(
                             sequential = True,
@@ -391,7 +392,8 @@ class TrainClassifier:
                     'epoch': self.epoch + 1,
                     'state_dict': self.model.state_dict(),
                     'best_valid_loss': self.eval_loss,
-                    'optimizer': None if optimizer is None else optimizer.state_dict()
+                    'optimizer': None if optimizer is None else optimizer.state_dict(),
+                    'losses': self.losses
                 }
         savepath = checkpointpath + ''.join(str(datetime.now()).split())
         if name is not None:
@@ -422,10 +424,10 @@ class TrainClassifier:
         not_better = 0
         self.best_eval_loss = 10000
         self.best_model = None
-
         for epoch in range(self.n_epochs):
             self.train_step(optimizer, start_time)
             self.evaluate()
+            self.losses[epoch] = self.eval_loss
             self.epoch = epoch
             if self.eval_loss > self.best_eval_loss:
                 not_better += 1
