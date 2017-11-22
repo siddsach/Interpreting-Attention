@@ -24,7 +24,7 @@ SAVED_VECTORS = True
 NUM_EPOCHS = 100
 LEARNING_RATE = 0.0001
 BATCH_SIZE = 32
-LOG_INTERVAL = 50
+LOG_INTERVAL = 10
 WORD_VEC_DIM = 200
 WORDVEC_SOURCE = ['GloVe']
 #['GloVe']# charLevel']
@@ -34,13 +34,13 @@ HIDDEN_SIZE = 200
 PRETRAINED = None #root_path + '/trained_models/trained_rnn.pt'
 MAX_LENGTH = 100
 SAVE_CHECKPOINT = root_path + '/trained_models/classifier/'
-USE_ATTENTION = False
-ATTENTION_DIM = 10 if USE_ATTENTION else None
+USE_ATTENTION = True
+ATTENTION_DIM = 5 if USE_ATTENTION else None
 MLP_HIDDEN = 100
 OPTIMIZER = 'SGD'
 MAX_DATA_LEN = 500
 if torch.cuda.is_available():
-    MAX_DATA_LEN = 10000
+    MAX_DATA_LEN = 2000
 
 
 def sorter(example):
@@ -364,7 +364,7 @@ class TrainClassifier:
                         p.data.add_(-self.lr, p.grad.data)
 
 
-                if i + 1% self.log_interval == 0:
+                if i % self.log_interval == 0:
                     current_loss = total_loss / self.log_interval
                     elapsed = time.time() - start_time
                     total_loss = 0
