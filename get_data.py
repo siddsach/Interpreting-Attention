@@ -12,7 +12,7 @@ class Download:
                 googlenews = False,
                 charngram = False,
                 wiki = False,
-                gigaword = False,
+                gigaword = True,
                 imdb = False,
                 mpqa_subj = False
             ):
@@ -21,11 +21,13 @@ class Download:
         self.charngram = charngram
         self.imdb = imdb
         self.mpqa_subj = mpqa_subj
+        self.wiki = wiki
+        self.gigaword = gigaword
 
 
-        self.get_vectors()
-        self.get_supervised_data()
         self.get_unsupervised_data()
+        #self.get_vectors()
+        #self.get_supervised_data()
 
 
 
