@@ -3,7 +3,7 @@ from torchtext.vocab import Vectors
 import torch
 from torch.nn import CrossEntropyLoss, NLLLoss
 from torch.autograd import Variable
-from torch.optim import Adam
+from torch.optim import Adam, SGD
 from model import VanillaRNN, SelfAttentiveRNN
 import time
 import glob
@@ -22,7 +22,7 @@ IMDB_PATH = current_path + '/data/imdb/aclImdb'# 'sentence_subjectivity.csv' #DA
 VECTOR_CACHE = root_path + '/vectors'
 SAVED_VECTORS = True
 NUM_EPOCHS = 100
-LEARNING_RATE = 0.5
+LEARNING_RATE = 0.2
 BATCH_SIZE = 32
 LOG_INTERVAL = 4
 WORD_VEC_DIM = 200
@@ -418,7 +418,9 @@ class TrainClassifier:
         parameters = filter(lambda p: p.requires_grad, self.model.parameters())
         optimizer = None
         if self.optim == 'adam':
-            optimizer = Adam(parameters)
+            optimizer = Adam(parameters, lr = self.lr)
+        elif self.optim == 'SGD':
+            optimizer = SGD(parameters, lr = self.lr)
 
         start_time = time.time()
         print('Begin Training...')
