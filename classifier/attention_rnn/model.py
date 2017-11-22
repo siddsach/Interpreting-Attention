@@ -105,8 +105,8 @@ class VanillaRNN(nn.Module):
         if self.bidirectional:
             hiddens = torch.cat((hiddens[0][0], hiddens[0][1]), 1)
 
-        proj = self.linear(hiddens[0])
-        predictions = self.normalize(proj.view(proj.size(0) * proj.size(1), proj.size(2)))
+        proj = torch.squeeze(self.linear(hiddens[0]))
+        predictions = self.normalize(proj)
         return predictions, hiddens, None
 
 class SelfAttentiveRNN(VanillaRNN):
