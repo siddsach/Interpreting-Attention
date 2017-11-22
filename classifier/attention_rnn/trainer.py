@@ -26,7 +26,8 @@ LEARNING_RATE = 0.5
 BATCH_SIZE = 32
 LOG_INTERVAL = 20
 WORD_VEC_DIM = 200
-WORDVEC_SOURCE = ['GloVe'] #['GloVe']# charLevel']
+WORDVEC_SOURCE = ['GloVe']
+#['GloVe']# charLevel']
 SAVED_MODEL_PATH = None#'saved_model.pt'
 IMDB = True
 HIDDEN_SIZE = 300
@@ -37,7 +38,7 @@ USE_ATTENTION = False
 ATTENTION_DIM = 10 if USE_ATTENTION else None
 MLP_HIDDEN = 100
 OPTIMIZER = 'vanilla_grad'
-MAX_DATA_LEN = 2000
+MAX_DATA_LEN = 500
 if torch.cuda.is_available():
     MAX_DATA_LEN = 10000
 
@@ -194,8 +195,12 @@ class TrainClassifier:
                 google = Vectors(name = 'googlenews.bin', cache = self.vector_cache)
                 vecs.append(google)
         print('Building Vocab...')
-        self.sentence_field.build_vocab(self.train_data, vectors = vecs)
-        self.target_field.build_vocab(self.train_data)
+        if len(vecs) > 0:
+            self.sentence_field.build_vocab(self.train_data, vectors = vecs)
+            self.target_field.build_vocab(self.train_data)
+        else:
+            self.sentence_field.build_vocab(self.train_data)
+            self.target_field.build_vocab(self.train_data)
 
 
 
@@ -356,14 +361,12 @@ class TrainClassifier:
                     parameters = filter(lambda p: p.requires_grad, self.model.parameters())
                     for p in parameters:
                         p.data.add_(-self.lr, p.grad.data)
-            else:
-                pass
 
-            if i % self.log_interval == 0:
-                current_loss = total_loss / self.log_interval
-                elapsed = time.time() - start_time
-                total_loss = 0
-                print('At time: {elapsed}\n loss is {current_loss}'.format(elapsed=elapsed, current_loss = current_loss[0]))
+                if i + 1 % self.log_interval == 0:
+                    current_loss = total_loss / self.log_interval
+                    elapsed = time.time() - start_time
+                    total_loss = 0
+                    print('At time: {elapsed}\n loss is {current_loss}'.format(elapsed=elapsed, current_loss = current_loss[0]))
 
         return optimizer
 
@@ -426,12 +429,12 @@ class TrainClassifier:
             self.epoch = epoch
             if self.eval_loss > self.best_eval_loss:
                 not_better += 1
-                if not_better >= 2:
+
+                if not_better >= 5:
                     if self.optim == 'vanilla_grad':
                         #Annealing
                         self.lr /= 4
-
-                if not_better >= 10:
+                elif not_better >= 20:
                     print('Model not improving. Stopping early with {}'
                            'loss at {} epochs.'.format(self.best_eval_loss, self.epoch))
                     break
