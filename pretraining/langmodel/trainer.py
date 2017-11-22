@@ -35,7 +35,7 @@ CLIP = 0.25
 NUM_LAYERS = 2
 TIE_WEIGHTS = True
 MODEL_TYPE = 'LSTM'
-OPTIMIZER = 'vanilla_grad'
+OPTIMIZER = 'adam'
 DROPOUT = 0.2
 HIDDEN_SIZE = 4096
 FEW_BATCHES = None
@@ -377,11 +377,12 @@ class TrainLangModel:
         self.model.train()
 
         optimizer = None
+        scheduler = None
         if self.optim == 'adam':
             parameters = filter(lambda p: p.requires_grad, self.model.parameters())
             optimizer = Adam(parameters, lr = self.lr, betas = (0, 0.999), eps = 10**-9)
 
-        scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode = 'min', factor = 0.1)
+            scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode = 'min', factor = 0.1)
 
         return optimizer, scheduler
 
@@ -404,7 +405,8 @@ class TrainLangModel:
             if this_perplexity > self.best_eval_perplexity:
                 not_better += 1
 
-                scheduler.step(this_perplexity)
+                if self.optim == 'adam':
+                    scheduler.step(this_perplexity)
 
                 if not_better >= 10:
                     print('Model not improving. Stopping early with {}'
