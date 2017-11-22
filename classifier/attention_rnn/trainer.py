@@ -23,9 +23,9 @@ VECTOR_CACHE = root_path + '/vectors'
 SAVED_VECTORS = True
 NUM_EPOCHS = 100
 LEARNING_RATE = 0.5
-BATCH_SIZE = 64
+BATCH_SIZE = 32
 LOG_INTERVAL = 20
-WORD_VEC_DIM = 300
+WORD_VEC_DIM = 200
 WORDVEC_SOURCE = ['GloVe'] #['GloVe']# charLevel']
 SAVED_MODEL_PATH = None#'saved_model.pt'
 IMDB = True
@@ -36,7 +36,7 @@ SAVE_CHECKPOINT = root_path + '/trained_models/classifier/'
 USE_ATTENTION = False
 ATTENTION_DIM = 10 if USE_ATTENTION else None
 MLP_HIDDEN = 100
-OPTIMIZER = 'adam'
+OPTIMIZER = 'vanilla_grad'
 MAX_DATA_LEN = 2000
 if torch.cuda.is_available():
     MAX_DATA_LEN = 10000
@@ -52,7 +52,7 @@ class TrainClassifier:
                     pretrained_modelpath = PRETRAINED,
                     checkpoint = None,
                     datapath = DATASET,
-                    n_epochs = NUM_EPOCHS,
+                    num_epochs = NUM_EPOCHS,
                     lr = LEARNING_RATE,
                     batch_size = BATCH_SIZE,
                     vector_cache = VECTOR_CACHE,
@@ -92,7 +92,7 @@ class TrainClassifier:
         self.max_data_len = max_data_len
 
         self.batch_size = batch_size
-        self.n_epochs = n_epochs
+        self.n_epochs = num_epochs
         self.vector_cache = vector_cache
 
         if objective == 'crossentropy':
@@ -439,10 +439,12 @@ class TrainClassifier:
                 self.best_eval_loss = self.eval_loss
                 self.best_model = self.model
 
-        print("Saving Model Parameters and Results...")
-        self.save_checkpoint(optimizer, self.savepath)
+        if self.savepath is not None:
 
-        print('Finished Training.')
+            print("Saving Model Parameters and Results...")
+            self.save_checkpoint(optimizer, self.savepath)
+
+            print('Finished Training.')
 
 if __name__ == '__main__':
     trainer = TrainClassifier()
