@@ -23,7 +23,7 @@ VECTOR_CACHE = root_path + '/vectors'
 SAVED_VECTORS = True
 NUM_EPOCHS = 100
 LEARNING_RATE = 0.5
-BATCH_SIZE = 20
+BATCH_SIZE = 32
 LOG_INTERVAL = 4
 WORD_VEC_DIM = 200
 WORDVEC_SOURCE = ['GloVe']
@@ -37,10 +37,10 @@ SAVE_CHECKPOINT = root_path + '/trained_models/classifier/'
 USE_ATTENTION = False
 ATTENTION_DIM = 10 if USE_ATTENTION else None
 MLP_HIDDEN = 100
-OPTIMIZER = 'vanilla_grad'
+OPTIMIZER = 'SGD'
 MAX_DATA_LEN = 500
 if torch.cuda.is_available():
-    MAX_DATA_LEN = 1000
+    MAX_DATA_LEN = 5000
 
 
 def sorter(example):
@@ -356,7 +356,7 @@ class TrainClassifier:
                 loss = self.objective(predictions, targets)
                 loss.backward()
                 total_loss += loss.data
-                if self.optim == 'adam':
+                if self.optim in ['adam', 'SGD']:
                     optimizer.step()
                 elif self.optim == 'vanilla_grad':
                     parameters = filter(lambda p: p.requires_grad, self.model.parameters())
