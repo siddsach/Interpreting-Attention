@@ -44,7 +44,7 @@ CLIP = 0.5
 
 MAX_DATA_LEN = 500
 if torch.cuda.is_available():
-    MAX_DATA_LEN = None
+    MAX_DATA_LEN = 20000
 
 
 def sorter(example):
@@ -177,7 +177,9 @@ class TrainClassifier:
             self.train_data = self.get_data(self.trainpath, self.max_data_len)
 
         if self.testpath is not None:
-            self.test_data = self.get_data(self.testpath, self.max_data_len / 4)
+            if self.max_data_len is not None:
+                self.max_data_len = self.max_data_len / 4
+            self.test_data = self.get_data(self.testpath, self.max_data_len)
 
 
         else:
