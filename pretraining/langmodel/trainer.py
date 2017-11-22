@@ -184,7 +184,7 @@ class TrainLangModel:
 
         elif self.data == 'gigaword':
             datapath = GIGA_PATH
-            trainpath = datapath + 'gigaword_thread1_cleaned.txt'
+            trainpath = datapath + 'gigaword_cleaned_small.txt'
 
         print("Retrieving Train Data from file: {}...".format(trainpath))
         self.train_sentences = datasets.LanguageModelingDataset(trainpath, self.sentence_field, newline_eos = False)
