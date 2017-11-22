@@ -37,9 +37,9 @@ USE_ATTENTION = False
 ATTENTION_DIM = 10 if USE_ATTENTION else None
 MLP_HIDDEN = 100
 OPTIMIZER = 'adam'
-MAX_DATA_LEN = 500
+MAX_DATA_LEN = 2000
 if torch.cuda.is_available():
-    MAX_DATA_LEN = None
+    MAX_DATA_LEN = 2000
 
 
 def sorter(example):
