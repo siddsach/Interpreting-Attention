@@ -343,7 +343,6 @@ class TrainClassifier:
                 lengths = lengths.cuda()
 
             if data.size(0) == self.batch_size:
-                print('here')
                 #GETTING PREDICTIONS
                 output, h, A = self.model(data, lengths = lengths)
                 predictions = output.view(-1, self.num_classes)
