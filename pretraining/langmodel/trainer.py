@@ -358,7 +358,7 @@ class TrainLangModel:
                 if i >= FEW_BATCHES:
                     break
 
-        avg_loss = total_loss / i
+        avg_loss = total_loss[0] / i
         perplexity = math.exp(avg_loss)
         print('Done Evaluating: Achieved loss of {} and perplexity of {}'
                 .format(avg_loss, perplexity))
