@@ -40,7 +40,7 @@ MLP_HIDDEN = 100
 OPTIMIZER = 'vanilla_grad'
 MAX_DATA_LEN = 500
 if torch.cuda.is_available():
-    MAX_DATA_LEN = 20
+    MAX_DATA_LEN = 500
 
 
 def sorter(example):
