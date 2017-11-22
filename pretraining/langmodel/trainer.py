@@ -389,7 +389,7 @@ class TrainLangModel:
         print('Begin Training...')
 
         not_better = 0
-        self.best_eval_perplexity = 1000000
+        self.best_eval_perplexity = 10000
         self.best_model = None
 
         for epoch in range(self.n_epochs):

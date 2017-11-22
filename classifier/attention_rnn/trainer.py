@@ -409,7 +409,7 @@ class TrainClassifier:
         print('Begin Training...')
 
         not_better = 0
-        self.best_eval_loss = 1000000
+        self.best_eval_loss = 10000
         self.best_model = None
 
         for epoch in range(self.n_epochs):
