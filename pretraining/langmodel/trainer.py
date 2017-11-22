@@ -302,7 +302,6 @@ class TrainLangModel:
             if self.clip is not None:
                 torch.nn.utils.clip_grad_norm(self.model.parameters(), self.clip)
 
-            print(loss)
             total_loss += loss.data[0]
 
             if self.optim == 'adam':
@@ -324,7 +323,7 @@ class TrainLangModel:
                 total_loss = 0
                 print('At time: {elapsed} and batch: {i}, loss is {current_loss}'
                         ' and perplexity is {ppl}'.format(i=i+1, elapsed=elapsed,
-                        current_loss = current_loss[0], ppl = math.exp(current_loss[0])))
+                        current_loss = current_loss, ppl = math.exp(current_loss)))
         print('Finished Train Step')
 
         return optimizer
