@@ -4,9 +4,9 @@ import torch
 from torch.nn import CrossEntropyLoss
 from torch.autograd import Variable
 from torch.optim import Adam, lr_scheduler
-from model import LangModel
+from .model import LangModel
 import time
-from nce import NCELoss
+from .nce import NCELoss
 import os
 import math
 from datetime import datetime
@@ -17,6 +17,7 @@ project_path = current_path#[:len(current_path)-len('/pretraining/langmodel')]
 DATASET = 'ptb'
 WIKI_PATH = project_path + '/data/wikitext-2/wikitext-2/'
 PTB_PATH = project_path + '/data/penn/'
+GIGA_PATH = project_path + '/data/gigaword/'
 MODEL_SAVE_PATH = project_path + '/trained_models/langmodel/'
 VECTOR_CACHE = project_path + '/vectors'
 
@@ -27,7 +28,7 @@ LEARNING_RATE = 0.5
 LOG_INTERVAL = 50
 BPTT_SEQUENCE_LENGTH = 35
 BATCH_SIZE = 64
-WORDVEC_DIM = 300
+WORDVEC_DIM = 200
 WORDVEC_SOURCE = ['GloVe', 'charLevel']#, 'googlenews']
 CHARNGRAM_DIM = 100
 TUNE_WORDVECS = False
@@ -79,7 +80,7 @@ class TrainLangModel:
     def __init__(
                     self,
                     data = DATASET,
-                    n_epochs = NUM_EPOCHS,
+                    num_epochs = NUM_EPOCHS,
                     seq_len = BPTT_SEQUENCE_LENGTH,
                     lr = LEARNING_RATE,
                     clip = CLIP,
@@ -98,7 +99,8 @@ class TrainLangModel:
                     use_cuda = True,
                     tie_weights = TIE_WEIGHTS,
                     optim = OPTIMIZER,
-                    dropout = DROPOUT
+                    dropout = DROPOUT,
+                    few_batches = FEW_BATCHES
                 ):
         if torch.cuda.is_available() and use_cuda:
             self.cuda = True
@@ -113,8 +115,9 @@ class TrainLangModel:
         self.bptt_len = seq_len
         self.optim = optim
         self.dropout = dropout
+        self.few_batches = few_batches
 
-        self.n_epochs = n_epochs
+        self.n_epochs = num_epochs
 
         self.num_layers = num_layers
 
@@ -178,6 +181,10 @@ class TrainLangModel:
             paths = [datapath + s + '.txt' for s in ['train', 'valid', 'test']]
 
             trainpath, validpath, testpath = paths[0], paths[1], paths[2]
+
+        elif self.data == 'gigaword':
+            datapath = GIGA_PATH
+            trainpath = datapath + 'gigaword_thread1_cleaned.txt'
 
         print("Retrieving Train Data from file: {}...".format(trainpath))
         self.train_sentences = datasets.LanguageModelingDataset(trainpath, self.sentence_field, newline_eos = False)
@@ -313,8 +320,8 @@ class TrainLangModel:
                 for p in parameters:
                     p.data.add_(-self.lr, p.grad.data)
 
-            if FEW_BATCHES is not None:
-                if i >= FEW_BATCHES:
+            if self.few_batches is not None:
+                if i >= self.few_batches:
                     break
 
             if ((i + 1) % self.log_interval) == 0:
@@ -354,8 +361,8 @@ class TrainLangModel:
             loss = self.objective(output, targets)
             total_loss += loss.data
 
-            if FEW_BATCHES is not None:
-                if i >= FEW_BATCHES:
+            if self.few_batches is not None:
+                if i >= self.few_batches:
                     break
 
         avg_loss = total_loss[0] / i
@@ -396,8 +403,9 @@ class TrainLangModel:
         for epoch in range(self.n_epochs):
             print('Finished {} epochs...'.format(epoch))
             optimizer = self.train_step(optimizer, self.model, start_time)
-            this_perplexity = self.evaluate()
+            #this_perplexity = self.evaluate()
             self.epoch = epoch
+            '''
             if this_perplexity > self.best_eval_perplexity:
                 not_better += 1
 
@@ -408,26 +416,25 @@ class TrainLangModel:
                     print('Model not improving. Stopping early with {}'
                            'loss at {} epochs.'.format(self.best_eval_perplexity, self.epoch))
                     break
+
             else:
                 self.best_eval_perplexity = this_perplexity
                 self.best_model = self.model
-
-        print("Saving Model Parameters and Results...")
-        self.save_checkpoint(optimizer)
+            '''
 
         print('Finished Training.')
 
 
-    def save_checkpoint(self, optimizer, checkpointpath, name = None):
+    def save_checkpoint(self, name = None):
+        print("Saving Model Parameters and Results...")
         state = {
                     'epoch': self.epoch + 1,
                     'state_dict': self.model.state_dict(),
-                    'best_valid_loss': self.eval_loss,
-                    'optimizer': None if optimizer is None else optimizer.state_dict()
+                    'best_valid_loss': self.best_eval_perplexity,
                 }
-        savepath = checkpointpath + ''.join(str(datetime.now()).split())
+        savepath = self.savepath + ''.join(str(datetime.now()).split())
         if name is not None:
-            savepath = checkpointpath + name
+            savepath = self.savepath + name
 
         torch.save(state, savepath)
 

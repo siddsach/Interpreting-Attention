@@ -23,8 +23,6 @@ class LangModel(nn.Module):
 
         super(LangModel, self).__init__()
 
-        print("INPUT SIZE")
-        print(input_size)
 
         self.embed = nn.Embedding(vocab_size, input_size) # this creates a layer
 
