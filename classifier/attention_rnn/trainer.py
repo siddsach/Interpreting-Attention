@@ -136,7 +136,7 @@ class TrainClassifier:
 
 
 
-    def get_data(self, path):
+    def get_data(self, path, max_len):
 
         print("Retrieving Data from file: {}...".format(path))
 
@@ -147,8 +147,8 @@ class TrainClassifier:
             c = 0
             for fname in glob.iglob(os.path.join(path, label, '*.txt')):
 
-                if self.max_data_len is not None:
-                    if c > self.max_data_len:
+                if max_len is not None:
+                    if c > max_len:
                         break
 
                 with open(fname, 'r') as f:
@@ -165,10 +165,10 @@ class TrainClassifier:
                   ('label', self.target_field)]
 
         if self.trainpath is not None:
-            self.train_data = self.get_data(self.trainpath)
+            self.train_data = self.get_data(self.trainpath, self.max_data_len)
 
         if self.testpath is not None:
-            self.test_data = self.get_data(self.testpath)
+            self.test_data = self.get_data(self.testpath, self.max_data_len / 4)
 
 
         else:
