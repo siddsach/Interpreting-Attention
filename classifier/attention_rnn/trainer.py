@@ -22,7 +22,7 @@ IMDB_PATH = current_path + '/data/imdb/aclImdb'# 'sentence_subjectivity.csv' #DA
 VECTOR_CACHE = root_path + '/vectors'
 SAVED_VECTORS = True
 NUM_EPOCHS = 100
-LEARNING_RATE = 0.2
+LEARNING_RATE = 0.01
 BATCH_SIZE = 32
 LOG_INTERVAL = 4
 WORD_VEC_DIM = 200
@@ -40,7 +40,7 @@ MLP_HIDDEN = 100
 OPTIMIZER = 'SGD'
 MAX_DATA_LEN = 500
 if torch.cuda.is_available():
-    MAX_DATA_LEN = 5000
+    MAX_DATA_LEN = 2000
 
 
 def sorter(example):
