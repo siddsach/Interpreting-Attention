@@ -435,7 +435,7 @@ class TrainClassifier:
 
                 if not_better >= 10:
                     print('Model not improving. Stopping early with {}'
-                           'loss at {} epochs.'.format(self.best_eval_loss), self.epoch)
+                           'loss at {} epochs.'.format(self.best_eval_loss, self.epoch))
                     break
             else:
                 self.best_eval_loss = self.eval_loss
