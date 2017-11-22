@@ -24,13 +24,13 @@ SAVED_VECTORS = True
 NUM_EPOCHS = 100
 LEARNING_RATE = 0.0001
 BATCH_SIZE = 32
-LOG_INTERVAL = 4
+LOG_INTERVAL = 20
 WORD_VEC_DIM = 200
 WORDVEC_SOURCE = ['GloVe']
 #['GloVe']# charLevel']
 SAVED_MODEL_PATH = None#'saved_model.pt'
 IMDB = True
-HIDDEN_SIZE = 300
+HIDDEN_SIZE = 200
 PRETRAINED = None #root_path + '/trained_models/trained_rnn.pt'
 MAX_LENGTH = 100
 SAVE_CHECKPOINT = root_path + '/trained_models/classifier/'
