@@ -24,7 +24,7 @@ SAVED_VECTORS = True
 NUM_EPOCHS = 100
 LEARNING_RATE = 0.5
 BATCH_SIZE = 32
-LOG_INTERVAL = 5
+LOG_INTERVAL = 1
 WORD_VEC_DIM = 200
 WORDVEC_SOURCE = ['GloVe']
 #['GloVe']# charLevel']
@@ -295,7 +295,6 @@ class TrainClassifier:
         for i, batch in enumerate(self.test_iterator):
             #GETTING TENSORS
             data, targets = batch.text, batch.label.view(-1)
-            targets = targets - 1 #NEED TO INDEX FROM ZERO
             data, lengths = data[0], data[1]
 
             #CONVERTING TO CUDA IF ON NEEDED
