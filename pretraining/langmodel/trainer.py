@@ -182,20 +182,17 @@ class TrainLangModel:
         print("Retrieving Train Data from file: {}...".format(trainpath))
         self.train_sentences = datasets.LanguageModelingDataset(trainpath, self.sentence_field, newline_eos = False)
         print("Got Train Dataset with {n_tokens} words".format(n_tokens=len(self.train_sentences.examples[0].text)))
-        print('done.')
 
 
         if validpath is not None:
 
             print("Retrieving Valid Data from file: {}...".format(validpath))
             self.valid_sentences = datasets.LanguageModelingDataset(validpath, self.sentence_field, newline_eos = False)
-            print('done.')
 
         if testpath is not None:
 
             print("Retrieving Test Data from file: {}...".format(testpath))
             self.test_sentences = datasets.LanguageModelingDataset(testpath, self.sentence_field, newline_eos = False)
-            print('done.')
 
 
 
@@ -228,7 +225,7 @@ class TrainLangModel:
             iterator = data.BPTTIterator(dataset, sort_key = None, bptt_len = self.bptt_len,  batch_size = self.batch_size, device = -1)
             iterator.repeat = False
 
-        print("Done Creating Iterator with {num} batches".format(num = len(iterator)))
+        print("Created Iterator with {num} batches".format(num = len(iterator)))
         return iterator
 
     def get_model(self):

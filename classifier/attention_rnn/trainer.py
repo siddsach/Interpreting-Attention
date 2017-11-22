@@ -33,11 +33,11 @@ HIDDEN_SIZE = 300
 PRETRAINED = None #root_path + '/trained_models/trained_rnn.pt'
 MAX_LENGTH = 100
 SAVE_CHECKPOINT = root_path + '/trained_models/classifier/'
-USE_ATTENTION = False
+USE_ATTENTION = True
 ATTENTION_DIM = 10 if USE_ATTENTION else None
 MLP_HIDDEN = 100
 OPTIMIZER = 'adam'
-MAX_DATA_LEN = None
+MAX_DATA_LEN = 500
 
 
 def sorter(example):
@@ -194,7 +194,6 @@ class TrainClassifier:
         print('Building Vocab...')
         self.sentence_field.build_vocab(self.train_data, vectors = vecs)
         self.target_field.build_vocab(self.train_data)
-        print('Done.')
 
 
 
@@ -216,8 +215,7 @@ class TrainClassifier:
                                         )
             iterator_object.repeat = False
 
-        print("Done Creating Iterator with {num} batches".format(num = len(iterator_object)))
-        print("Done.")
+        print("Created Iterator with {num} batches".format(num = len(iterator_object)))
         return iterator_object
 
     def get_batches(self):
@@ -242,6 +240,7 @@ class TrainClassifier:
                 print('Using Attention model with {} dimensions'.format(self.attention_dim))
                 self.model = SelfAttentiveRNN(vocab_size = self.ntokens,
                                                 num_classes = self.num_classes,
+                                                batch_size = self.batch_size,
                                                 vectors = self.sentence_field.vocab.vectors,
                                                 pretrained_rnn = pretrained_model,
                                                 attention_dim = self.attention_dim,
@@ -256,6 +255,7 @@ class TrainClassifier:
                 print('Using Vanilla RNN with {} dimensions'.format(self.hidden_dim))
                 self.model = VanillaRNN(vocab_size = self.ntokens,
                                         num_classes = self.num_classes,
+                                        batch_size = self.batch_size,
                                         hidden_size = self.hidden_dim,
                                         vectors = self.sentence_field.vocab.vectors,
                                         pretrained_rnn = pretrained_model,
@@ -263,7 +263,6 @@ class TrainClassifier:
                                     )
             if self.cuda:
                 self.model.cuda()
-            print('Done.')
         else:
             print('Loading Model from checkpoint')
             self.model = torch.load(self.checkpoint_path)
@@ -284,14 +283,9 @@ class TrainClassifier:
 
     def evaluate(self):
         self.model.eval()
-        hidden = self.model.init_hidden(self.batch_size)
         total_loss = 0
         i = 0
         for i, batch in enumerate(self.test_iterator):
-
-            #CLEARING HISTORY
-            hidden = self.repackage_hidden(hidden)
-
             #GETTING TENSORS
             data, targets = batch.text, batch.label.view(-1)
             targets = targets - 1 #NEED TO INDEX FROM ZERO
@@ -306,7 +300,7 @@ class TrainClassifier:
             if data.size(0) == self.batch_size:
 
                 #GETTING PREDICTIONS
-                output, h, A = self.model(data, hidden, lengths = lengths)
+                output, h, A = self.model(data, lengths = lengths)
                 predictions = output.view(-1, self.num_classes)
 
                 if A is not None:
@@ -324,13 +318,11 @@ class TrainClassifier:
                 .format(self.eval_loss))
 
     def train_step(self, optimizer, start_time):
-        hidden = self.model.init_hidden(self.batch_size)
         total_loss = 0
 
         for i, batch in enumerate(self.train_iterator):
             #CLEARING HISTORY
             optimizer.zero_grad
-            hidden = self.repackage_hidden(hidden)
 
             #GETTING TENSORS
             data, targets = batch.text, batch.label.view(-1)
@@ -345,7 +337,7 @@ class TrainClassifier:
 
             if data.size(0) == self.batch_size:
                 #GETTING PREDICTIONS
-                output, h, A = self.model(data, hidden, lengths = lengths)
+                output, h, A = self.model(data, lengths = lengths)
                 predictions = output.view(-1, self.num_classes)
 
                 if A is not None:
@@ -385,19 +377,17 @@ class TrainClassifier:
 
 
     def save_checkpoint(self, optimizer, checkpointpath, name = None):
-        if optimizer is not None:
-            state = {
-                        'epoch': self.epoch + 1,
-                        'state_dict': self.model.state_dict(),
-                        'best_valid_loss': self.eval_loss,
-                        'optimizer': optimizer.state_dict()
-                    }
-            savepath = checkpointpath + str(datetime.now())
-            if name is not None:
-                savepath = checkpointpath + name
+        state = {
+                    'epoch': self.epoch + 1,
+                    'state_dict': self.model.state_dict(),
+                    'best_valid_loss': self.eval_loss,
+                    'optimizer': None if optimizer is None else optimizer.state_dict()
+                }
+        savepath = checkpointpath + ''.join(str(datetime.now()).split())
+        if name is not None:
+            savepath = checkpointpath + name
 
-
-            torch.save(state, savepath)
+        torch.save(state, savepath)
 
 
     def dump_attns(self, attn_path):
