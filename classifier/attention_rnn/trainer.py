@@ -24,7 +24,7 @@ SAVED_VECTORS = True
 NUM_EPOCHS = 100
 LEARNING_RATE = 0.5
 BATCH_SIZE = 64
-LOG_INTERVAL = 5
+LOG_INTERVAL = 20
 WORD_VEC_DIM = 300
 WORDVEC_SOURCE = ['GloVe'] #['GloVe']# charLevel']
 SAVED_MODEL_PATH = None#'saved_model.pt'
@@ -350,7 +350,12 @@ class TrainClassifier:
                 loss = self.objective(predictions, targets)
                 loss.backward()
                 total_loss += loss.data
-                optimizer.step()
+                if self.optim == 'adam':
+                    optimizer.step()
+                elif self.optim == 'vanilla_grad':
+                    parameters = filter(lambda p: p.requires_grad, self.model.parameters())
+                    for p in parameters:
+                        p.data.add_(-self.lr, p.grad.data)
             else:
                 pass
 
@@ -407,6 +412,7 @@ class TrainClassifier:
         optimizer = None
         if self.optim == 'adam':
             optimizer = Adam(parameters)
+
         start_time = time.time()
         print('Begin Training...')
 
