@@ -21,7 +21,7 @@ DATASET = 'IMDB'
 IMDB_PATH = current_path + '/data/imdb/aclImdb'# 'sentence_subjectivity.csv' #DATA MUST BE IN CSV FORMAT WITH ONE FIELD TITLED SENTENCES CONTANING ONE LINE PER SENTENCE
 VECTOR_CACHE = root_path + '/vectors'
 SAVED_VECTORS = True
-NUM_EPOCHS = 3
+NUM_EPOCHS = 2
 LEARNING_RATE = 0.5
 BATCH_SIZE = 64
 LOG_INTERVAL = 5
@@ -37,7 +37,7 @@ USE_ATTENTION = False
 ATTENTION_DIM = 10 if USE_ATTENTION else None
 MLP_HIDDEN = 100
 OPTIMIZER = 'adam'
-MAX_DATA_LEN = None
+MAX_DATA_LEN = 500
 
 
 def sorter(example):
@@ -315,14 +315,18 @@ class TrainClassifier:
 
                 #CALCULATING LOSS
                 loss = self.objective(predictions, targets)
+
                 total_loss += loss.data
             else:
                 break
-        self.eval_loss = total_loss[0]
+        self.eval_loss = total_loss[0] / i
+        print('Done Evaluating: Achieved loss of {}'
+                .format(self.eval_loss))
 
     def train_step(self, optimizer, start_time):
         hidden = self.model.init_hidden(self.batch_size)
         total_loss = 0
+
         for i, batch in enumerate(self.train_iterator):
             #CLEARING HISTORY
             optimizer.zero_grad
@@ -445,5 +449,4 @@ class TrainClassifier:
 if __name__ == '__main__':
     trainer = TrainClassifier()
     trainer.train()
-    trainer.evaluate()
 
