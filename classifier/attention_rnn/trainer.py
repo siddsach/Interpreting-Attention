@@ -208,15 +208,14 @@ class TrainClassifier:
     def build_batches(self, dataset):
         print('Getting Batches...')
         if self.cuda:
-            iterator_object = data.Iterator(dataset,
+            iterator_object = data.BucketIterator(dataset,
                                             sort_key = sorter,
                                             batch_size = self.batch_size,
-                                            sort = True,
-                                            device = 0
+                                            sort = True
                                         )
             iterator_object.repeat = False
         else:
-            iterator_object = data.Iterator(dataset,
+            iterator_object = data.BucketIterator(dataset,
                                             sort_key = sorter,
                                             sort = True,
                                             batch_size = self.batch_size,
@@ -355,6 +354,7 @@ class TrainClassifier:
                 #CALCULATING AND PROPAGATING LOSS
                 loss = self.objective(predictions, targets)
                 loss.backward()
+                print(loss.data)
                 total_loss += loss.data
                 if self.optim == 'adam':
                     optimizer.step()
@@ -421,6 +421,7 @@ class TrainClassifier:
         start_time = time.time()
         print('Begin Training...')
 
+        self.eval_loss = 100000
         not_better = 0
         self.best_eval_loss = 10000
         self.best_model = None
@@ -428,7 +429,7 @@ class TrainClassifier:
             print("Completing Train Step...")
             self.train_step(optimizer, start_time)
             print("Evaluating...")
-            self.evaluate()
+            #self.evaluate()
             self.losses[epoch] = self.eval_loss
             self.epoch = epoch
             if self.eval_loss > self.best_eval_loss:
