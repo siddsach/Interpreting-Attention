@@ -44,7 +44,7 @@ CLIP = 0.5
 
 MAX_DATA_LEN = 500
 if torch.cuda.is_available():
-    MAX_DATA_LEN = 2000
+    MAX_DATA_LEN = None
 
 
 def sorter(example):
