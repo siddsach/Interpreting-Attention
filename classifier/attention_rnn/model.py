@@ -14,8 +14,7 @@ class VanillaRNN(nn.Module):
             input_size = 300,
             hidden_size = 4096,
             num_layers = 1,
-            rnn_dropout = 0.5,
-            linear_dropout = None,
+            dropout = 0.5,
             tie_weights = False,
             init_range = 0.1,
             num_classes = 2,
@@ -37,20 +36,18 @@ class VanillaRNN(nn.Module):
         self.init_c = nn.Parameter(torch.randn(num_states, self.batch_size, self.hidden_size)
                                 .type(torch.FloatTensor), requires_grad=True)
 
+        self.drop = nn.Dropout(dropout)
+
         self.model = getattr(nn, model_type)(input_size,
                                             hidden_size,
                                             num_layers,
-                                            dropout = rnn_dropout,
+                                            dropout = dropout,
                                             bidirectional = bidirectional,
                                             batch_first = True)
 
         if pretrained_rnn is not None:
             self.init_rnn(pretrained_rnn)
 
-        if linear_dropout is not None:
-            self.drop = nn.Dropout(p = linear_dropout)
-        else:
-            self.drop = lambda x: x
 
         self.decode_dim = hidden_size * 2 if bidirectional else hidden_size
         self.linear = nn.Linear(self.decode_dim, num_classes)

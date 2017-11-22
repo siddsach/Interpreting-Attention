@@ -21,23 +21,27 @@ DATASET = 'IMDB'
 IMDB_PATH = current_path + '/data/imdb/aclImdb'# 'sentence_subjectivity.csv' #DATA MUST BE IN CSV FORMAT WITH ONE FIELD TITLED SENTENCES CONTANING ONE LINE PER SENTENCE
 VECTOR_CACHE = root_path + '/vectors'
 SAVED_VECTORS = True
-NUM_EPOCHS = 100
-LEARNING_RATE = 0.0001
+NUM_EPOCHS = 40
+LEARNING_RATE = 0.06
 BATCH_SIZE = 32
 LOG_INTERVAL = 10
-WORD_VEC_DIM = 200
+WORD_VEC_DIM = 300
 WORDVEC_SOURCE = ['GloVe']
 #['GloVe']# charLevel']
 SAVED_MODEL_PATH = None#'saved_model.pt'
 IMDB = True
-HIDDEN_SIZE = 200
+HIDDEN_SIZE = 300
 PRETRAINED = None #root_path + '/trained_models/trained_rnn.pt'
 MAX_LENGTH = 100
 SAVE_CHECKPOINT = root_path + '/trained_models/classifier/'
 USE_ATTENTION = True
-ATTENTION_DIM = 5 if USE_ATTENTION else None
-MLP_HIDDEN = 100
-OPTIMIZER = 'SGD'
+ATTENTION_DIM = 350 if USE_ATTENTION else None
+L2 = 0.0001
+DROPOUT = 0.5
+MLP_HIDDEN = 512
+OPTIMIZER = 'adam'
+CLIP = 0.5
+
 MAX_DATA_LEN = 500
 if torch.cuda.is_available():
     MAX_DATA_LEN = 2000
@@ -70,7 +74,9 @@ class TrainClassifier:
                     use_cuda = True,
                     savepath = SAVE_CHECKPOINT,
                     optim = 'adam',
-                    max_data_len = MAX_DATA_LEN
+                    max_data_len = MAX_DATA_LEN,
+                    dropout = DROPOUT,
+                    clip = CLIP
                 ):
 
         self.savepath = savepath
@@ -116,6 +122,9 @@ class TrainClassifier:
         self.checkpoint_path = checkpoint
         self.max_length = max_length
         self.optim = optim
+        self.dropout = dropout
+        self.clip = clip
+
         self.losses = torch.zeros(self.n_epochs)
 
         self.sentence_field = data.Field(
@@ -253,7 +262,8 @@ class TrainClassifier:
                                                 pretrained_rnn = pretrained_model,
                                                 attention_dim = self.attention_dim,
                                                 mlp_hidden = self.mlp_hidden,
-                                                input_size = self.wordvec_dim
+                                                input_size = self.wordvec_dim,
+                                                dropout = self.dropout
                                             )
 
                 #MAKING MATRIX TO SAVE ATTENTION WEIGHTS
@@ -267,6 +277,7 @@ class TrainClassifier:
                                         hidden_size = self.hidden_dim,
                                         vectors = self.sentence_field.vocab.vectors,
                                         pretrained_rnn = pretrained_model,
+                                        dropout = self.dropout,
                                         input_size = self.wordvec_dim
                                     )
             if self.cuda:
@@ -355,6 +366,8 @@ class TrainClassifier:
                 #CALCULATING AND PROPAGATING LOSS
                 loss = self.objective(predictions, targets)
                 loss.backward()
+                if self.clip is not None:
+                    torch.nn.utils.clip_grad_norm(self.model.parameters(), self.clip)
                 total_loss += loss.data
                 if self.optim in ['adam', 'SGD']:
                     optimizer.step()
@@ -419,7 +432,7 @@ class TrainClassifier:
         if self.optim == 'adam':
             optimizer = Adam(parameters, lr = self.lr)
         elif self.optim == 'SGD':
-            optimizer = SGD(parameters, lr = self.lr)
+            optimizer = SGD(parameters, lr = self.lr, weight_decay = L2)
 
         start_time = time.time()
         print('Begin Training...')
