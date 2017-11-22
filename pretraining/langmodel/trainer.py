@@ -9,6 +9,7 @@ import time
 from nce import NCELoss
 import os
 import math
+from datetime import datetime
 
 current_path = os.getcwd()
 project_path = current_path#[:len(current_path)-len('/pretraining/langmodel')]
@@ -361,7 +362,7 @@ class TrainLangModel:
                 if i >= FEW_BATCHES:
                     break
 
-        avg_loss = total_loss[0] / i
+        avg_loss = total_loss / i
         perplexity = math.exp(avg_loss)
         print('Done Evaluating: Achieved loss of {} and perplexity of {}'
                 .format(avg_loss, perplexity))
@@ -418,17 +419,19 @@ class TrainLangModel:
 
         print('Finished Training.')
 
-    def save_checkpoint(self, optimizer, title = None):
+
+    def save_checkpoint(self, optimizer, checkpointpath, name = None):
         state = {
                     'epoch': self.epoch + 1,
-                    'state_dict': self.best_model.state_dict(),
-                    'best_valid_loss': self.best_eval_perplexity,
+                    'state_dict': self.model.state_dict(),
+                    'best_valid_loss': self.eval_loss,
                     'optimizer': None if optimizer is None else optimizer.state_dict()
                 }
-        if title is None:
-            torch.save(state, self.savepath + self.data + "/trained_rnn.pt")
-        else:
-            pass
+        savepath = checkpointpath + ''.join(str(datetime.now()).split())
+        if name is not None:
+            savepath = checkpointpath + name
+
+        torch.save(state, savepath)
 
 
 if __name__ == '__main__':
