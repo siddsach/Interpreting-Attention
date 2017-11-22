@@ -318,6 +318,7 @@ class TrainLangModel:
 
             if ((i + 1) % self.log_interval) == 0:
                 current_loss = total_loss / self.log_interval
+                print(current_loss)
                 elapsed = time.time() - start_time
                 total_loss = 0
                 print('At time: {elapsed} and batch: {i}, loss is {current_loss}'
