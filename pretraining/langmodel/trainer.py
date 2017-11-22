@@ -232,8 +232,6 @@ class TrainLangModel:
         print('Initializing Model parameters...')
         self.ntokens = len(self.sentence_field.vocab)
         print('Constructing {} with {} layers and {} hidden size...'.format(self.model_type, self.num_layers, self.hidden_size))
-        print("WORDVEC DIM")
-        print(self.wordvec_dim)
         if self.objective_function == 'crossentropy':
             print('Cross Entropy Loss ...')
             self.objective = CrossEntropyLoss()
