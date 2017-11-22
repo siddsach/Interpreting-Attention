@@ -424,7 +424,9 @@ class TrainClassifier:
         self.best_eval_loss = 10000
         self.best_model = None
         for epoch in range(self.n_epochs):
+            print("Completing Train Step...")
             self.train_step(optimizer, start_time)
+            print("Evaluating...")
             self.evaluate()
             self.losses[epoch] = self.eval_loss
             self.epoch = epoch
