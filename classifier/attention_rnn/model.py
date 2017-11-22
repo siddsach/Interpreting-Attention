@@ -106,7 +106,6 @@ class VanillaRNN(nn.Module):
             hiddens = torch.cat((hiddens[0][0], hiddens[0][1]), 1)
 
         proj = self.linear(hiddens[0])
-        print(proj.data.shape)
         predictions = self.normalize(proj.view(proj.size(0) * proj.size(1), proj.size(2)))
         return predictions, hiddens, None
 
