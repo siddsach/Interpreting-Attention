@@ -35,7 +35,7 @@ CLIP = 0.25
 NUM_LAYERS = 2
 TIE_WEIGHTS = True
 MODEL_TYPE = 'LSTM'
-OPTIMIZER = 'adam'
+OPTIMIZER = 'vanilla_grad'
 DROPOUT = 0.2
 HIDDEN_SIZE = 4096
 FEW_BATCHES = None
@@ -233,7 +233,7 @@ class TrainLangModel:
         self.ntokens = len(self.sentence_field.vocab)
         print('Constructing {} with {} layers and {} hidden size...'.format(self.model_type, self.num_layers, self.hidden_size))
         if self.objective_function == 'crossentropy':
-            print('Cross Entropy Loss ...')
+            print('Using Cross Entropy Loss ...')
             self.objective = CrossEntropyLoss()
 
 
@@ -301,7 +301,9 @@ class TrainLangModel:
             loss.backward()
             if self.clip is not None:
                 torch.nn.utils.clip_grad_norm(self.model.parameters(), self.clip)
-            total_loss += loss.data
+
+            print(loss)
+            total_loss += loss.data[0]
 
             if self.optim == 'adam':
                 optimizer.step()
@@ -318,7 +320,6 @@ class TrainLangModel:
 
             if ((i + 1) % self.log_interval) == 0:
                 current_loss = total_loss / self.log_interval
-                print(current_loss)
                 elapsed = time.time() - start_time
                 total_loss = 0
                 print('At time: {elapsed} and batch: {i}, loss is {current_loss}'
