@@ -11,7 +11,7 @@ from pretraining.langmodel.trainer import TrainLangModel
 
 vector_cache = os.path.join(project_path, 'vectors')
 
-unlabeled_datasets = ["gigaword"]#["wikitext", "ptb"]#, "gigaword"]
+unlabeled_datasets = ["gigaword", "wikitext", "ptb"]
 benchmark_dataset = ''
 
 for dataset in unlabeled_datasets:
@@ -22,7 +22,7 @@ for dataset in unlabeled_datasets:
     model = TrainLangModel(
                 data = dataset,
                 savepath = savepath,
-                num_epochs = 50
+                num_epochs = 100
             )
 
     model.train()

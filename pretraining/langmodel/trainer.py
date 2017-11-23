@@ -110,9 +110,9 @@ class TrainLangModel:
             self.cuda = True
         else:
             self.cuda = False
-        self.savepath = savepath
         self.lr = lr
         self.data = data
+        self.savepath = savepath + self.data + "/"
 
         self.model_type = model_type
         self.batch_size = batch_size
@@ -189,9 +189,9 @@ class TrainLangModel:
 
         elif self.data == 'gigaword':
             datapath = GIGA_PATH
-            trainpath = datapath + 'gigaword_cleaned_train.txt'
-            validpath = datapath + 'gigaword_cleaned_val.txt'
-            testpath = datapath + 'gigaword_cleaned_test.txt'
+            trainpath = datapath + 'gigaword_train.txt'
+            validpath = datapath + 'gigaword_val.txt'
+            testpath = datapath + 'gigaword_test.txt'
 
         print("Retrieving Train Data from file: {}...".format(trainpath))
         self.train_sentences = datasets.LanguageModelingDataset(trainpath, self.sentence_field, newline_eos = False)
@@ -454,6 +454,7 @@ if __name__ == '__main__':
 
     trainer = TrainLangModel()
     trainer.train()
+    trainer.save_checkpoint()
 
 
 
