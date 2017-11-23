@@ -3,7 +3,7 @@ from torchtext import data
 from torchtext.vocab import GloVe, CharNGram
 import subprocess
 
-GIGAWORD_PATH = "https://s3.amazonaws.com/gigaword/gigaword_cleaned_small.txt"
+GIGAWORD_PATHS = ["https://s3.amazonaws.com/gigaword/gigaword_cleaned_{}.txt".format(path) for path in ['train', 'val', 'test']]
 DATA_DIR = "data/gigaword"
 
 class Download:
@@ -71,10 +71,11 @@ class Download:
 
         if self.gigaword:
 
-            print("Downloading Gigaword Data")
-            bashCommand = "wget " + GIGAWORD_PATH + " -P " + DATA_DIR
-            process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
-            output, error = process.communicate()
+            for path in GIGAWORD_PATHS:
+                print("Downloading Gigaword Data")
+                bashCommand = "wget " + path + " -P " + DATA_DIR
+                process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
+                output, error = process.communicate()
 
 
     def get_supervised_data(self):

@@ -4,9 +4,9 @@ import torch
 from torch.nn import CrossEntropyLoss
 from torch.autograd import Variable
 from torch.optim import Adam, lr_scheduler
-from .model import LangModel
+from model import LangModel
 import time
-from .nce import NCELoss
+from nce import NCELoss
 import os
 import math
 from datetime import datetime
@@ -14,7 +14,7 @@ from datetime import datetime
 current_path = os.getcwd()
 project_path = current_path#[:len(current_path)-len('/pretraining/langmodel')]
 
-DATASET = 'ptb'
+DATASET = 'gigaword'
 WIKI_PATH = project_path + '/data/wikitext-2/wikitext-2/'
 PTB_PATH = project_path + '/data/penn/'
 GIGA_PATH = project_path + '/data/gigaword/'
@@ -24,14 +24,15 @@ VECTOR_CACHE = project_path + '/vectors'
 #TRAIN_PATH = project_path + 'data/gigaword/gigaword_cleaned_small.txt'#'data/wikitext-2/wikitext-2/wiki.train.tokens'
 
 NUM_EPOCHS = 100
-LEARNING_RATE = 0.5
+LEARNING_RATE = 20
 LOG_INTERVAL = 50
 BPTT_SEQUENCE_LENGTH = 35
-BATCH_SIZE = 64
+BATCH_SIZE = 20
 WORDVEC_DIM = 200
-WORDVEC_SOURCE = ['GloVe', 'charLevel']#, 'googlenews']
+WORDVEC_SOURCE = ['GloVe']
 CHARNGRAM_DIM = 100
 TUNE_WORDVECS = False
+PRETRAINED_WORDVEC = False
 CLIP = 0.25
 NUM_LAYERS = 2
 TIE_WEIGHTS = True
@@ -39,7 +40,7 @@ MODEL_TYPE = 'LSTM'
 OPTIMIZER = 'vanilla_grad'
 DROPOUT = 0.2
 HIDDEN_SIZE = 4096
-FEW_BATCHES = None
+FEW_BATCHES = 100
 
 def preprocess(x):
     #ENSURE ENCODING IS RIGHT
@@ -100,7 +101,8 @@ class TrainLangModel:
                     tie_weights = TIE_WEIGHTS,
                     optim = OPTIMIZER,
                     dropout = DROPOUT,
-                    few_batches = FEW_BATCHES
+                    few_batches = FEW_BATCHES,
+                    pretrained_wordvecs = PRETRAINED_WORDVEC
                 ):
         if torch.cuda.is_available() and use_cuda:
             self.cuda = True
@@ -127,6 +129,7 @@ class TrainLangModel:
         self.wordvec_source = wordvec_source
         self.glove_dim = glove_dim
         self.wordvec_dim = 0
+        self.pretrained_wordvecs = pretrained_wordvecs
 
         for src in self.wordvec_source:
             if src == 'GloVe':
@@ -184,7 +187,9 @@ class TrainLangModel:
 
         elif self.data == 'gigaword':
             datapath = GIGA_PATH
-            trainpath = datapath + 'gigaword_cleaned_small.txt'
+            trainpath = datapath + 'gigaword_cleaned_train.txt'
+            validpath = datapath + 'gigaword_cleaned_val.txt'
+            testpath = datapath + 'gigaword_cleaned_test.txt'
 
         print("Retrieving Train Data from file: {}...".format(trainpath))
         self.train_sentences = datasets.LanguageModelingDataset(trainpath, self.sentence_field, newline_eos = False)
@@ -207,16 +212,17 @@ class TrainLangModel:
         vecs = []
         print('Loading Vectors From Memory...')
         print('Using these vectors: ' + str(self.wordvec_source))
-        for source in self.wordvec_source:
-            if source == 'GloVe':
-                glove = Vectors(name = 'glove.6B.{}d.txt'.format(self.glove_dim), cache = self.vector_cache)
-                vecs.append(glove)
-            if source == 'charLevel':
-                charVec = Vectors(name = 'charNgram.txt',cache = self.vector_cache)
-                vecs.append(charVec)
-            if source == 'googlenews':
-                googlenews = Vectors(name = 'googlenews.txt', cache = self.vector_cache)
-                vecs.append(googlenews)
+        if self.pretrained_wordvecs:
+            for source in self.wordvec_source:
+                if source == 'GloVe':
+                    glove = Vectors(name = 'glove.6B.{}d.txt'.format(self.glove_dim), cache = self.vector_cache)
+                    vecs.append(glove)
+                if source == 'charLevel':
+                    charVec = Vectors(name = 'charNgram.txt',cache = self.vector_cache)
+                    vecs.append(charVec)
+                if source == 'googlenews':
+                    googlenews = Vectors(name = 'googlenews.txt', cache = self.vector_cache)
+                    vecs.append(googlenews)
         print('Building Vocab...')
         self.sentence_field.build_vocab(self.train_sentences, vectors = vecs)
         print('Found {} tokens'.format(len(self.sentence_field.vocab)))
@@ -239,13 +245,18 @@ class TrainLangModel:
         print('Initializing Model parameters...')
         self.ntokens = len(self.sentence_field.vocab)
         print('Constructing {} with {} layers and {} hidden size...'.format(self.model_type, self.num_layers, self.hidden_size))
+
+        pretrained_vecs = None
+        if self.pretrained_wordvecs:
+            pretrained_vecs = self.sentence_field.vocab.vectors
+
         if self.objective_function == 'crossentropy':
             print('Using Cross Entropy Loss ...')
             self.objective = CrossEntropyLoss()
 
 
             self.model = LangModel(vocab_size = self.ntokens,
-                                pretrained_vecs = self.sentence_field.vocab.vectors,
+                                pretrained_vecs = pretrained_vecs,
                                 decoder = 'softmax',
                                 num_layers = self.num_layers,
                                 hidden_size = self.hidden_size,
@@ -259,7 +270,7 @@ class TrainLangModel:
             freqs = get_freqs(self.sentence_field.vocab)
             self.noise = build_unigram_noise(freqs)
             self.model = LangModel(vocab_size = self.ntokens,
-                                pretrained_vecs = self.sentence_field.vocab.vectors,
+                                pretrained_vecs = pretrained_vecs,
                                 tie_weights = self.tie_weights,
                                 decoder = 'nce',
                                 num_layers = self.num_layers,
@@ -403,9 +414,8 @@ class TrainLangModel:
         for epoch in range(self.n_epochs):
             print('Finished {} epochs...'.format(epoch))
             optimizer = self.train_step(optimizer, self.model, start_time)
-            #this_perplexity = self.evaluate()
+            this_perplexity = self.evaluate()
             self.epoch = epoch
-            '''
             if this_perplexity > self.best_eval_perplexity:
                 not_better += 1
 
@@ -420,7 +430,6 @@ class TrainLangModel:
             else:
                 self.best_eval_perplexity = this_perplexity
                 self.best_model = self.model
-            '''
 
         print('Finished Training.')
 

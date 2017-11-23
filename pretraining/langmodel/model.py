@@ -18,7 +18,7 @@ class LangModel(nn.Module):
             tie_weights = False,
             init_range = 0.1,
             tune_wordvecs = False,
-            drop_embed = False
+            drop_embed = True
         ):
 
         super(LangModel, self).__init__()
