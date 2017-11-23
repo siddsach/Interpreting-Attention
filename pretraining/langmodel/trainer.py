@@ -4,9 +4,9 @@ import torch
 from torch.nn import CrossEntropyLoss
 from torch.autograd import Variable
 from torch.optim import Adam, lr_scheduler
-from .model import LangModel
+from model import LangModel
 import time
-from .nce import NCELoss
+from nce import NCELoss
 import os
 import math
 from datetime import datetime
@@ -14,7 +14,7 @@ from datetime import datetime
 current_path = os.getcwd()
 project_path = current_path#[:len(current_path)-len('/pretraining/langmodel')]
 
-DATASET = 'ptb'
+DATASET = 'gigaword'
 WIKI_PATH = project_path + '/data/wikitext-2/wikitext-2/'
 PTB_PATH = project_path + '/data/penn/'
 GIGA_PATH = project_path + '/data/gigaword/'
@@ -40,6 +40,8 @@ OPTIMIZER = 'vanilla_grad'
 DROPOUT = 0.2
 HIDDEN_SIZE = 4096
 FEW_BATCHES = None
+MAX_VOCAB = 100000
+MIN_FREQ = 5
 
 def preprocess(x):
     #ENSURE ENCODING IS RIGHT
@@ -163,7 +165,7 @@ class TrainLangModel:
                             preprocessing = data.Pipeline(convert_token = preprocess), #function to preprocess if needed, already converted to lower, probably need to strip stuff
                             tensor_type = torch.LongTensor,
                             lower = True,
-                            tokenize = 'spacy',
+                            tokenize = 'spacy'
                         )
 
         datapath = None
@@ -184,7 +186,7 @@ class TrainLangModel:
 
         elif self.data == 'gigaword':
             datapath = GIGA_PATH
-            trainpath = datapath + 'gigaword_cleaned_small.txt'
+            trainpath = datapath + 'gigaword_cleaned_train.txt'
 
         print("Retrieving Train Data from file: {}...".format(trainpath))
         self.train_sentences = datasets.LanguageModelingDataset(trainpath, self.sentence_field, newline_eos = False)
@@ -218,7 +220,7 @@ class TrainLangModel:
                 googlenews = Vectors(name = 'googlenews.txt', cache = self.vector_cache)
                 vecs.append(googlenews)
         print('Building Vocab...')
-        self.sentence_field.build_vocab(self.train_sentences, vectors = vecs)
+        self.sentence_field.build_vocab(self.train_sentences, vectors = vecs, max_size = MAX_VOCAB, min_freq = MIN_FREQ)
         print('Found {} tokens'.format(len(self.sentence_field.vocab)))
 
 
