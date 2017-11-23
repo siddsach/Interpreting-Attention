@@ -22,7 +22,7 @@ for dataset in unlabeled_datasets:
     model = TrainLangModel(
                 data = dataset,
                 savepath = savepath,
-                num_epochs = 10
+                num_epochs = 50
             )
 
     model.train()
