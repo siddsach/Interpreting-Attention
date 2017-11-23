@@ -14,7 +14,7 @@ from datetime import datetime
 current_path = os.getcwd()
 project_path = current_path#[:len(current_path)-len('/pretraining/langmodel')]
 
-DATASET = 'gigaword'
+DATASET = 'ptb'
 WIKI_PATH = project_path + '/data/wikitext-2/wikitext-2/'
 PTB_PATH = project_path + '/data/penn/'
 GIGA_PATH = project_path + '/data/gigaword/'
@@ -454,7 +454,6 @@ if __name__ == '__main__':
 
     trainer = TrainLangModel()
     trainer.train()
-    trainer.save_checkpoint()
 
 
 
