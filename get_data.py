@@ -3,7 +3,7 @@ from torchtext import data
 from torchtext.vocab import GloVe, CharNGram
 import subprocess
 
-GIGAWORD_PATHS = ["https://s3.amazonaws.com/gigaword/gigaword_cleaned_{}.txt".format(path) for path in ['train', 'val', 'test']]
+GIGAWORD_PATHS = ["https://s3.amazonaws.com/gigaword/gigaword_{}.txt".format(path) for path in ['train', 'val', 'test']]
 DATA_DIR = "data/gigaword"
 
 class Download:
