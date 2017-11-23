@@ -9,6 +9,7 @@ import time
 import glob
 import os
 from datetime import datetime
+import pickle
 
 current_path = os.getcwd()
 
@@ -19,6 +20,7 @@ print("ROOT PATH:{}".format(root_path))
 
 DATASET = 'IMDB'
 IMDB_PATH = current_path + '/data/imdb/aclImdb'# 'sentence_subjectivity.csv' #DATA MUST BE IN CSV FORMAT WITH ONE FIELD TITLED SENTENCES CONTANING ONE LINE PER SENTENCE
+MPQA_PATH = current_path + '/data/mpqa'
 VECTOR_CACHE = root_path + '/vectors'
 SAVED_VECTORS = True
 NUM_EPOCHS = 40
@@ -96,6 +98,10 @@ class TrainClassifier:
         if datapath == 'IMDB':
             self.trainpath = IMDB_PATH + "/train"
             self.testpath = IMDB_PATH + "/test"
+
+        elif datapath == 'mpqa_subj':
+            self.datapath = MPQA_PATH
+
         self.max_data_len = max_data_len
 
         self.batch_size = batch_size
@@ -145,41 +151,71 @@ class TrainClassifier:
 
 
 
-    def get_data(self, path, max_len):
+    def get_data(self, path, max_len, file_split):
 
         print("Retrieving Data from file: {}...".format(path))
 
-        fields = [('text', self.sentence_field), ('label', self.target_field)]
-        examples = []
+        if file_split:
 
-        for label in ['pos', 'neg']:
+            fields = [('text', self.sentence_field), ('label', self.target_field)]
+            examples = []
+
+            for label in ['pos', 'neg']:
+                c = 0
+                for fname in glob.iglob(os.path.join(path, label, '*.txt')):
+
+                    if max_len is not None:
+                        if c > max_len:
+                            break
+
+                    with open(fname, 'r') as f:
+                        text = f.readline()
+                    examples.append(data.Example.fromlist([text, label], fields))
+
+                    c += 1
+
+            return data.Dataset(examples, fields)
+        elif self.datapath == 'mpqa_subj':
+            fields = [('text', self.sentence_field), ('label', self.target_field)]
+
+            data = pickle.load(open(self.datapath + '/mpqa_subj_labels.pickle', 'rb'))
+            n_ex = len(data[0])
+
+            train_data, train_labels = data[0][:(SPLIT*n_ex)], data[1][:(SPLIT*n_ex)]
+            test_data, test_labels = data[0][(SPLIT*n_ex):], data[1][(SPLIT*n_ex):]
+
+            examples = []
+
             c = 0
-            for fname in glob.iglob(os.path.join(path, label, '*.txt')):
-
+            for text, label in zip(train_data, train_labels):
+                examples.append(data.Example.fromlist([text, label], fields))
                 if max_len is not None:
                     if c > max_len:
                         break
-
-                with open(fname, 'r') as f:
-                    text = f.readline()
-                examples.append(data.Example.fromlist([text, label], fields))
-
                 c += 1
 
-        return data.Dataset(examples, fields)
+            return data.Dataset(examples, fields)
+
+
+
+
 
     def load_data(self):
 
-        fields = [('text', self.sentence_field),
-                  ('label', self.target_field)]
+        if self.datapath == 'IMDB':
+            fields = [('text', self.sentence_field),
+                      ('label', self.target_field)]
 
-        if self.trainpath is not None:
-            self.train_data = self.get_data(self.trainpath, self.max_data_len)
+            if self.trainpath is not None:
+                self.train_data = self.get_data(self.trainpath, self.max_data_len, filesplit = True)
 
-        if self.testpath is not None:
-            if self.max_data_len is not None:
-                self.max_data_len = self.max_data_len / 4
-            self.test_data = self.get_data(self.testpath, self.max_data_len)
+            if self.testpath is not None:
+                if self.max_data_len is not None:
+                    self.max_data_len = self.max_data_len / 4
+                self.test_data = self.get_data(self.testpath, self.max_data_len, filesplit = True)
+        elif self.datapath == 'mpqa_subj':
+
+            self.train_data, self.test_data = self.get_data(self.datapath)
 
 
         else:
