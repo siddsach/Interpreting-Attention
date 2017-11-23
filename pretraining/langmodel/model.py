@@ -50,10 +50,11 @@ class LangModel(nn.Module):
         self.init_embedding(pretrained_vecs)
 
     def init_embedding(self, pretrained_embeddings):
-        # INIT EMBEDDING WITH PRE-TRAINED WORD VECTORS
-        self.embed.weight.data.copy_(pretrained_embeddings)
-        if not self.tune_wordvecs:
-            self.embed.weight.requires_grad = False
+        if pretrained_embeddings is not None:
+            # INIT EMBEDDING WITH PRE-TRAINED WORD VECTORS
+            self.embed.weight.data.copy_(pretrained_embeddings)
+            if not self.tune_wordvecs:
+                self.embed.weight.requires_grad = False
 
     def init_weights(self, init_range):
         self.linear.bias.data.fill_(0)
