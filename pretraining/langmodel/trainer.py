@@ -40,7 +40,9 @@ MODEL_TYPE = 'LSTM'
 OPTIMIZER = 'vanilla_grad'
 DROPOUT = 0.2
 HIDDEN_SIZE = 4096
-FEW_BATCHES = 100
+FEW_BATCHES = None
+MAX_VOCAB = 100000
+MIN_FREQ = 5
 
 def preprocess(x):
     #ENSURE ENCODING IS RIGHT
@@ -166,7 +168,7 @@ class TrainLangModel:
                             preprocessing = data.Pipeline(convert_token = preprocess), #function to preprocess if needed, already converted to lower, probably need to strip stuff
                             tensor_type = torch.LongTensor,
                             lower = True,
-                            tokenize = 'spacy',
+                            tokenize = 'spacy'
                         )
 
         datapath = None
@@ -224,7 +226,7 @@ class TrainLangModel:
                     googlenews = Vectors(name = 'googlenews.txt', cache = self.vector_cache)
                     vecs.append(googlenews)
         print('Building Vocab...')
-        self.sentence_field.build_vocab(self.train_sentences, vectors = vecs)
+        self.sentence_field.build_vocab(self.train_sentences, vectors = vecs, max_size = MAX_VOCAB, min_freq = MIN_FREQ)
         print('Found {} tokens'.format(len(self.sentence_field.vocab)))
 
 
@@ -452,6 +454,7 @@ if __name__ == '__main__':
 
     trainer = TrainLangModel()
     trainer.train()
+    trainer.save_checkpoint()
 
 
 
