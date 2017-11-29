@@ -1,10 +1,22 @@
-(In Progress) Pytorch implementation of my research in applying self-attention to see what models learn. Trying to see whether one 
-can use learned attention weights to understand:
 
--->choice of dataset for unsupervised pretraining via language model
+#(In Progress) 
 
--->choice of word embeddings
+What are we Transferring Anyway?: Using Attention Weights to Interpret domain choice in Transfer Learning
 
--->hyperpameter choice
+## Data
 
--->what subjective language is
+### Language Model Datasets
+* Wikitext-2
+* Gigaword
+* Penn Tree Bank
+
+### Text Classification Datasets
+* IMDB Sentiment Classification
+* MPQA Subjectivity Classification
+
+### Word Vectors
+* CharNGram
+* Google News Word2Vec
+* GloVe
+
+

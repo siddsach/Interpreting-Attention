@@ -112,6 +112,7 @@ class SelfAttentiveRNN(VanillaRNN):
             attention_dim,
             mlp_hidden,
             train_hidden = True,
+            attn_type = 'MLP',
             **kwargs
         ):
 
@@ -127,13 +128,20 @@ class SelfAttentiveRNN(VanillaRNN):
         else:
             self.input_hidden_size = self.hidden_size
 
-        # ATTENTION LAYERS
-        self.W1 = nn.Linear(self.input_hidden_size, attention_dim, bias=False)
-        self.W2 = nn.Linear(self.attention_dim, 1, bias=False )
+        self.attn_type = attn_type
 
-        # MLP AND DECODER TO OUTPUT
-        self.MLP = nn.Linear(self.input_hidden_size, mlp_hidden)
-        self.decoder = nn.Linear(mlp_hidden, self.num_classes)
+        if self.attn_type == 'MLP':
+
+            # ATTENTION LAYERS
+            self.W1 = nn.Linear(self.input_hidden_size, attention_dim, bias=False)
+            self.W2 = nn.Linear(self.attention_dim, 1, bias=False )
+
+            # MLP AND DECODER TO OUTPUT
+            self.MLP = nn.Linear(self.input_hidden_size, mlp_hidden)
+            self.decoder = nn.Linear(mlp_hidden, self.num_classes)
+
+        elif self.attn_type == 'keyval':
+            self.W = nn.Parameter(torch.randn(self.input_hidden_size, self.input_hidden_size))
 
     def forward(self, inp, lengths = None):
 
@@ -143,17 +151,29 @@ class SelfAttentiveRNN(VanillaRNN):
         out, h = self.model(packed_vecs, (self.init_h, self.init_c))
         out, lens = torch.nn.utils.rnn.pad_packed_sequence(out, batch_first = True)
 
-        # GET SELF-ATTENTION WEIGHTS
-        s1 = self.W1(out)
-        s2 = self.W2(nn.functional.tanh(s1))
-        A = torch.squeeze(nn.functional.softmax(s2))
+        if self.attn_type == 'MLP':
+            # GET SELF-ATTENTION WEIGHTS
+            s1 = self.W1(out)
+            s2 = self.W2(nn.functional.tanh(s1))
+            A = torch.squeeze(nn.functional.softmax(s2))
 
-        #GET EMBEDDING MATRIX GIVEN ATTENTION WEIGHTS
-        M = torch.sum(A.unsqueeze(2).expand_as(out) * out, 1)
+            #GET EMBEDDING MATRIX GIVEN ATTENTION WEIGHTS
+            M = torch.sum(A.unsqueeze(2).expand_as(out) * out, 1)
 
+        elif self.attn_type == 'keyval':
+            #GET HIDDENS
+            last_hiddens = out[:, -1, :]
+
+            #GET ATTENTION WEIGHTS
+            A = torch.mm(out, self.W, last_hiddens)
+
+            #GET ATTENTION WEIGHTED CONTEXT VECTOR
+            M = torch.mm(A, out)
 
         # DECODING ATTENTION EMBEDDED MATRICES TO OUTPUT
         MLPhidden = self.MLP(M)
         decoded = self.normalize(self.decoder(nn.functional.relu(MLPhidden)))
 
         return decoded, h, A
+
+

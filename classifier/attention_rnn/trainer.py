@@ -18,6 +18,7 @@ root_path = current_path#[:len(current_path) - len('classifier/attention_rnn') +
 
 print("ROOT PATH:{}".format(root_path))
 
+SPLIT = 0.9
 DATASET = 'IMDB'
 IMDB_PATH = current_path + '/data/imdb/aclImdb'# 'sentence_subjectivity.csv' #DATA MUST BE IN CSV FORMAT WITH ONE FIELD TITLED SENTENCES CONTANING ONE LINE PER SENTENCE
 MPQA_PATH = current_path + '/data/mpqa'
@@ -43,6 +44,7 @@ DROPOUT = 0.5
 MLP_HIDDEN = 512
 OPTIMIZER = 'adam'
 CLIP = 0.5
+ATTN_TYPE = 'MLP'
 
 MAX_DATA_LEN = 500
 if torch.cuda.is_available():
@@ -78,7 +80,8 @@ class TrainClassifier:
                     optim = 'adam',
                     max_data_len = MAX_DATA_LEN,
                     dropout = DROPOUT,
-                    clip = CLIP
+                    clip = CLIP,
+                    attn_type = ATTN_TYPE
                 ):
 
         self.savepath = savepath
@@ -116,10 +119,12 @@ class TrainClassifier:
 
         #MODEL SPECS
         self.model_type = model_type
+        self.attn_type = attn_type
         self.attention_dim = attention_dim
         self.mlp_hidden = mlp_hidden
         self.num_classes = num_classes
 
+        #HYPERPARAMS
         self.log_interval = log_interval
         self.wordvec_source = wordvec_source
         self.wordvec_dim = wordvec_dim
@@ -174,7 +179,9 @@ class TrainClassifier:
 
                     c += 1
 
-            return data.Dataset(examples, fields)
+            b = data.Field()
+            out = data.Dataset(examples, fields)
+            return out
         elif self.datapath == 'mpqa_subj':
             fields = [('text', self.sentence_field), ('label', self.target_field)]
 
@@ -301,7 +308,8 @@ class TrainClassifier:
                                                 attention_dim = self.attention_dim,
                                                 mlp_hidden = self.mlp_hidden,
                                                 input_size = self.wordvec_dim,
-                                                dropout = self.dropout
+                                                dropout = self.dropout,
+                                                attn_type = self.attn_type
                                             )
 
                 #MAKING MATRIX TO SAVE ATTENTION WEIGHTS
