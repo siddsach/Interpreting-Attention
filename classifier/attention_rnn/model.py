@@ -18,7 +18,7 @@ class VanillaRNN(nn.Module):
             tie_weights = False,
             init_range = 0.1,
             num_classes = 2,
-            bidirectional = False,
+            bidirectional = False, #Cannot have bidirectional embeddings in a language model
             train_word_vecs = False
         ):
 
@@ -27,14 +27,15 @@ class VanillaRNN(nn.Module):
         self.hidden_size = hidden_size
         self.bidirectional = bidirectional
 
-        num_states = 2 if self.bidirectional else 1
+        num_states = 2 if model_type == 'LSTM' else 1
+        num_directions = 2 if bidirectional else 1
+
         self.batch_size = batch_size
 
-        self.init_h = nn.Parameter(torch.randn(num_states, self.batch_size, self.hidden_size)
-                                .type(torch.FloatTensor), requires_grad=True)
+        self.hiddens  = tuple(nn.Parameter(torch.randn(self.batch_size, num_directions, self.hidden_size)
+                        .type(torch.FloatTensor), requires_grad=True) for i in range(num_states))
 
-        self.init_c = nn.Parameter(torch.randn(num_states, self.batch_size, self.hidden_size)
-                                .type(torch.FloatTensor), requires_grad=True)
+        self.hiddens = self.hiddens[0] if (num_states == 1) else self.hiddens
 
         self.drop = nn.Dropout(dropout)
 
@@ -43,7 +44,8 @@ class VanillaRNN(nn.Module):
                                             num_layers,
                                             dropout = dropout,
                                             bidirectional = bidirectional,
-                                            batch_first = True)
+                                            batch_first = True
+                                        )
 
         if pretrained_rnn is not None:
             self.init_rnn(pretrained_rnn)
@@ -94,15 +96,21 @@ class VanillaRNN(nn.Module):
                     .type(torch.LongTensor) for i in range(num_states))
 
     def forward(self, inp, lengths = None):
-        vectors = self.embed(inp)
-        packed_vecs = torch.nn.utils.rnn.pack_padded_sequence(vectors, list(lengths), batch_first = True)
 
-        out, hiddens = self.model(packed_vecs, (self.init_h, self.init_c))
+        vectors = self.embed(inp)
+
+        packed_vecs = torch.nn.utils.rnn.pack_padded_sequence(vectors, list(lengths), batch_first = True)
+        out, hiddens = self.model(packed_vecs, self.hiddens)
 
         if self.bidirectional:
             hiddens = torch.cat((hiddens[0][0], hiddens[0][1]), 1)
 
-        proj = torch.squeeze(self.linear(hiddens[0]))
+        out = torch.nn.utils.rnn.pad_packed_sequence(out, list(lengths))
+        print("OUT")
+        print(out)
+
+        proj = self.linear(hiddens[0])
+
         return proj, hiddens, None
 
 class SelfAttentiveRNN(VanillaRNN):

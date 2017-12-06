@@ -11,7 +11,7 @@ from pretraining.langmodel.trainer import TrainLangModel
 
 vector_cache = os.path.join(project_path, 'vectors')
 
-unlabeled_datasets = ["gigaword", "wikitext", "ptb"]
+unlabeled_datasets = ["ptb", "gigaword"]
 benchmark_dataset = ''
 
 for dataset in unlabeled_datasets:

@@ -4,9 +4,9 @@ import torch
 from torch.nn import CrossEntropyLoss
 from torch.autograd import Variable
 from torch.optim import Adam, lr_scheduler
-from model import LangModel
+from .model import LangModel
 import time
-from nce import NCELoss
+from .nce import NCELoss
 import os
 import math
 from datetime import datetime
@@ -40,44 +40,9 @@ MODEL_TYPE = 'LSTM'
 OPTIMIZER = 'vanilla_grad'
 DROPOUT = 0.2
 HIDDEN_SIZE = 4096
-FEW_BATCHES = None
+FEW_BATCHES = 50 if torch.cuda.is_available() else None
 MAX_VOCAB = 100000
 MIN_FREQ = 5
-
-def preprocess(x):
-    #ENSURE ENCODING IS RIGHT
-    try:
-        return x.encode('utf-8').decode('utf-8').lower()
-    except ValueError:
-        print("COULD NOT DECODE FOR EXAMPLE:")
-        print(type(x))
-        print(x)
-
-def get_freqs(vocab_object):
-
-    num_specials = 4
-    vocab_size = len(vocab_object.itos)
-    out = torch.zeros(vocab_size)
-
-    for i in range(num_specials, vocab_size):
-        out[i] = vocab_object.freqs[vocab_object.itos[i]]
-
-    return out
-
-
-def build_unigram_noise(freq):
-    """build the unigram noise from a list of frequency
-    Parameters:
-        freq: a tensor of #occurrences of the corresponding index
-    Return:
-        unigram_noise: a torch.Tensor with size ntokens,
-        elements indicate the probability distribution
-    """
-    total = freq.sum()
-    noise = freq / total
-    assert abs(noise.sum() - 1) < 0.001
-    return noise
-
 
 class TrainLangModel:
     def __init__(
@@ -448,6 +413,42 @@ class TrainLangModel:
             savepath = self.savepath + name
 
         torch.save(state, savepath)
+
+# HELPER FUNCTIONS
+def preprocess(x):
+    #ENSURE ENCODING IS RIGHT
+    try:
+        return x.encode('utf-8').decode('utf-8').lower()
+    except ValueError:
+        print("COULD NOT DECODE FOR EXAMPLE:")
+        print(type(x))
+        print(x)
+
+def get_freqs(vocab_object):
+
+    num_specials = 4
+    vocab_size = len(vocab_object.itos)
+    out = torch.zeros(vocab_size)
+
+    for i in range(num_specials, vocab_size):
+        out[i] = vocab_object.freqs[vocab_object.itos[i]]
+
+    return out
+
+
+def build_unigram_noise(freq):
+    """build the unigram noise from a list of frequency
+    Parameters:
+        freq: a tensor of #occurrences of the corresponding index
+    Return:
+        unigram_noise: a torch.Tensor with size ntokens,
+        elements indicate the probability distribution
+    """
+    total = freq.sum()
+    noise = freq / total
+    assert abs(noise.sum() - 1) < 0.001
+    return noise
+
 
 
 if __name__ == '__main__':

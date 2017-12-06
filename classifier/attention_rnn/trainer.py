@@ -1,3 +1,4 @@
+import torchtext
 from torchtext import data
 from torchtext.vocab import Vectors
 import torch
@@ -19,9 +20,9 @@ root_path = current_path#[:len(current_path) - len('classifier/attention_rnn') +
 print("ROOT PATH:{}".format(root_path))
 
 SPLIT = 0.9
-DATASET = 'IMDB'
+DATASET = 'MPQA'
 IMDB_PATH = current_path + '/data/imdb/aclImdb'# 'sentence_subjectivity.csv' #DATA MUST BE IN CSV FORMAT WITH ONE FIELD TITLED SENTENCES CONTANING ONE LINE PER SENTENCE
-MPQA_PATH = current_path + '/data/mpqa'
+MPQA_PATH = current_path + '/data/mpqa/mpqa_subj_labels.pickle'
 VECTOR_CACHE = root_path + '/vectors'
 SAVED_VECTORS = True
 NUM_EPOCHS = 40
@@ -30,23 +31,25 @@ BATCH_SIZE = 32
 LOG_INTERVAL = 5
 WORD_VEC_DIM = 300
 WORDVEC_SOURCE = ['GloVe']
-#['GloVe']# charLevel']
+#['GloVe']# charLevel'
 SAVED_MODEL_PATH = None#'saved_model.pt'
 IMDB = True
 HIDDEN_SIZE = 300
 PRETRAINED = None #root_path + '/trained_models/trained_rnn.pt'
 MAX_LENGTH = 100
 SAVE_CHECKPOINT = root_path + '/trained_models/classifier/'
-USE_ATTENTION = True
+USE_ATTENTION = False
 ATTENTION_DIM = 350 if USE_ATTENTION else None
 L2 = 0.0001
 DROPOUT = 0.5
 MLP_HIDDEN = 512
 OPTIMIZER = 'adam'
-CLIP = 0.5
+CLIP = 1
 ATTN_TYPE = 'MLP'
+NUM_LAYERS = 3
+HIDDEN_SIZE = 300
 
-MAX_DATA_LEN = 500
+MAX_DATA_LEN = 1000
 if torch.cuda.is_available():
     MAX_DATA_LEN = 5000
 
@@ -65,15 +68,16 @@ class TrainClassifier:
                     lr = LEARNING_RATE,
                     batch_size = BATCH_SIZE,
                     vector_cache = VECTOR_CACHE,
-                    objective = 'crossentropy',
+                    objective = 'nllloss',
                     train = False,
                     log_interval = LOG_INTERVAL,
                     model_type = "LSTM",
+                    num_layers = NUM_LAYERS,
+                    hidden_size = HIDDEN_SIZE,
                     attention_dim = ATTENTION_DIM, #None if not using attention
                     mlp_hidden = MLP_HIDDEN,
                     wordvec_dim = WORD_VEC_DIM,
                     wordvec_source = WORDVEC_SOURCE,
-                    hidden_dim = HIDDEN_SIZE,
                     max_length = MAX_LENGTH,
                     use_cuda = True,
                     savepath = SAVE_CHECKPOINT,
@@ -94,16 +98,9 @@ class TrainClassifier:
             self.cuda = False
 
         self.lr = lr
-
-        self.optim = optim
-
         self.datapath = datapath
-        if datapath == 'IMDB':
-            self.trainpath = IMDB_PATH + "/train"
-            self.testpath = IMDB_PATH + "/test"
-
-        elif datapath == 'mpqa_subj':
-            self.datapath = MPQA_PATH
+        if self.datapath == 'MPQA':
+            self.filepath = MPQA_PATH
 
         self.max_data_len = max_data_len
 
@@ -128,7 +125,8 @@ class TrainClassifier:
         self.log_interval = log_interval
         self.wordvec_source = wordvec_source
         self.wordvec_dim = wordvec_dim
-        self.hidden_dim = hidden_dim
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
         self.pretrained_modelpath = pretrained_modelpath
         self.checkpoint_path = checkpoint
         self.max_length = max_length
@@ -156,13 +154,12 @@ class TrainClassifier:
 
 
 
-    def get_data(self, path, max_len, file_split):
+    def get_data(self, path, fields, max_len, file_split = True):
 
         print("Retrieving Data from file: {}...".format(path))
 
-        if file_split:
+        if self.datapath == 'IMDB':
 
-            fields = [('text', self.sentence_field), ('label', self.target_field)]
             examples = []
 
             for label in ['pos', 'neg']:
@@ -179,50 +176,62 @@ class TrainClassifier:
 
                     c += 1
 
-            b = data.Field()
-            out = data.Dataset(examples, fields)
+            out = torchtext.data.Dataset(examples, fields)
             return out
-        elif self.datapath == 'mpqa_subj':
-            fields = [('text', self.sentence_field), ('label', self.target_field)]
 
-            data = pickle.load(open(self.datapath + '/mpqa_subj_labels.pickle', 'rb'))
-            n_ex = len(data[0])
+        elif self.datapath == 'MPQA':
 
-            train_data, train_labels = data[0][:(SPLIT*n_ex)], data[1][:(SPLIT*n_ex)]
-            test_data, test_labels = data[0][(SPLIT*n_ex):], data[1][(SPLIT*n_ex):]
+            mpqa_data = pickle.load(open(self.filepath, 'rb'))
+            mpqa_data[1] = [str(el) for el in mpqa_data[1]]
 
-            examples = []
+            n_ex = len(mpqa_data[0])
+            boundary = int(SPLIT*n_ex)
+
+            train_data, train_labels = mpqa_data[0][:boundary], mpqa_data[1][:boundary]
+            test_data, test_labels = mpqa_data[0][boundary:], mpqa_data[1][boundary:]
+
+            train_examples = []
+            test_examples = []
 
             c = 0
             for text, label in zip(train_data, train_labels):
-                examples.append(data.Example.fromlist([text, label], fields))
+
+
+                train_examples.append(data.Example.fromlist([text, label], fields))
                 if max_len is not None:
                     if c > max_len:
                         break
                 c += 1
 
-            return data.Dataset(examples, fields)
+            c = 0
+            for text, label in zip(test_data, test_labels):
+                test_examples.append(data.Example.fromlist([text, label], fields))
+                if max_len is not None:
+                    if c > max_len:
+                        break
+                c += 1
+
+            return data.Dataset(train_examples, fields), data.Dataset(test_examples, fields)
 
 
 
 
 
     def load_data(self):
-
+        fields = [('text', self.sentence_field),
+                  ('label', self.target_field)]
         if self.datapath == 'IMDB':
-            fields = [('text', self.sentence_field),
-                      ('label', self.target_field)]
 
             if self.trainpath is not None:
-                self.train_data = self.get_data(self.trainpath, self.max_data_len, filesplit = True)
+                self.train_data = self.get_data(self.trainpath, fields, self.max_data_len)
 
             if self.testpath is not None:
                 if self.max_data_len is not None:
                     self.max_data_len = self.max_data_len / 4
-                self.test_data = self.get_data(self.testpath, self.max_data_len, filesplit = True)
-        elif self.datapath == 'mpqa_subj':
+                self.test_data = self.get_data(self.testpath, self.max_data_len)
+        elif self.datapath == 'MPQA':
 
-            self.train_data, self.test_data = self.get_data(self.datapath)
+            self.train_data, self.test_data = self.get_data(self.filepath, fields, self.max_data_len)
 
 
         else:
@@ -299,7 +308,8 @@ class TrainClassifier:
                 print('Using Pretrained RNN from path: {}'.format(self.pretrained_modelpath))
 
             if self.attention_dim is not None:
-                print('Using Attention model with {} dimensions'.format(self.attention_dim))
+                print('Using Attention model with {} dimensions and {} layers'
+                        .format(self.attention_dim, self.num_layers))
                 self.model = SelfAttentiveRNN(vocab_size = self.ntokens,
                                                 num_classes = self.num_classes,
                                                 batch_size = self.batch_size,
@@ -309,22 +319,26 @@ class TrainClassifier:
                                                 mlp_hidden = self.mlp_hidden,
                                                 input_size = self.wordvec_dim,
                                                 dropout = self.dropout,
-                                                attn_type = self.attn_type
+                                                attn_type = self.attn_type,
+                                                hidden_size = self.hidden_size,
+                                                num_layers = self.num_layers
                                             )
 
                 #MAKING MATRIX TO SAVE ATTENTION WEIGHTS
                 self.train_attns = torch.zeros(2, len(self.train_data), self.max_length)
                 self.eval_attns = torch.zeros(2, len(self.test_data), self.max_length)
             else:
-                print('Using Vanilla RNN with {} dimensions'.format(self.hidden_dim))
+                print('Using Vanilla RNN with {} dimensions and {} layers'
+                        .format(self.hidden_size, self.num_layers))
                 self.model = VanillaRNN(vocab_size = self.ntokens,
                                         num_classes = self.num_classes,
                                         batch_size = self.batch_size,
-                                        hidden_size = self.hidden_dim,
+                                        hidden_size = self.hidden_size,
+                                        num_layers = self.num_layers,
                                         vectors = self.sentence_field.vocab.vectors,
                                         pretrained_rnn = pretrained_model,
                                         dropout = self.dropout,
-                                        input_size = self.wordvec_dim
+                                        input_size = self.wordvec_dim,
                                     )
             if self.cuda:
                 self.model.cuda()
@@ -409,6 +423,11 @@ class TrainClassifier:
                     #SAVING ATTENTION WEIGHTS
                     self.save_attns(i, data, A, 'train')
 
+                print("PREDICTIONS")
+                print(predictions.data.shape)
+
+                print("TARGETS")
+                print(targets.data.shape)
                 #CALCULATING AND PROPAGATING LOSS
                 loss = self.objective(predictions, targets)
                 loss.backward()
@@ -423,7 +442,7 @@ class TrainClassifier:
                         p.data.add_(-self.lr, p.grad.data)
 
 
-                if i % self.log_interval == 0:
+                if i % self.log_interval == 0 and i != 0:
                     current_loss = total_loss / self.log_interval
                     elapsed = time.time() - start_time
                     total_loss = 0

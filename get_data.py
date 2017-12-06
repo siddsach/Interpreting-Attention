@@ -8,11 +8,11 @@ DATA_DIR = "data/gigaword"
 
 class Download:
     def __init__(self,
-                glove = False,
+                glove = True,
                 googlenews = False,
                 charngram = False,
                 wiki = False,
-                gigaword = True,
+                gigaword = False,
                 imdb = False,
                 mpqa_subj = False
             ):
@@ -26,7 +26,7 @@ class Download:
 
 
         self.get_unsupervised_data()
-        #self.get_vectors()
+        self.get_vectors()
         #self.get_supervised_data()
 
 
