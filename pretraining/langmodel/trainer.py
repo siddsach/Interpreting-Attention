@@ -32,7 +32,7 @@ WORDVEC_DIM = 200
 WORDVEC_SOURCE = ['GloVe']
 CHARNGRAM_DIM = 100
 TUNE_WORDVECS = True
-PRETRAINED_WORDVEC = False
+PRETRAINED_WORDVEC = True
 CLIP = 0.25
 NUM_LAYERS = 2
 TIE_WEIGHTS = True
@@ -179,8 +179,8 @@ class TrainLangModel:
     def get_vectors(self):
         vecs = []
         print('Loading Vectors From Memory...')
-        print('Using these vectors: ' + str(self.wordvec_source))
         if self.pretrained_wordvecs:
+            print('Using these vectors: ' + str(self.wordvec_source))
             for source in self.wordvec_source:
                 if source == 'GloVe':
                     glove = Vectors(name = 'glove.6B.{}d.txt'.format(self.glove_dim), cache = self.vector_cache)
