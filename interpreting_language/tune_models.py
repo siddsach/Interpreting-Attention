@@ -23,7 +23,7 @@ def getError(params):
     print(settings)
     trainer = TrainLangModel(**settings)
     trainer.train()
-    return trainer.eval_loss
+    return trainer.best_eval_perplexity
 
 def test(params):
     print('testing')
