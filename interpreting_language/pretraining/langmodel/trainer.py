@@ -43,6 +43,7 @@ HIDDEN_SIZE = 4096
 FEW_BATCHES = 50 if not torch.cuda.is_available() else None
 MAX_VOCAB = None
 MIN_FREQ = 5
+ANNEAL = 4.0
 
 class TrainLangModel:
     def __init__(
@@ -69,7 +70,8 @@ class TrainLangModel:
                     optim = OPTIMIZER,
                     dropout = DROPOUT,
                     few_batches = FEW_BATCHES,
-                    pretrained_wordvecs = PRETRAINED_WORDVEC
+                    pretrained_wordvecs = PRETRAINED_WORDVEC,
+                    anneal = ANNEAL
                 ):
         if torch.cuda.is_available() and use_cuda:
             self.cuda = True
@@ -77,13 +79,14 @@ class TrainLangModel:
             self.cuda = False
         self.lr = lr
         self.data = data
-        self.savepath = savepath + "/"
+        self.savepath = savepath
         print(self.savepath)
 
         self.model_type = model_type
         self.batch_size = batch_size
         self.bptt_len = seq_len
         self.optim = optim
+        self.anneal = anneal
         self.dropout = dropout
         self.few_batches = few_batches
 
@@ -388,7 +391,7 @@ class TrainLangModel:
                 not_better += 1
 
                 print("Annealing...")
-                self.lr /= 4.0
+                self.lr /= self.anneal
 
 
                 if self.optim == 'adam':

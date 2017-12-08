@@ -4,18 +4,18 @@ from pretraining.langmodel.trainer import TrainLangModel
 
 vanilla_params = [
     {"name":"lr", "type": "continuous", "domain": [0, 10]},
-    {"name":"batch_size", "type": "discrete", "domain": [10, 100]}
+    {"name":"batch_size", "type": "discrete", "domain": [10, 100]},
+    {"name":"seq_len", "type":"discrete", "domain":[10, 100]},
+    {"name":"dropout", "type": "continuous", "domain": [0,1]},
+    {"name":"anneal", "type": "continuous", "domain": [2, 8]}
 ]
 
 ARGS = [x["name"] for x in vanilla_params]
 
 def getError(params):
-    print("PARAMS")
-    print(params)
-
     settings = {name: value for name, value in zip(ARGS, params[0])}
 
-    print("SETTINGS")
+    print("SETTINGS FOR THIS RUN")
     print(settings)
     trainer = TrainLangModel(**settings)
     trainer.train()
@@ -33,7 +33,7 @@ attn_params = vanilla_params + \
                  {"name": "mlp_hidden", "type": "discrete", "domain": [20, 500]}]
 
 
-myBopt = GPyOpt.methods.BayesianOptimization(f=test,#Objective function
+myBopt = GPyOpt.methods.BayesianOptimization(f=getError,#Objective function
                                                     domain=vanilla_params,          # Box-constrains of the problem
                                                     initial_design_numdata = 5,   # Number data initial design
                                                     acquisition_type='EI',        # Expected Improvement
