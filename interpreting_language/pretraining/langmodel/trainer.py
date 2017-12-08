@@ -23,7 +23,7 @@ VECTOR_CACHE = project_path + '/vectors'
 
 #TRAIN_PATH = project_path + 'data/gigaword/gigaword_cleaned_small.txt'#'data/wikitext-2/wikitext-2/wiki.train.tokens'
 
-NUM_EPOCHS = 100
+NUM_EPOCHS = 40
 LEARNING_RATE = 20
 LOG_INTERVAL = 50
 BPTT_SEQUENCE_LENGTH = 35
@@ -396,7 +396,7 @@ class TrainLangModel:
                 if self.optim == 'adam':
                     scheduler.step(this_perplexity)
 
-                if not_better >= 5:
+                if not_better >= 3:
                     print('Model not improving. Stopping early with {}'
                            'loss at {} epochs.'.format(self.best_eval_perplexity, self.epoch))
                     break
@@ -404,6 +404,7 @@ class TrainLangModel:
             else:
                 self.best_eval_perplexity = this_perplexity
                 self.best_model = self.model
+                not_better = 0
 
         print('Finished Training.')
 
