@@ -40,9 +40,9 @@ MODEL_TYPE = 'LSTM'
 OPTIMIZER = 'vanilla_grad'
 DROPOUT = 0.2
 HIDDEN_SIZE = 4096
-FEW_BATCHES = 50 if torch.cuda.is_available() else None
-MAX_VOCAB = 100000
-MIN_FREQ = 1
+FEW_BATCHES = 50 if not torch.cuda.is_available() else None
+MAX_VOCAB = None
+MIN_FREQ = 5
 
 class TrainLangModel:
     def __init__(
@@ -77,7 +77,8 @@ class TrainLangModel:
             self.cuda = False
         self.lr = lr
         self.data = data
-        self.savepath = savepath + self.data + "/"
+        self.savepath = savepath + "/"
+        print(self.savepath)
 
         self.model_type = model_type
         self.batch_size = batch_size
@@ -409,6 +410,7 @@ class TrainLangModel:
                     'best_valid_loss': self.best_eval_perplexity,
                 }
         savepath = self.savepath + ''.join(str(datetime.now()).split())
+        print(self.savepath)
         if name is not None:
             savepath = self.savepath + name
 
