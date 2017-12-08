@@ -42,7 +42,7 @@ DROPOUT = 0.2
 HIDDEN_SIZE = 4096
 FEW_BATCHES = 50 if torch.cuda.is_available() else None
 MAX_VOCAB = 100000
-MIN_FREQ = 5
+MIN_FREQ = 1
 
 class TrainLangModel:
     def __init__(
