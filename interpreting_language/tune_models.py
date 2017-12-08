@@ -7,7 +7,8 @@ vanilla_params = [
     {"name":"batch_size", "type": "discrete", "domain": [10, 100]},
     {"name":"seq_len", "type":"discrete", "domain":[10, 100]},
     {"name":"dropout", "type": "continuous", "domain": [0,1]},
-    {"name":"anneal", "type": "continuous", "domain": [2, 8]}
+    {"name":"anneal", "type": "continuous", "domain": [2, 8]},
+    {"name":"num_layers", "type": "discrete", "domain": [1, 2, 3]}
 ]
 
 def getError(params):
