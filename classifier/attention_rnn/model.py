@@ -99,6 +99,9 @@ class VanillaRNN(nn.Module):
 
         vectors = self.embed(inp)
 
+        print("BEFORE HIDDENS")
+        print(self.hiddens)
+
         packed_vecs = torch.nn.utils.rnn.pack_padded_sequence(vectors, list(lengths), batch_first = True)
         out, hiddens = self.model(packed_vecs, self.hiddens)
 
@@ -108,8 +111,17 @@ class VanillaRNN(nn.Module):
         out = torch.nn.utils.rnn.pad_packed_sequence(out, list(lengths))
         print("OUT")
         print(out)
+        print("LENGTHS")
+        print(lengths)
+        print("LAST")
+        print(out[0][:, list(lengths - 1), :])
 
-        proj = self.linear(hiddens[0])
+        features = out[0][:, list(lengths - 1), :]
+
+        proj = self.linear(features)
+
+        print("PROJ")
+        print(proj)
 
         return proj, hiddens, None
 
