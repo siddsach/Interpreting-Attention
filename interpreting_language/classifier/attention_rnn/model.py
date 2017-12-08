@@ -109,19 +109,13 @@ class VanillaRNN(nn.Module):
             hiddens = torch.cat((hiddens[0][0], hiddens[0][1]), 1)
 
         out = torch.nn.utils.rnn.pad_packed_sequence(out, list(lengths))
-        print("OUT")
-        print(out)
-        print("LENGTHS")
-        print(lengths)
-        print("LAST")
-        print(out[0][:, list(lengths - 1), :])
 
-        features = out[0][:, list(lengths - 1), :]
+        #features = out[0][:, list(lengths - 1), :]
+
+        features = hiddens[0][self.num_layers - 1, :, :].squeeze(0)
 
         proj = self.linear(features)
 
-        print("PROJ")
-        print(proj)
 
         return proj, hiddens, None
 
