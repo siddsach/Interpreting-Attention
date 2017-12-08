@@ -31,8 +31,8 @@ BATCH_SIZE = 20
 WORDVEC_DIM = 200
 WORDVEC_SOURCE = ['GloVe']
 CHARNGRAM_DIM = 100
-TUNE_WORDVECS = True
-PRETRAINED_WORDVEC = True
+TUNE_WORDVECS = False
+PRETRAINED_WORDVEC = False
 CLIP = 0.25
 NUM_LAYERS = 2
 TIE_WEIGHTS = True
@@ -386,6 +386,7 @@ class TrainLangModel:
             self.epoch = epoch
             if this_perplexity > self.best_eval_perplexity:
                 not_better += 1
+                self.lr /= 4.0
 
                 if self.optim == 'adam':
                     scheduler.step(this_perplexity)
