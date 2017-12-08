@@ -3,9 +3,8 @@ import GPyOpt
 from pretraining.langmodel.trainer import TrainLangModel
 
 vanilla_params = [
-    {"name":"lr", "type": "continuous", "domain": [0, 10]},
-    {"name":"batch_size", "type": "discrete", "domain": [10, 100]},
-    {"name":"seq_len", "type":"discrete", "domain":[10, 100]},
+    {"name":"batch_size", "type": "discrete", "domain": [20, 40, 60, 80, 100]},
+    {"name":"seq_len", "type":"discrete", "domain":[20, 35, 50],
     {"name":"dropout", "type": "continuous", "domain": [0,1]},
     {"name":"anneal", "type": "continuous", "domain": [2, 8]},
     {"name":"num_layers", "type": "discrete", "domain": [2, 3]}
