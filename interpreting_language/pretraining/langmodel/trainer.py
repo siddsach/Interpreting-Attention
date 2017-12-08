@@ -80,7 +80,6 @@ class TrainLangModel:
         self.lr = lr
         self.data = data
         self.savepath = savepath
-        print(self.savepath)
 
         self.model_type = model_type
         self.batch_size = batch_size

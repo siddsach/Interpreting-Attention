@@ -10,10 +10,14 @@ vanilla_params = [
     {"name":"anneal", "type": "continuous", "domain": [2, 8]}
 ]
 
-ARGS = [x["name"] for x in vanilla_params]
-
 def getError(params):
-    settings = {name: value for name, value in zip(ARGS, params[0])}
+    settings = {}
+    for arg, value in zip(vanilla_params, params[0]):
+        value = value.item()
+        if arg["type"] == "discrete":
+            value = int(value)
+
+        settings[arg['name']] = value
 
     print("SETTINGS FOR THIS RUN")
     print(settings)
@@ -23,7 +27,7 @@ def getError(params):
 
 def test(params):
     print('testing')
-    settings = {name: value for name, value in zip(ARGS, params[0])}
+    settings = {arg["name"]: value for arg, value in zip(vanilla_params, params[0])}
     out = settings['lr']**2 + 5 * settings['batch_size']
     return out
 
