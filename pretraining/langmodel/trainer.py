@@ -386,7 +386,10 @@ class TrainLangModel:
             self.epoch = epoch
             if this_perplexity > self.best_eval_perplexity:
                 not_better += 1
+
+                print("Annealing...")
                 self.lr /= 4.0
+
 
                 if self.optim == 'adam':
                     scheduler.step(this_perplexity)
