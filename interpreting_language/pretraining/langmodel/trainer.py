@@ -396,7 +396,7 @@ class TrainLangModel:
                 if self.optim == 'adam':
                     scheduler.step(this_perplexity)
 
-                if not_better >= 10:
+                if not_better >= 5:
                     print('Model not improving. Stopping early with {}'
                            'loss at {} epochs.'.format(self.best_eval_perplexity, self.epoch))
                     break
