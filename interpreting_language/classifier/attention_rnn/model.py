@@ -164,10 +164,6 @@ class SelfAttentiveRNN(VanillaRNN):
         #EMBED, APPLY RNN
         vectors = self.embed(inp)
         packed_vecs = torch.nn.utils.rnn.pack_padded_sequence(vectors, list(lengths), batch_first = True)
-        print("VECS")
-        print(packed_vecs.data.data.shape)
-        print("HIDDENS")
-        print(self.hiddens[0].data.shape)
         out, h = self.model(packed_vecs, self.hiddens)
         out, lens = torch.nn.utils.rnn.pad_packed_sequence(out, batch_first = True)
 
@@ -191,7 +187,10 @@ class SelfAttentiveRNN(VanillaRNN):
             print(last_hiddens)
 
             #GET ATTENTION WEIGHTS
-            weighted_seq = torch.mm(out, self.W)
+            weighted_seq = torch.mm(out, self.W.unsqueeze(0).expand_as(out))
+
+            print("WEIGHTED_SEQ")
+            print(weighted_seq)
             A = torch.mm(weighted_seq, last_hiddens)
 
             #GET ATTENTION WEIGHTED CONTEXT VECTOR

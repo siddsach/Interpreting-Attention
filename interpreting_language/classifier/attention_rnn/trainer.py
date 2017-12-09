@@ -68,7 +68,7 @@ class TrainClassifier:
                     lr = LEARNING_RATE,
                     batch_size = BATCH_SIZE,
                     vector_cache = VECTOR_CACHE,
-                    objective = 'nllloss',
+                    objective = 'crossentropy',
                     train = False,
                     log_interval = LOG_INTERVAL,
                     model_type = "LSTM",
