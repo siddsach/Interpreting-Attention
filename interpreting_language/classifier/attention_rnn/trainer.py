@@ -333,6 +333,7 @@ class TrainClassifier:
                 self.model = VanillaRNN(vocab_size = self.ntokens,
                                         num_classes = self.num_classes,
                                         batch_size = self.batch_size,
+                                        cuda = self.cuda,
                                         hidden_size = self.hidden_size,
                                         num_layers = self.num_layers,
                                         vectors = self.sentence_field.vocab.vectors,

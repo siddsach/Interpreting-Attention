@@ -9,6 +9,7 @@ class VanillaRNN(nn.Module):
             vocab_size,
             vectors,
             batch_size,
+            cuda,
             pretrained_rnn = None,
             model_type = 'LSTM',
             input_size = 300,
@@ -32,8 +33,13 @@ class VanillaRNN(nn.Module):
 
         self.batch_size = batch_size
 
-        self.hiddens  = tuple(nn.Parameter(torch.randn(self.batch_size, num_directions, self.hidden_size)
-                        .type(torch.FloatTensor), requires_grad=True) for i in range(num_states))
+        if cuda:
+
+            self.hiddens  = tuple(nn.Parameter(torch.randn(self.batch_size, num_directions, self.hidden_size)
+                            .type(torch.cuda.FloatTensor), requires_grad=True) for i in range(num_states))
+        else:
+            self.hiddens  = tuple(nn.Parameter(torch.randn(self.batch_size, num_directions, self.hidden_size)
+                            .type(torch.FloatTensor), requires_grad=True) for i in range(num_states))
 
         self.hiddens = self.hiddens[0] if (num_states == 1) else self.hiddens
 
@@ -98,9 +104,6 @@ class VanillaRNN(nn.Module):
     def forward(self, inp, lengths = None):
 
         vectors = self.embed(inp)
-
-        print("BEFORE HIDDENS")
-        print(self.hiddens)
 
         packed_vecs = torch.nn.utils.rnn.pack_padded_sequence(vectors, list(lengths), batch_first = True)
         out, hiddens = self.model(packed_vecs, self.hiddens)
