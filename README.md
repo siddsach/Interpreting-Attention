@@ -9,9 +9,9 @@ What are we Transferring Anyway?: Using Attention Weights to Interpret domain ch
 * Self-Attention Embedding
 * Key-Value Attention
 * Language Model Pretraining
+* Bayesian Optimization 
 
 ### To Do
-* Bayesian Optimization of Hyperparams
 * Classification Tuning
 * Attention Classification Tuning
 * Model Comparison
