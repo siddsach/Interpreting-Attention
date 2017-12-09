@@ -5,7 +5,7 @@ import torch
 from torch.nn import CrossEntropyLoss, NLLLoss
 from torch.autograd import Variable
 from torch.optim import Adam, SGD
-from .model import VanillaRNN, SelfAttentiveRNN
+from model import VanillaRNN, SelfAttentiveRNN
 import time
 import glob
 import os
@@ -39,7 +39,7 @@ PRETRAINED = None #root_path + '/trained_models/trained_rnn.pt'
 MAX_LENGTH = 100
 SAVE_CHECKPOINT = root_path + '/trained_models/classifier/'
 ATTN_TYPE = 'keyval'
-USE_ATTENTION = True
+USE_ATTENTION = False
 ATTENTION_DIM = 350 if USE_ATTENTION else None
 L2 = 0.0001
 DROPOUT = 0.5
