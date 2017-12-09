@@ -35,10 +35,10 @@ class VanillaRNN(nn.Module):
 
         if cuda:
 
-            self.hiddens  = tuple(nn.Parameter(torch.randn(self.batch_size, num_directions, self.hidden_size)
+            self.hiddens  = tuple(nn.Parameter(torch.randn(self.batch_size * num_directions, num_layers, self.hidden_size)
                             .type(torch.cuda.FloatTensor), requires_grad=True) for i in range(num_states))
         else:
-            self.hiddens  = tuple(nn.Parameter(torch.randn(self.batch_size, num_directions, self.hidden_size)
+            self.hiddens  = tuple(nn.Parameter(torch.randn(self.batch_size * num_directions, num_layers, self.hidden_size)
                             .type(torch.FloatTensor), requires_grad=True) for i in range(num_states))
 
         self.hiddens = self.hiddens[0] if (num_states == 1) else self.hiddens
@@ -106,6 +106,9 @@ class VanillaRNN(nn.Module):
         vectors = self.embed(inp)
 
         packed_vecs = torch.nn.utils.rnn.pack_padded_sequence(vectors, list(lengths), batch_first = True)
+        print("HIDDENS")
+        print(self.hiddens)
+        print(self.model)
         out, hiddens = self.model(packed_vecs, self.hiddens)
 
         if self.bidirectional:
