@@ -8,9 +8,9 @@ DATA_DIR = "data/gigaword"
 
 class Download:
     def __init__(self,
-                glove = True,
+                glove = False,
                 googlenews = False,
-                charngram = False,
+                charngram = True,
                 wiki = False,
                 gigaword = False,
                 imdb = False,

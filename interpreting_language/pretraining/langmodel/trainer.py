@@ -14,7 +14,7 @@ from datetime import datetime
 current_path = os.getcwd()
 project_path = current_path#[:len(current_path)-len('/pretraining/langmodel')]
 
-DATASET = 'ptb'
+DATASET = 'gigawordsmall'
 WIKI_PATH = project_path + '/data/wikitext-2/wikitext-2/'
 PTB_PATH = project_path + '/data/penn/'
 GIGA_PATH = project_path + '/data/gigaword/'
@@ -29,10 +29,10 @@ LOG_INTERVAL = 50
 BPTT_SEQUENCE_LENGTH = 35
 BATCH_SIZE = 20
 WORDVEC_DIM = 200
-WORDVEC_SOURCE = ['GloVe']
+WORDVEC_SOURCE = ['GloVe', 'charLevel']
 CHARNGRAM_DIM = 100
-TUNE_WORDVECS = True
-PRETRAINED_WORDVEC = False
+TUNE_WORDVECS = False
+PRETRAINED_WORDVEC = True
 CLIP = 0.25
 NUM_LAYERS = 2
 TIE_WEIGHTS = True
@@ -70,7 +70,6 @@ class TrainLangModel:
                     optim = OPTIMIZER,
                     dropout = DROPOUT,
                     few_batches = FEW_BATCHES,
-                    pretrained_wordvecs = PRETRAINED_WORDVEC,
                     anneal = ANNEAL
                 ):
         if torch.cuda.is_available() and use_cuda:
@@ -99,7 +98,7 @@ class TrainLangModel:
         self.wordvec_source = wordvec_source
         self.glove_dim = glove_dim
         self.wordvec_dim = 0
-        self.pretrained_wordvecs = pretrained_wordvecs
+        self.pretrained_wordvecs = len(self.wordvec_source) > 0
 
         for src in self.wordvec_source:
             if src == 'GloVe':
@@ -116,7 +115,7 @@ class TrainLangModel:
         else:
             self.hidden_size = hidden_size
 
-        self.tune_wordvecs = tune_wordvecs
+        self.tune_wordvecs = True if not self.pretrained_wordvecs else tune_wordvecs
 
         self.objective_function = objective
 
@@ -160,6 +159,12 @@ class TrainLangModel:
             trainpath = datapath + 'gigaword_train.txt'
             validpath = datapath + 'gigaword_val.txt'
             testpath = datapath + 'gigaword_test.txt'
+
+        elif self.data == 'gigawordsmall':
+            datapath = GIGA_PATH
+            trainpath = datapath + 'gigaword_small_train.txt'
+            validpath = datapath + 'gigaword_small_val.txt'
+            testpath = datapath + 'gigaword_small_test.txt'
 
         print("Retrieving Train Data from file: {}...".format(trainpath))
         self.train_sentences = datasets.LanguageModelingDataset(trainpath, self.sentence_field, newline_eos = False)
