@@ -1,13 +1,10 @@
 import GPy
 import GPyOpt
-from pretraining.langmodel.trainer import TrainLangModel
-from classifier.attention_rnn.trainer import TrainClassifier
-import json
 import argparse
 
 
 class Optimizer:
-    def __init__(self, dataset, choices, TrainerClass):
+    def __init__(self, dataset, vectors, choices, TrainerClass):
 
         print('Building Bayesian Optimizer for \n data:{} \n choices:{}'.format(dataset, choices))
 
@@ -16,6 +13,7 @@ class Optimizer:
         self.best_loss = 100000
         self.TrainerClass = TrainerClass
         self.model = None
+        self.vectors = vectors
 
         myBopt = GPyOpt.methods.BayesianOptimization(f=self.getError,#Objective function
                                                             domain=choices,          # Box-constrains of the problem
@@ -33,7 +31,6 @@ class Optimizer:
 
         print("ATTRIBUTES")
         print(myBopt.__dict__)
-        self.model.save_checkpoint()
 
     def getError(self, params):
         settings = {}
@@ -45,6 +42,7 @@ class Optimizer:
             settings[arg['name']] = value
 
         settings["data"] = self.dataset
+        settings["wordvec_source"] = self.vectors
 
         print("SETTINGS FOR THIS RUN")
         print(settings)
@@ -52,6 +50,7 @@ class Optimizer:
         trainer.train()
         if trainer.best_loss < self.best_loss:
             self.best_loss = trainer.best_loss
+            self.best_args = settings
             self.model = trainer
         return trainer.best_loss
 
@@ -84,24 +83,38 @@ MLPATTN_CHOICES = []
 
 KEYVALATTN_CHOICES = []
 
-def tuneModels(dataset, model, savepath):
+def tuneModels(dataset, model, vectors):
     choices = None
     trainerclass = None
 
     if model == 'langmodel':
         choices = LANGMODEL_CHOICES
+        from pretraining.langmodel.trainer import TrainLangModel
         trainerclass = TrainLangModel
     elif model == 'classifier':
         choices = CLASSIFIER_CHOICES
+        from classifier.attention_rnn.trainer import TrainClassifier
         trainerclass = TrainClassifier
     elif model == 'mlpattn':
         choices = MLPATTN_CHOICES
+        from classifier.attention_rnn.trainer import TrainClassifier
         trainerclass = TrainClassifier
     elif model == 'keyvalattn':
         choices = KEYVALATTN_CHOICES
+        from classifier.attention_rnn.trainer import TrainClassifier
         trainerclass = TrainClassifier
 
-    opt = Optimizer(dataset, choices, trainerclass)
+    vecs = []
+    if vectors == 'glove':
+        vecs = ['GloVe']
+    elif vectors == 'charlevel':
+        vecs = ['GloVe', 'charLevel']
+    elif vectors == 'google':
+        vecs = ['googlenews']
+
+    opt = Optimizer(dataset, vecs, choices, trainerclass)
+    name = '{}_{}.pt'.format(dataset, vectors)
+    opt.model.save_checkpoint(name)
 
 
 
@@ -111,9 +124,10 @@ parser.add_argument('--data', type=str, default='ptb',
                     help='dataset')
 parser.add_argument('--model', type=str, default='langmodel',
                     help='type of model to train')
-parser.add_argument('--savepath', type=str, default=None,
-                    help='where to save everything')
+parser.add_argument('--vectors', type=str, default='glove',
+                    help='vectors to use')
 
 args = parser.parse_args()
 
-tuneModels(args.data, model = args.model, savepath = args.savepath)
+
+tuneModels(args.data, model = args.model, vectors = args.vectors)
