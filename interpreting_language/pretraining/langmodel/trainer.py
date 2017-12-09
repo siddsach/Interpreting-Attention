@@ -378,7 +378,7 @@ class TrainLangModel:
         print('Begin Training...')
 
         not_better = 0
-        self.best_eval_perplexity = 10000
+        self.best_loss = 10000
         self.best_model = None
 
         for epoch in range(self.n_epochs):
@@ -386,7 +386,7 @@ class TrainLangModel:
             optimizer = self.train_step(optimizer, self.model, start_time)
             this_perplexity = self.evaluate()
             self.epoch = epoch
-            if this_perplexity > self.best_eval_perplexity:
+            if this_perplexity > self.best_loss:
                 not_better += 1
 
                 print("Annealing...")
@@ -398,11 +398,11 @@ class TrainLangModel:
 
                 if not_better >= 3:
                     print('Model not improving. Stopping early with {}'
-                           'loss at {} epochs.'.format(self.best_eval_perplexity, self.epoch))
+                           'loss at {} epochs.'.format(self.best_loss, self.epoch))
                     break
 
             else:
-                self.best_eval_perplexity = this_perplexity
+                self.best_loss = this_perplexity
                 self.best_model = self.model
                 not_better = 0
 
@@ -414,7 +414,7 @@ class TrainLangModel:
         state = {
                     'epoch': self.epoch + 1,
                     'state_dict': self.model.state_dict(),
-                    'best_valid_loss': self.best_eval_perplexity,
+                    'best_valid_loss': self.best_loss,
                 }
         savepath = self.savepath + ''.join(str(datetime.now()).split())
         print(self.savepath)

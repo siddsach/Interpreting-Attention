@@ -126,7 +126,7 @@ class SelfAttentiveRNN(VanillaRNN):
             attention_dim,
             mlp_hidden,
             train_hidden = True,
-            attn_type = 'MLP',
+            attn_type = 'keyval',
             **kwargs
         ):
 
@@ -162,7 +162,7 @@ class SelfAttentiveRNN(VanillaRNN):
         #EMBED, APPLY RNN
         vectors = self.embed(inp)
         packed_vecs = torch.nn.utils.rnn.pack_padded_sequence(vectors, list(lengths), batch_first = True)
-        out, h = self.model(packed_vecs, (self.init_h, self.init_c))
+        out, h = self.model(packed_vecs, self.hiddens)
         out, lens = torch.nn.utils.rnn.pad_packed_sequence(out, batch_first = True)
 
         if self.attn_type == 'MLP':

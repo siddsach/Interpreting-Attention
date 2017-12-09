@@ -5,7 +5,7 @@ import torch
 from torch.nn import CrossEntropyLoss, NLLLoss
 from torch.autograd import Variable
 from torch.optim import Adam, SGD
-from model import VanillaRNN, SelfAttentiveRNN
+from .model import VanillaRNN, SelfAttentiveRNN
 import time
 import glob
 import os
@@ -38,14 +38,14 @@ HIDDEN_SIZE = 300
 PRETRAINED = None #root_path + '/trained_models/trained_rnn.pt'
 MAX_LENGTH = 100
 SAVE_CHECKPOINT = root_path + '/trained_models/classifier/'
-USE_ATTENTION = False
+ATTN_TYPE = 'keyval'
+USE_ATTENTION = True
 ATTENTION_DIM = 350 if USE_ATTENTION else None
 L2 = 0.0001
 DROPOUT = 0.5
 MLP_HIDDEN = 512
 OPTIMIZER = 'adam'
 CLIP = 1
-ATTN_TYPE = 'MLP'
 NUM_LAYERS = 3
 HIDDEN_SIZE = 300
 
@@ -308,8 +308,8 @@ class TrainClassifier:
                 print('Using Pretrained RNN from path: {}'.format(self.pretrained_modelpath))
 
             if self.attention_dim is not None:
-                print('Using Attention model with {} dimensions and {} layers'
-                        .format(self.attention_dim, self.num_layers))
+                print('Using {} Attention model with {} dimensions and {} layers'
+                        .format(self.attn_type, self.attention_dim, self.num_layers))
                 self.model = SelfAttentiveRNN(vocab_size = self.ntokens,
                                                 num_classes = self.num_classes,
                                                 batch_size = self.batch_size,
