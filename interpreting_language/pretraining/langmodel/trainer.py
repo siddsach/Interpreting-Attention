@@ -4,9 +4,9 @@ import torch
 from torch.nn import CrossEntropyLoss
 from torch.autograd import Variable
 from torch.optim import Adam, lr_scheduler
-from .model import LangModel
+from model import LangModel
 import time
-from .nce import NCELoss
+#from nce import NCELoss
 import os
 import math
 from datetime import datetime
@@ -14,7 +14,7 @@ from datetime import datetime
 current_path = os.getcwd()
 project_path = current_path#[:len(current_path)-len('/pretraining/langmodel')]
 
-DATASET = 'gigawordsmall'
+DATASET = 'gigasmall'
 WIKI_PATH = project_path + '/data/wikitext-2/wikitext-2/'
 PTB_PATH = project_path + '/data/penn/'
 GIGA_PATH = project_path + '/data/gigaword/'
@@ -23,7 +23,7 @@ VECTOR_CACHE = project_path + '/vectors'
 
 #TRAIN_PATH = project_path + 'data/gigaword/gigaword_cleaned_small.txt'#'data/wikitext-2/wikitext-2/wiki.train.tokens'
 
-NUM_EPOCHS = 40
+NUM_EPOCHS = 200
 LEARNING_RATE = 20
 LOG_INTERVAL = 50
 BPTT_SEQUENCE_LENGTH = 35
@@ -160,7 +160,7 @@ class TrainLangModel:
             validpath = datapath + 'gigaword_val.txt'
             testpath = datapath + 'gigaword_test.txt'
 
-        elif self.data == 'gigawordsmall':
+        elif self.data == 'gigasmall':
             datapath = GIGA_PATH
             trainpath = datapath + 'gigaword_small_train.txt'
             validpath = datapath + 'gigaword_small_val.txt'
@@ -401,7 +401,7 @@ class TrainLangModel:
                 if self.optim == 'adam':
                     scheduler.step(this_perplexity)
 
-                if not_better >= 3:
+                if not_better >= 5:
                     print('Model not improving. Stopping early with {}'
                            'loss at {} epochs.'.format(self.best_loss, self.epoch))
                     break
