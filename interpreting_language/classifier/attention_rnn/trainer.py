@@ -11,6 +11,7 @@ import glob
 import os
 from datetime import datetime
 import pickle
+import argparse
 
 current_path = os.getcwd()
 
@@ -39,8 +40,7 @@ PRETRAINED = None #root_path + '/trained_models/trained_rnn.pt'
 MAX_LENGTH = 100
 SAVE_CHECKPOINT = root_path + '/trained_models/classifier/'
 ATTN_TYPE = 'keyval'
-USE_ATTENTION = False
-ATTENTION_DIM = 350 if USE_ATTENTION else None
+ATTENTION_DIM = 350 if ATTN_TYPE is not None else None
 L2 = 0.0001
 DROPOUT = 0.5
 MLP_HIDDEN = 512
@@ -117,7 +117,7 @@ class TrainClassifier:
         #MODEL SPECS
         self.model_type = model_type
         self.attn_type = attn_type
-        self.attention_dim = attention_dim
+        self.attention_dim = attention_dim if self.attn_type is not None else None
         self.mlp_hidden = mlp_hidden
         self.num_classes = num_classes
 
@@ -533,6 +533,10 @@ class TrainClassifier:
             print('Finished Training.')
 
 if __name__ == '__main__':
-    trainer = TrainClassifier()
+    parser = argparse.ArgumentParser(description='Tuning Hyperparameters')
+    parser.add_argument('--attention', type=str, default=None,
+                        help='location of the data corpus')
+    args = parser.parse_args()
+    trainer = TrainClassifier(attn_type = args.attention)
     trainer.train()
 
