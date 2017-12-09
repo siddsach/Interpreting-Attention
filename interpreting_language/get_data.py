@@ -4,15 +4,17 @@ from torchtext.vocab import GloVe, CharNGram
 import subprocess
 
 GIGAWORD_PATHS = ["https://s3.amazonaws.com/gigaword/gigaword_{}.txt".format(path) for path in ['train', 'val', 'test']]
+GIGAWORDSMALL_PATHS = ["https://s3.amazonaws.com/gigaword/gigaword_small_{}.txt".format(path) for path in ['train', 'val', 'test']]
 DATA_DIR = "data/gigaword"
 
 class Download:
     def __init__(self,
                 glove = False,
-                googlenews = False,
-                charngram = True,
+                googlenews = True,
+                charngram = False,
                 wiki = False,
                 gigaword = False,
+                gigawordsmall = False,
                 imdb = False,
                 mpqa_subj = False
             ):
@@ -23,6 +25,7 @@ class Download:
         self.mpqa_subj = mpqa_subj
         self.wiki = wiki
         self.gigaword = gigaword
+        self.gigawordsmall = gigawordsmall
 
 
         self.get_unsupervised_data()
@@ -72,6 +75,12 @@ class Download:
         if self.gigaword:
 
             for path in GIGAWORD_PATHS:
+                print("Downloading Gigaword Data")
+                bashCommand = "wget " + path + " -P " + DATA_DIR
+                process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
+                output, error = process.communicate()
+        elif self.gigawordsmall:
+            for path in GIGAWORDSMALL_PATHS:
                 print("Downloading Gigaword Data")
                 bashCommand = "wget " + path + " -P " + DATA_DIR
                 process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
