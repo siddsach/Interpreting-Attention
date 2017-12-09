@@ -104,13 +104,7 @@ class VanillaRNN(nn.Module):
     def forward(self, inp, lengths = None):
 
         vectors = self.embed(inp)
-        print("VECTORS")
-        print(vectors)
-
         packed_vecs = torch.nn.utils.rnn.pack_padded_sequence(vectors, list(lengths), batch_first = True)
-        print("HIDDENS")
-        print(self.hiddens)
-        print(self.model)
         out, hiddens = self.model(packed_vecs, self.hiddens)
 
         if self.bidirectional:

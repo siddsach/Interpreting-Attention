@@ -425,11 +425,6 @@ class TrainClassifier:
                     #SAVING ATTENTION WEIGHTS
                     self.save_attns(i, data, A, 'train')
 
-                print("PREDICTIONS")
-                print(predictions.data.shape)
-
-                print("TARGETS")
-                print(targets.data.shape)
                 #CALCULATING AND PROPAGATING LOSS
                 loss = self.objective(predictions, targets)
                 loss.backward()
