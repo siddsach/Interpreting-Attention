@@ -6,24 +6,56 @@ import json
 import argparse
 
 
-def optimize(dataset, choices, TrainerClass):
+class Optimizer:
+    def __init__(self, dataset, choices, TrainerClass):
 
-    def getError(params):
+        print('Building Bayesian Optimizer for \n data:{} \n choices:{}'.format(dataset, choices))
+
+        self.choices = choices
+        self.dataset = dataset
+        self.best_loss = 100000
+        self.TrainerClass = TrainerClass
+        self.model = None
+
+        myBopt = GPyOpt.methods.BayesianOptimization(f=self.getError,#Objective function
+                                                            domain=choices,          # Box-constrains of the problem
+                                                            initial_design_numdata = 5,   # Number data initial design
+                                                            acquisition_type='EI',        # Expected Improvement
+                                                            exact_feval = True
+                                                        )
+
+
+
+        max_iter = 1 ## maximum number of iterations
+        max_time = 3.5 * 60 * 60 ## maximum allowed time
+
+        myBopt.run_optimization(max_time = max_time, max_iter = max_iter)
+
+        print("ATTRIBUTES")
+        print(myBopt.__dict__)
+        self.model.save_checkpoint()
+
+    def getError(self, params):
         settings = {}
-        for arg, value in zip(choices, params[0]):
+        for arg, value in zip(self.choices, params[0]):
             value = value.item()
             if arg["type"] == "discrete":
                 value = int(value)
 
             settings[arg['name']] = value
 
-        settings["data"] = dataset
+        settings["data"] = self.dataset
 
         print("SETTINGS FOR THIS RUN")
         print(settings)
-        trainer = TrainerClass(**settings)
+        trainer = self.TrainerClass(**settings)
         trainer.train()
-        return trainer.best_objective
+        if trainer.best_loss < self.best_loss:
+            self.best_loss = trainer.best_loss
+            self.model = trainer
+        return trainer.best_loss
+
+
 
     def test(params):
         print('testing')
@@ -31,22 +63,6 @@ def optimize(dataset, choices, TrainerClass):
         out = settings['lr']**2 + 5 * settings['batch_size']
         return out
 
-
-
-    myBopt = GPyOpt.methods.BayesianOptimization(f=getError,#Objective function
-                                                        domain=choices,          # Box-constrains of the problem
-                                                        initial_design_numdata = 5,   # Number data initial design
-                                                        acquisition_type='EI',        # Expected Improvement
-                                                        exact_feval = True
-                                                    )
-
-
-
-    max_iter = 1 ## maximum number of iterations
-    max_time = 3.5 * 60 * 60 ## maximum allowed time
-
-    myBopt.run_optimization(max_time = max_time, max_iter = max_iter)
-    return myBopt.x_opt, myBopt.fx_opt
 
 
 # TRAIN LANGUAGE MODELS
@@ -69,34 +85,35 @@ MLPATTN_CHOICES = []
 KEYVALATTN_CHOICES = []
 
 def tuneModels(dataset, model, savepath):
-    best = {}
+    choices = None
+    trainerclass = None
 
     if model == 'langmodel':
-        best_params, best_loss = optimize(dataset, LANGMODEL_CHOICES, TrainLangModel)
+        choices = LANGMODEL_CHOICES
+        trainerclass = TrainLangModel
     elif model == 'classifier':
-        best_params, best_loss = optimize(dataset, CLASSIFIER_CHOICES, TrainClassifier)
+        choices = CLASSIFIER_CHOICES
+        trainerclass = TrainClassifier
     elif model == 'mlpattn':
-        best_params, best_loss = optimize(dataset, MLPATTN_CHOICES, TrainClassifier)
+        choices = MLPATTN_CHOICES
+        trainerclass = TrainClassifier
     elif model == 'keyvalattn':
-        best_params, best_loss = optimize(dataset, KEYVALATTN_CHOICES, TrainClassifier)
+        choices = KEYVALATTN_CHOICES
+        trainerclass = TrainClassifier
 
-    best['params'] = best_params
-    best['loss'] = best_loss
+    opt = Optimizer(dataset, choices, trainerclass)
 
-    if savepath is None:
-        savepath = '{}_{}.json'.format(model, dataset)
 
-    json.dump(best, open(savepath, 'w'))
 
 
 parser = argparse.ArgumentParser(description='Tuning Hyperparameters')
 parser.add_argument('--data', type=str, default='ptb',
-                    help='location of the data corpus')
+                    help='dataset')
 parser.add_argument('--model', type=str, default='langmodel',
-                    help='location of the data corpus')
+                    help='type of model to train')
 parser.add_argument('--savepath', type=str, default=None,
-                    help='location of the data corpus')
+                    help='where to save everything')
 
 args = parser.parse_args()
 
-tuneModels(args.data, model = args.model, savapeth = args.savepath)
+tuneModels(args.data, model = args.model, savepath = args.savepath)

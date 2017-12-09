@@ -187,7 +187,10 @@ class SelfAttentiveRNN(VanillaRNN):
             print(last_hiddens)
 
             #GET ATTENTION WEIGHTS
-            weighted_seq = torch.mm(out, self.W.unsqueeze(0).expand_as(out))
+            print("TRANSFORMED")
+            transformed = self.W.unsqueeze(0).expand(self.batch_size, self.W.size(0), self.W.size(1))
+            print(transformed)
+            weighted_seq = torch.sum(out * transformed, 2)
 
             print("WEIGHTED_SEQ")
             print(weighted_seq)
