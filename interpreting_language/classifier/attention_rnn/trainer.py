@@ -13,17 +13,13 @@ from datetime import datetime
 import pickle
 import argparse
 
-current_path = os.getcwd()
-
-print("CURRENT PATH:{}".format(current_path))
-root_path = current_path#[:len(current_path) - len('classifier/attention_rnn') + 1]
-
-print("ROOT PATH:{}".format(root_path))
+root_path = os.getcwd()
+print("ROOT_PATH: {}".format(root_path))
 
 SPLIT = 0.9
 DATASET = 'MPQA'
-IMDB_PATH = current_path + '/data/imdb/aclImdb'# 'sentence_subjectivity.csv' #DATA MUST BE IN CSV FORMAT WITH ONE FIELD TITLED SENTENCES CONTANING ONE LINE PER SENTENCE
-MPQA_PATH = current_path + '/data/mpqa/mpqa_subj_labels.pickle'
+IMDB_PATH = root_path + '/data/imdb/aclImdb'# 'sentence_subjectivity.csv' #DATA MUST BE IN CSV FORMAT WITH ONE FIELD TITLED SENTENCES CONTANING ONE LINE PER SENTENCE
+MPQA_PATH = root_path + '/data/mpqa/mpqa_subj_labels.pickle'
 VECTOR_CACHE = root_path + '/vectors'
 SAVED_VECTORS = True
 NUM_EPOCHS = 40

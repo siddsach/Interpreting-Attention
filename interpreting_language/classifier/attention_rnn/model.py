@@ -144,6 +144,8 @@ class SelfAttentiveRNN(VanillaRNN):
         else:
             self.input_hidden_size = self.hidden_size
 
+        assert attn_type == 'MLP' or attn_type == 'keyval', "ATTENTION TYPE MUST BE MLP OR KEYVAL"
+
         self.attn_type = attn_type
 
         if self.attn_type == 'MLP':
@@ -152,12 +154,13 @@ class SelfAttentiveRNN(VanillaRNN):
             self.W1 = nn.Linear(self.input_hidden_size, attention_dim, bias=False)
             self.W2 = nn.Linear(self.attention_dim, 1, bias=False )
 
-            # MLP AND DECODER TO OUTPUT
-            self.MLP = nn.Linear(self.input_hidden_size, mlp_hidden)
-            self.decoder = nn.Linear(mlp_hidden, self.num_classes)
 
         elif self.attn_type == 'keyval':
             self.W = nn.Parameter(torch.randn(self.input_hidden_size, self.input_hidden_size))
+
+        # MLP AND DECODER TO OUTPUT
+        self.MLP = nn.Linear(self.input_hidden_size, mlp_hidden)
+        self.decoder = nn.Linear(mlp_hidden, self.num_classes)
 
     def forward(self, inp, lengths = None):
 
@@ -177,27 +180,22 @@ class SelfAttentiveRNN(VanillaRNN):
             M = torch.sum(A.unsqueeze(2).expand_as(out) * out, 1)
 
         elif self.attn_type == 'keyval':
-            print("OUT")
-            print(out)
             #GET HIDDENS
-            print("W")
-            print(self.W)
-            print("HIDDENS")
-            last_hiddens = out[:, -1, :]
-            print(last_hiddens)
+            last_hiddens = h[0][self.num_layers - 1, :, :]
 
-            #GET ATTENTION WEIGHTS
-            print("TRANSFORMED")
+            # KEY-VALUE ATTENTION
+            # A = (all_hiddens x W x last_hidden)
+
             transformed = self.W.unsqueeze(0).expand(self.batch_size, self.W.size(0), self.W.size(1))
-            print(transformed)
-            weighted_seq = torch.sum(out * transformed, 2)
+            weighted_seq = torch.bmm(out, transformed)
 
-            print("WEIGHTED_SEQ")
-            print(weighted_seq)
-            A = torch.mm(weighted_seq, last_hiddens)
+            batched_last_hiddens = last_hiddens.unsqueeze(2)
+            A = torch.bmm(weighted_seq, batched_last_hiddens)
+
+            A = A.squeeze(2).unsqueeze(1)
 
             #GET ATTENTION WEIGHTED CONTEXT VECTOR
-            M = torch.mm(A, out)
+            M = torch.bmm(A, out).squeeze(1)
 
         # DECODING ATTENTION EMBEDDED MATRICES TO OUTPUT
         MLPhidden = self.MLP(M)
