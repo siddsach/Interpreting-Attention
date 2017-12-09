@@ -18,7 +18,6 @@ def optimize(dataset, choices, TrainerClass):
             settings[arg['name']] = value
 
         settings["data"] = dataset
-        settings["num_epochs"] = 1
 
         print("SETTINGS FOR THIS RUN")
         print(settings)
@@ -69,7 +68,7 @@ MLPATTN_CHOICES = []
 
 KEYVALATTN_CHOICES = []
 
-def tuneModels(dataset, model = 'langmodel'):
+def tuneModels(dataset, model, savepath):
     best = {}
 
     if model == 'langmodel':
@@ -83,7 +82,11 @@ def tuneModels(dataset, model = 'langmodel'):
 
     best['params'] = best_params
     best['loss'] = best_loss
-    json.dump(best, open('{}_{}.json'.format(model, dataset), 'w'))
+
+    if savepath is None:
+        savepath = '{}_{}.json'.format(model, dataset)
+
+    json.dump(best, open(savepath, 'w'))
 
 
 parser = argparse.ArgumentParser(description='Tuning Hyperparameters')
@@ -91,6 +94,9 @@ parser.add_argument('--data', type=str, default='ptb',
                     help='location of the data corpus')
 parser.add_argument('--model', type=str, default='langmodel',
                     help='location of the data corpus')
+parser.add_argument('--savepath', type=str, default=None,
+                    help='location of the data corpus')
+
 args = parser.parse_args()
 
-tuneModels(args.data, model = args.model)
+tuneModels(args.data, model = args.model, savapeth = args.savepath)
