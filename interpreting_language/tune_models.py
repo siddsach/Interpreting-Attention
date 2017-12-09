@@ -1,10 +1,9 @@
-import GPy
 import GPyOpt
 import argparse
 
 
 class Optimizer:
-    def __init__(self, dataset, vectors, choices, TrainerClass):
+    def __init__(self, dataset, vectors, choices, TrainerClass, timelimit):
 
         print('Building Bayesian Optimizer for \n data:{} \n choices:{}'.format(dataset, choices))
 
@@ -14,6 +13,7 @@ class Optimizer:
         self.TrainerClass = TrainerClass
         self.model = None
         self.vectors = vectors
+        self.runs = []
 
         myBopt = GPyOpt.methods.BayesianOptimization(f=self.getError,#Objective function
                                                             domain=choices,          # Box-constrains of the problem
@@ -24,10 +24,7 @@ class Optimizer:
 
 
 
-        max_iter = 1 ## maximum number of iterations
-        max_time = 3.5 * 60 * 60 ## maximum allowed time
-
-        myBopt.run_optimization(max_time = max_time, max_iter = max_iter)
+        myBopt.run_optimization(max_time = timelimit)
 
         print("ATTRIBUTES")
         print(myBopt.__dict__)
@@ -38,6 +35,8 @@ class Optimizer:
             value = value.item()
             if arg["type"] == "discrete":
                 value = int(value)
+            elif arg["type"] == "continuous":
+                value = float(value)
 
             settings[arg['name']] = value
 
@@ -49,9 +48,12 @@ class Optimizer:
         trainer = self.TrainerClass(**settings)
         trainer.train()
         if trainer.best_loss < self.best_loss:
+            print('Improved loss from {} to {}'.format(self.best_loss, trainer.best_loss))
             self.best_loss = trainer.best_loss
             self.best_args = settings
             self.model = trainer
+        self.runs.append({"params":settings, "loss": trainer.best_loss})
+
         return trainer.best_loss
 
 
@@ -112,10 +114,16 @@ def tuneModels(dataset, model, vectors):
     elif vectors == 'google':
         vecs = ['googlenews']
 
-    opt = Optimizer(dataset, vecs, choices, trainerclass)
+    max_time = 3.5 * 60 * 60 ## maximum allowed time
+    opt = Optimizer(dataset, vecs, choices, trainerclass, max_time)
     name = '{}_{}.pt'.format(dataset, vectors)
-    opt.model.save_checkpoint(name)
+    folder = None
+    if opt.finished:
+        folder = 'optimized/'
+    else:
+        folder = 'optimizing/'
 
+    opt.model.save_checkpoint(folder + name)
 
 
 
@@ -128,6 +136,5 @@ parser.add_argument('--vectors', type=str, default='glove',
                     help='vectors to use')
 
 args = parser.parse_args()
-
 
 tuneModels(args.data, model = args.model, vectors = args.vectors)
