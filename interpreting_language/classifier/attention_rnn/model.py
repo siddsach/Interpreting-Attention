@@ -35,10 +35,10 @@ class VanillaRNN(nn.Module):
 
         if cuda:
 
-            self.hiddens  = tuple(nn.Parameter(torch.randn(self.batch_size * num_directions, num_layers, self.hidden_size)
+            self.hiddens  = tuple(nn.Parameter(torch.randn(num_layers, self.batch_size * num_directions, self.hidden_size)
                             .type(torch.cuda.FloatTensor), requires_grad=True) for i in range(num_states))
         else:
-            self.hiddens  = tuple(nn.Parameter(torch.randn(self.batch_size * num_directions, num_layers, self.hidden_size)
+            self.hiddens  = tuple(nn.Parameter(torch.randn(num_layers, self.batch_size * num_directions, self.hidden_size)
                             .type(torch.FloatTensor), requires_grad=True) for i in range(num_states))
 
         self.hiddens = self.hiddens[0] if (num_states == 1) else self.hiddens
@@ -104,6 +104,8 @@ class VanillaRNN(nn.Module):
     def forward(self, inp, lengths = None):
 
         vectors = self.embed(inp)
+        print("VECTORS")
+        print(vectors)
 
         packed_vecs = torch.nn.utils.rnn.pack_padded_sequence(vectors, list(lengths), batch_first = True)
         print("HIDDENS")
@@ -168,6 +170,10 @@ class SelfAttentiveRNN(VanillaRNN):
         #EMBED, APPLY RNN
         vectors = self.embed(inp)
         packed_vecs = torch.nn.utils.rnn.pack_padded_sequence(vectors, list(lengths), batch_first = True)
+        print("VECS")
+        print(packed_vecs.data.data.shape)
+        print("HIDDENS")
+        print(self.hiddens[0].data.shape)
         out, h = self.model(packed_vecs, self.hiddens)
         out, lens = torch.nn.utils.rnn.pad_packed_sequence(out, batch_first = True)
 
@@ -181,11 +187,18 @@ class SelfAttentiveRNN(VanillaRNN):
             M = torch.sum(A.unsqueeze(2).expand_as(out) * out, 1)
 
         elif self.attn_type == 'keyval':
+            print("OUT")
+            print(out)
             #GET HIDDENS
+            print("W")
+            print(self.W)
+            print("HIDDENS")
             last_hiddens = out[:, -1, :]
+            print(last_hiddens)
 
             #GET ATTENTION WEIGHTS
-            A = torch.mm(out, self.W, last_hiddens)
+            weighted_seq = torch.mm(out, self.W)
+            A = torch.mm(weighted_seq, last_hiddens)
 
             #GET ATTENTION WEIGHTED CONTEXT VECTOR
             M = torch.mm(A, out)

@@ -313,6 +313,7 @@ class TrainClassifier:
                 self.model = SelfAttentiveRNN(vocab_size = self.ntokens,
                                                 num_classes = self.num_classes,
                                                 batch_size = self.batch_size,
+                                                cuda = self.cuda,
                                                 vectors = self.sentence_field.vocab.vectors,
                                                 pretrained_rnn = pretrained_model,
                                                 attention_dim = self.attention_dim,
