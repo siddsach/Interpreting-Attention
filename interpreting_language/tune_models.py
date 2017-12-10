@@ -68,7 +68,8 @@ class Optimizer:
 
 # TRAIN LANGUAGE MODELS
 LANGMODEL_CHOICES = [
-    {"name":"batch_size", "type": "discrete", "domain": [20, 50, 80, 100]},
+    {"name":"learning_rate", "type": "continuous", "domain":[2, 30]},
+    {"name":"batch_size", "type": "discrete", "domain": [20, 50, 80]},
     {"name":"seq_len", "type":"discrete", "domain":[20, 35, 50]},
     {"name":"dropout", "type": "continuous", "domain": [0,1]},
     {"name":"anneal", "type": "continuous", "domain": [2, 8]},
