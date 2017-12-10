@@ -40,7 +40,7 @@ ATTENTION_DIM = 350 if ATTN_TYPE is not None else None
 L2 = 0.0001
 DROPOUT = 0.5
 MLP_HIDDEN = 512
-OPTIMIZER = 'adam'
+OPTIMIZER = 'vanilla_grad'
 CLIP = 1
 NUM_LAYERS = 3
 HIDDEN_SIZE = 300
@@ -478,7 +478,7 @@ class TrainClassifier:
         if self.test_attns is not None:
             torch.save(self.test_attns, attn_path)
 
-    def train(self):
+    def start_train(self):
         print("Building RNN Classifier...")
         self.load_data()
         self.get_vectors()
@@ -492,13 +492,21 @@ class TrainClassifier:
         elif self.optim == 'SGD':
             optimizer = SGD(parameters, lr = self.lr, weight_decay = L2)
 
+        return optimizer
+
+
+    def train(self):
+        optimizer = self.start_train()
+
         start_time = time.time()
         print('Begin Training...')
 
         self.eval_loss = 100000
-        not_better = 0
         self.best_eval_loss = 10000
         self.best_model = None
+
+        not_better = 0
+
         for epoch in range(self.n_epochs):
             print("Completing Train Step...")
             optimizer = self.train_step(optimizer, start_time)
