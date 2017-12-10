@@ -133,7 +133,7 @@ class TrainClassifier:
         self.dropout = dropout
         self.clip = clip
 
-        self.losses = torch.zeros(self.n_epochs)
+        self.accuracies = torch.zeros(self.n_epochs)
 
         self.sentence_field = data.Field(
                             sequential = True,
@@ -277,6 +277,7 @@ class TrainClassifier:
                                         )
             iterator_object.repeat = False
         else:
+            print('here')
             iterator_object = data.BucketIterator(dataset,
                                             sort_key = sorter,
                                             sort = True,
@@ -285,7 +286,7 @@ class TrainClassifier:
                                         )
             iterator_object.repeat = False
 
-        print("Created Iterator with {num} batches".format(num = len(iterator_object)))
+        print("Created Iterator with {num} batches".format(num = iterator_object))
         return iterator_object
 
     def get_batches(self):
@@ -363,9 +364,11 @@ class TrainClassifier:
 
     def evaluate(self):
         self.model.eval()
-        total_loss = 0
         i = 0
+        accuracies = torch.zeros(len(self.test_iterator))
+        total_loss = 0
         for i, batch in enumerate(self.test_iterator):
+            print('here')
             #GETTING TENSORS
             data, targets = batch.text, batch.label.view(-1)
             data, lengths = data[0], data[1]
@@ -377,27 +380,35 @@ class TrainClassifier:
                 targets = targets.cuda()
                 lengths = lengths.cuda()
 
-            if data.size(0) == self.batch_size:
 
-                #GETTING PREDICTIONS
-                output, h, A = self.model(data, lengths = lengths)
-                predictions = output.view(-1, self.num_classes)
+            #GETTING PREDICTIONS
+            output, h, A = self.model(data, lengths = lengths)
+            predictions = output.view(-1, self.num_classes)
 
-                if A is not None and False:
-                    #SAVING ATTENTION WEIGHTS
-                    self.save_attns(i, data, A, "test")
+            accuracies[i] = get_accuracy(predictions, targets)
 
-                #CALCULATING LOSS
-                loss = self.objective(predictions, targets)
+            if A is not None and False:
+                #SAVING ATTENTION WEIGHTS
+                self.save_attns(i, data, A, "test")
 
-                total_loss += loss.data
-            else:
-                break
-        self.eval_loss = total_loss[0] / i
-        print('Done Evaluating: Achieved loss of {}'
-                .format(self.eval_loss))
+            #CALCULATING LOSS
+            loss = self.objective(predictions, targets)
+            total_loss += loss.data
+
+            if i % self.log_interval == 0 and i != 0:
+                current_loss = total_loss[0] / self.log_interval
+                current_accuracy = accuracies[i - self.log_interval: i]
+                print('current loss is {} and current accuracy is {}'.format(\
+                        current_loss, current_accuracy))
+
+
+        self.eval_accuracy = torch.mean(accuracies)
+        print('Done Evaluating: Achieved accuracy of {}'
+                .format(self.eval_accuracy))
 
     def train_step(self, optimizer, start_time):
+
+        accuracies = torch.zeros(self.log_interval)
         total_loss = 0
 
         for i, batch in enumerate(self.train_iterator):
@@ -419,6 +430,7 @@ class TrainClassifier:
                 #GETTING PREDICTIONS
                 output, h, A = self.model(data, lengths = lengths)
                 predictions = output.view(-1, self.num_classes)
+                accuracies[i % self.log_interval] = get_accuracy(predictions, targets)
 
                 if A is not None and False:
                     #SAVING ATTENTION WEIGHTS
@@ -427,9 +439,9 @@ class TrainClassifier:
                 #CALCULATING AND PROPAGATING LOSS
                 loss = self.objective(predictions, targets)
                 loss.backward()
+
                 if self.clip is not None:
                     torch.nn.utils.clip_grad_norm(self.model.parameters(), self.clip)
-                total_loss += loss.data
                 if self.optim in ['adam', 'SGD']:
                     optimizer.step()
                 elif self.optim == 'vanilla_grad':
@@ -437,12 +449,17 @@ class TrainClassifier:
                     for p in parameters:
                         p.data.add_(-self.lr, p.grad.data)
 
+                total_loss += loss.data
+
 
                 if i % self.log_interval == 0 and i != 0:
-                    current_loss = total_loss / self.log_interval
-                    elapsed = time.time() - start_time
+                    current_accuracy = torch.mean(accuracies)
+                    current_loss = total_loss[0] / self.log_interval
                     total_loss = 0
-                    print('At time: {elapsed}\n loss is {current_loss}'.format(elapsed=elapsed, current_loss = current_loss[0]))
+                    elapsed = time.time() - start_time
+                    accuracies = torch.zeros(self.log_interval)
+                    print('At time: {elapsed} accuracy is {current_accuracy} and loss is {loss}'\
+                            .format(elapsed=elapsed, current_accuracy = current_accuracy, loss = current_loss))
 
         return optimizer
 
@@ -466,9 +483,9 @@ class TrainClassifier:
         state = {
                     'epoch': self.epoch + 1,
                     'state_dict': self.model.state_dict(),
-                    'best_valid_loss': self.eval_loss,
+                    'best_valid_accuracy': self.eval_accuracy,
                     'optimizer': None if optimizer is None else optimizer.state_dict(),
-                    'losses': self.losses
+                    'accuracies': self.accuracies
                 }
         savepath = checkpointpath + ''.join(str(datetime.now()).split())
         if name is not None:
@@ -504,8 +521,8 @@ class TrainClassifier:
         start_time = time.time()
         print('Begin Training...')
 
-        self.eval_loss = 100000
-        self.best_eval_loss = 10000
+        self.eval_accuracy = 0
+        self.best_accuracy = 0
         self.best_model = None
 
         not_better = 0
@@ -515,9 +532,9 @@ class TrainClassifier:
             optimizer = self.train_step(optimizer, start_time)
             print("Evaluating...")
             self.evaluate()
-            self.losses[epoch] = self.eval_loss
+            self.accuracies[epoch] = self.eval_accuracy
             self.epoch = epoch
-            if self.eval_loss > self.best_eval_loss:
+            if self.eval_accuracy < self.best_accuracy:
                 not_better += 1
 
                 if not_better >= 5:
@@ -526,10 +543,10 @@ class TrainClassifier:
                         self.lr /= 4
                 elif not_better >= 20:
                     print('Model not improving. Stopping early with {}'
-                           'loss at {} epochs.'.format(self.best_eval_loss, self.epoch))
+                           'loss at {} epochs.'.format(self.best_accuracy, self.epoch))
                     break
             else:
-                self.best_eval_loss = self.eval_loss
+                self.best_accuracy = self.eval_accuracy
                 self.best_model = self.model
 
         if self.savepath is not None:
@@ -538,6 +555,11 @@ class TrainClassifier:
             self.save_checkpoint(optimizer, self.savepath)
 
             print('Finished Training.')
+
+def get_accuracy(predictions, targets):
+    preds = torch.max(predictions, dim = 1)[1]
+    pct_correct = float(torch.sum(targets == preds)[0].data[0]/predictions.size(0))
+    return pct_correct
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Tuning Hyperparameters')
