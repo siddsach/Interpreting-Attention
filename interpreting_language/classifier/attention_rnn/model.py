@@ -103,7 +103,7 @@ class VanillaRNN(nn.Module):
 
     def forward(self, inp, lengths = None):
 
-        vectors = self.embed(inp)
+        vectors = self.drop(self.embed(inp))
         packed_vecs = torch.nn.utils.rnn.pack_padded_sequence(vectors, list(lengths), batch_first = True)
         out, hiddens = self.model(packed_vecs, self.hiddens)
 
@@ -115,6 +115,8 @@ class VanillaRNN(nn.Module):
         #features = out[0][:, list(lengths - 1), :]
 
         features = hiddens[0][self.num_layers - 1, :, :].squeeze(0)
+
+        features = self.drop(features)
 
         proj = self.linear(features)
 
