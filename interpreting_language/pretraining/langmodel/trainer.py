@@ -4,7 +4,7 @@ import torch
 from torch.nn import CrossEntropyLoss
 from torch.autograd import Variable
 from torch.optim import Adam, lr_scheduler
-from .model import LangModel
+from model import LangModel
 import time
 #from nce import NCELoss
 import os
@@ -14,7 +14,7 @@ from datetime import datetime
 current_path = os.getcwd()
 project_path = current_path#[:len(current_path)-len('/pretraining/langmodel')]
 
-DATASET = 'gigasmall'
+DATASET = 'ptb'
 WIKI_PATH = project_path + '/data/wikitext-2/wikitext-2/'
 PTB_PATH = project_path + '/data/penn/'
 GIGA_PATH = project_path + '/data/gigaword/'
@@ -31,8 +31,8 @@ BATCH_SIZE = 20
 WORDVEC_DIM = 200
 WORDVEC_SOURCE = ['GloVe', 'charLevel']
 CHARNGRAM_DIM = 100
-TUNE_WORDVECS = False
-PRETRAINED_WORDVEC = True
+TUNE_WORDVECS = True
+PRETRAINED_WORDVEC = False
 CLIP = 0.25
 NUM_LAYERS = 2
 TIE_WEIGHTS = True
