@@ -423,20 +423,22 @@ class TrainClassifier:
                 targets = targets.cuda()
                 lengths = lengths.cuda()
 
+            if data.size(0) == self.batch_size:
 
-            #GETTING PREDICTIONS
-            output, h, A = self.model(data, lengths = lengths)
-            predictions = output.view(-1, self.num_classes)
+                #GETTING PREDICTIONS
+                output, h, A = self.model(data, lengths = lengths)
+                predictions = output.view(-1, self.num_classes)
 
-            accuracies[i] = get_accuracy(predictions, targets)
+                accuracies[i] = get_accuracy(predictions, targets)
 
-            if A is not None and False:
-                #SAVING ATTENTION WEIGHTS
-                self.save_attns(i, data, A, "test")
+                if A is not None and False:
+                    #SAVING ATTENTION WEIGHTS
+                    self.save_attns(i, data, A, "test")
 
-            #CALCULATING LOSS
-            loss = self.objective(predictions, targets)
-            total_loss += loss.data
+                #CALCULATING LOSS
+                loss = self.objective(predictions, targets)
+                total_loss += loss.data
+
 
             if i % self.log_interval == 0 and i != 0:
                 current_loss = total_loss[0] / self.log_interval
@@ -445,7 +447,7 @@ class TrainClassifier:
                         current_loss, current_accuracy))
 
 
-        self.eval_accuracy = torch.mean(accuracies)
+        self.eval_accuracy = float(torch.sum(accuracies)) / float(torch.nonzero(accuracies).size(0))
         print('Done Evaluating: Achieved accuracy of {}'
                 .format(self.eval_accuracy))
 
@@ -496,7 +498,7 @@ class TrainClassifier:
 
 
                 if i % self.log_interval == 0 and i != 0:
-                    current_accuracy = torch.mean(accuracies)
+                    current_accuracy = float(torch.sum(accuracies)) / float(torch.nonzero(accuracies).size(0))
                     current_loss = total_loss[0] / self.log_interval
                     total_loss = 0
                     elapsed = time.time() - start_time
