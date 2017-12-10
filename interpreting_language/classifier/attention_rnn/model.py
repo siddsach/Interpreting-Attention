@@ -119,9 +119,9 @@ class VanillaRNN(nn.Module):
         features = self.drop(features)
 
         proj = self.linear(features)
+        probs = self.normalize(proj)
 
-
-        return proj, hiddens, None
+        return probs, hiddens, None
 
 class SelfAttentiveRNN(VanillaRNN):
 

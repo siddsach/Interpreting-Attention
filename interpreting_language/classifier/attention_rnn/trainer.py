@@ -16,6 +16,7 @@ import argparse
 root_path = os.getcwd()
 print("ROOT_PATH: {}".format(root_path))
 
+#### DEFAULTS ####
 SPLIT = 0.9
 DATASET = 'IMDB'
 IMDB_PATH = root_path + '/data/imdb/aclImdb'# 'sentence_subjectivity.csv' #DATA MUST BE IN CSV FORMAT WITH ONE FIELD TITLED SENTENCES CONTANING ONE LINE PER SENTENCE
@@ -49,6 +50,48 @@ MAX_DATA_LEN = 1000
 if torch.cuda.is_available():
     MAX_DATA_LEN = 5000
 
+parser = argparse.ArgumentParser(description='Tuning Hyperparameters')
+parser.add_argument('--attention', type=str, default=None,
+                    help='location of the data corpus')
+parser.add_argument('--pretrained', type=str, default = PRETRAINED,
+                    help='location, of pretrained init')
+parser.add_argument('--checkpoint', type=str, default = None,
+                    help='location, of pretrained init')
+parser.add_argument('--data',  type=str, default = DATASET,
+                    help='location of pretrained init')
+parser.add_argument('--num_epochs',  type=str, default = NUM_EPOCHS,
+                    help='location of pretrained init')
+parser.add_argument('--lr', type=str, default = LEARNING_RATE,
+                    help='location of pretrained init')
+parser.add_argument('--batch_size', type=str, default = BATCH_SIZE,
+                    help='location of pretrained init')
+parser.add_argument('--model_type', type=str, default = "LSTM",
+                    help='location of pretrained init')
+parser.add_argument('--num_layers', type=str, default = NUM_LAYERS,
+                    help='location of pretrained init')
+parser.add_argument('--hidden_size', type=str, default = HIDDEN_SIZE,
+                    help='location of pretrained init')
+parser.add_argument('--attention_dim', type=str, default = ATTENTION_DIM,
+                    help='location of pretrained init')
+parser.add_argument('--mlp_hidden', type=str, default = MLP_HIDDEN,
+                    help='location of pretrained init')
+parser.add_argument('--wordvec_dim', type=str, default = WORD_VEC_DIM,
+                    help='location of pretrained init')
+parser.add_argument('--wordvec_source', type=str, default = WORDVEC_SOURCE,
+                    help='location of pretrained init')
+parser.add_argument('--max_length', type=str, default = MAX_LENGTH,
+                    help='location of pretrained init')
+parser.add_argument('--optim', type=str, default = 'adam',
+                    help='location of pretrained init')
+parser.add_argument('--dropout', type=str, default = DROPOUT,
+                    help='location of pretrained init')
+parser.add_argument('--max_data_len', type=str, default = MAX_DATA_LEN,
+                    help='location of pretrained init')
+parser.add_argument('--clip', type=str, default = CLIP,
+                    help='location of pretrained init')
+parser.add_argument('--savepath', type=str, default = SAVE_CHECKPOINT,
+                    help='location of pretrained init')
+args = parser.parse_args()
 
 def sorter(example):
     return len(example.text)
@@ -57,31 +100,31 @@ class TrainClassifier:
     def __init__(
                     self,
                     num_classes = 2,
-                    pretrained_modelpath = PRETRAINED,
-                    checkpoint = None,
-                    datapath = DATASET,
-                    num_epochs = NUM_EPOCHS,
-                    lr = LEARNING_RATE,
-                    batch_size = BATCH_SIZE,
+                    pretrained_modelpath = args.pretrained,
+                    checkpoint = args.checkpoint,
+                    datapath = args.data,
+                    num_epochs = args.num_epochs,
+                    lr = args.lr,
                     vector_cache = VECTOR_CACHE,
-                    objective = 'crossentropy',
+                    objective = 'nllloss',
                     train = False,
                     log_interval = LOG_INTERVAL,
-                    model_type = "LSTM",
-                    num_layers = NUM_LAYERS,
-                    hidden_size = HIDDEN_SIZE,
-                    attention_dim = ATTENTION_DIM, #None if not using attention
-                    mlp_hidden = MLP_HIDDEN,
-                    wordvec_dim = WORD_VEC_DIM,
-                    wordvec_source = WORDVEC_SOURCE,
-                    max_length = MAX_LENGTH,
+                    batch_size = args.batch_size,
+                    model_type = args.model_type,
+                    num_layers = args.num_layers,
+                    hidden_size = args.hidden_size,
+                    attention_dim = args.hidden_size, #None if not using attention
+                    mlp_hidden = args.mlp_hidden,
+                    wordvec_dim = args.wordvec_dim,
+                    wordvec_source = args.wordvec_source,
+                    max_length = args.max_length,
                     use_cuda = True,
-                    savepath = SAVE_CHECKPOINT,
-                    optim = 'adam',
-                    max_data_len = MAX_DATA_LEN,
-                    dropout = DROPOUT,
-                    clip = CLIP,
-                    attn_type = ATTN_TYPE
+                    savepath = args.savepath,
+                    optim = args.optim,
+                    max_data_len = args.max_data_len,
+                    dropout = args.dropout,
+                    clip = args.clip,
+                    attn_type = args.attention
                 ):
 
         self.savepath = savepath
@@ -562,10 +605,6 @@ def get_accuracy(predictions, targets):
     return pct_correct
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Tuning Hyperparameters')
-    parser.add_argument('--attention', type=str, default=None,
-                        help='location of the data corpus')
-    args = parser.parse_args()
-    trainer = TrainClassifier(attn_type = args.attention)
+    trainer = TrainClassifier()
     trainer.train()
 
