@@ -4,7 +4,7 @@ import torch
 from torch.nn import CrossEntropyLoss
 from torch.autograd import Variable
 from torch.optim import Adam, lr_scheduler
-from model import LangModel
+from .model import LangModel
 import time
 #from nce import NCELoss
 import os
@@ -38,7 +38,7 @@ NUM_LAYERS = 2
 TIE_WEIGHTS = True
 MODEL_TYPE = 'LSTM'
 OPTIMIZER = 'vanilla_grad'
-DROPOUT = 0.4
+DROPOUT = 0.2
 HIDDEN_SIZE = 4096
 FEW_BATCHES = 50 if not torch.cuda.is_available() else None
 MAX_VOCAB = None
