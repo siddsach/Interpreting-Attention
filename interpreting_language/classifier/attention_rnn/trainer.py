@@ -59,35 +59,35 @@ parser.add_argument('--checkpoint', type=str, default = None,
                     help='location, of pretrained init')
 parser.add_argument('--data',  type=str, default = DATASET,
                     help='location of pretrained init')
-parser.add_argument('--num_epochs',  type=str, default = NUM_EPOCHS,
+parser.add_argument('--num_epochs',  type=int, default = NUM_EPOCHS,
                     help='location of pretrained init')
-parser.add_argument('--lr', type=str, default = LEARNING_RATE,
+parser.add_argument('--lr', type=float, default = LEARNING_RATE,
                     help='location of pretrained init')
-parser.add_argument('--batch_size', type=str, default = BATCH_SIZE,
+parser.add_argument('--batch_size', type=int, default = BATCH_SIZE,
                     help='location of pretrained init')
 parser.add_argument('--model_type', type=str, default = "LSTM",
                     help='location of pretrained init')
-parser.add_argument('--num_layers', type=str, default = NUM_LAYERS,
+parser.add_argument('--num_layers', type=int, default = NUM_LAYERS,
                     help='location of pretrained init')
-parser.add_argument('--hidden_size', type=str, default = HIDDEN_SIZE,
+parser.add_argument('--hidden_size', type=int, default = HIDDEN_SIZE,
                     help='location of pretrained init')
-parser.add_argument('--attention_dim', type=str, default = ATTENTION_DIM,
+parser.add_argument('--attention_dim', type=int, default = ATTENTION_DIM,
                     help='location of pretrained init')
-parser.add_argument('--mlp_hidden', type=str, default = MLP_HIDDEN,
+parser.add_argument('--mlp_hidden', type=int, default = MLP_HIDDEN,
                     help='location of pretrained init')
-parser.add_argument('--wordvec_dim', type=str, default = WORD_VEC_DIM,
+parser.add_argument('--wordvec_dim', type=int, default = WORD_VEC_DIM,
                     help='location of pretrained init')
-parser.add_argument('--wordvec_source', type=str, default = WORDVEC_SOURCE,
+parser.add_argument('--wordvec_source', type=list, default = WORDVEC_SOURCE,
                     help='location of pretrained init')
-parser.add_argument('--max_length', type=str, default = MAX_LENGTH,
+parser.add_argument('--max_length', type=int, default = MAX_LENGTH,
                     help='location of pretrained init')
 parser.add_argument('--optim', type=str, default = 'adam',
                     help='location of pretrained init')
-parser.add_argument('--dropout', type=str, default = DROPOUT,
+parser.add_argument('--dropout', type=float, default = DROPOUT,
                     help='location of pretrained init')
-parser.add_argument('--max_data_len', type=str, default = MAX_DATA_LEN,
+parser.add_argument('--max_data_len', type=int, default = MAX_DATA_LEN,
                     help='location of pretrained init')
-parser.add_argument('--clip', type=str, default = CLIP,
+parser.add_argument('--clip', type=float, default = CLIP,
                     help='location of pretrained init')
 parser.add_argument('--savepath', type=str, default = SAVE_CHECKPOINT,
                     help='location of pretrained init')
