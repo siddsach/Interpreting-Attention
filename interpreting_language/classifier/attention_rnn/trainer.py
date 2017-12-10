@@ -320,7 +320,6 @@ class TrainClassifier:
                                         )
             iterator_object.repeat = False
         else:
-            print('here')
             iterator_object = data.BucketIterator(dataset,
                                             sort_key = sorter,
                                             sort = True,
@@ -411,7 +410,6 @@ class TrainClassifier:
         accuracies = torch.zeros(len(self.test_iterator))
         total_loss = 0
         for i, batch in enumerate(self.test_iterator):
-            print('here')
             #GETTING TENSORS
             data, targets = batch.text, batch.label.view(-1)
             data, lengths = data[0], data[1]
@@ -438,13 +436,6 @@ class TrainClassifier:
                 #CALCULATING LOSS
                 loss = self.objective(predictions, targets)
                 total_loss += loss.data
-
-
-            if i % self.log_interval == 0 and i != 0:
-                current_loss = total_loss[0] / self.log_interval
-                current_accuracy = accuracies[i - self.log_interval: i]
-                print('current loss is {} and current accuracy is {}'.format(\
-                        current_loss, current_accuracy))
 
 
         self.eval_accuracy = float(torch.sum(accuracies)) / float(torch.nonzero(accuracies).size(0))
