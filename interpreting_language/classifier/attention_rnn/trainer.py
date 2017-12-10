@@ -17,13 +17,13 @@ root_path = os.getcwd()
 print("ROOT_PATH: {}".format(root_path))
 
 SPLIT = 0.9
-DATASET = 'MPQA'
+DATASET = 'IMDB'
 IMDB_PATH = root_path + '/data/imdb/aclImdb'# 'sentence_subjectivity.csv' #DATA MUST BE IN CSV FORMAT WITH ONE FIELD TITLED SENTENCES CONTANING ONE LINE PER SENTENCE
 MPQA_PATH = root_path + '/data/mpqa/mpqa_subj_labels.pickle'
 VECTOR_CACHE = root_path + '/vectors'
 SAVED_VECTORS = True
 NUM_EPOCHS = 40
-LEARNING_RATE = 0.0006
+LEARNING_RATE = 0.06
 BATCH_SIZE = 32
 LOG_INTERVAL = 5
 WORD_VEC_DIM = 300
@@ -40,9 +40,9 @@ ATTENTION_DIM = 350 if ATTN_TYPE is not None else None
 L2 = 0.0001
 DROPOUT = 0.5
 MLP_HIDDEN = 512
-OPTIMIZER = 'vanilla_grad'
+OPTIMIZER = 'adam'
 CLIP = 1
-NUM_LAYERS = 3
+NUM_LAYERS = 1
 HIDDEN_SIZE = 300
 
 MAX_DATA_LEN = 1000
@@ -97,6 +97,9 @@ class TrainClassifier:
         self.datapath = datapath
         if self.datapath == 'MPQA':
             self.filepath = MPQA_PATH
+        elif self.datapath == 'IMDB':
+            self.trainpath = IMDB_PATH + '/train'
+            self.testpath = IMDB_PATH + '/test'
 
         self.max_data_len = max_data_len
 
@@ -219,12 +222,12 @@ class TrainClassifier:
         if self.datapath == 'IMDB':
 
             if self.trainpath is not None:
-                self.train_data = self.get_data(self.trainpath, fields, self.max_data_len)
+                self.train_data = self.get_data(self.trainpath, fields, max_len = self.max_data_len)
 
             if self.testpath is not None:
                 if self.max_data_len is not None:
                     self.max_data_len = self.max_data_len / 4
-                self.test_data = self.get_data(self.testpath, self.max_data_len)
+                self.test_data = self.get_data(self.testpath, fields, max_len = self.max_data_len)
         elif self.datapath == 'MPQA':
 
             self.train_data, self.test_data = self.get_data(self.filepath, fields, self.max_data_len)
