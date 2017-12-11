@@ -17,6 +17,7 @@ class Optimizer:
         self.num_layers = num_layers
         self.tune_wordvecs = tune_wordvecs
         self.wordvec_dim = wordvec_dim
+        self.best_accuracy = 0.0
 
         myBopt = GPyOpt.methods.BayesianOptimization(f=self.getError,#Objective function
                                                             domain=choices,          # Box-constrains of the problem
@@ -54,7 +55,7 @@ class Optimizer:
         trainer = self.TrainerClass(**settings)
         trainer.train()
         if trainer.best_accuracy > self.best_accuracy:
-            print('Improved loss from {} to {}'.format(self.best_loss, trainer.best_loss))
+            print('Improved accuracyfrom {} to {}'.format(self.accuracy, trainer.best_accuracy))
             self.best_loss = trainer.best_loss
             self.best_args = settings
             self.model = trainer
