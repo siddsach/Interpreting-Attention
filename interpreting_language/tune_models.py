@@ -3,7 +3,7 @@ import argparse
 
 
 class Optimizer:
-    def __init__(self, dataset, vectors, choices, TrainerClass, timelimit, num_layers):
+    def __init__(self, dataset, vectors, tune_wordvecs, wordvec_dim, choices, TrainerClass, timelimit, num_layers):
 
         print('Building Bayesian Optimizer for \n data:{} \n choices:{}'.format(dataset, choices))
 
@@ -14,7 +14,9 @@ class Optimizer:
         self.model = None
         self.vectors = vectors
         self.runs = []
-        self.Number = num_layers
+        self.num_layers = num_layers
+        self.tune_wordvecs = tune_wordvecs
+        self.wordvec_dim = wordvec_dim
 
         myBopt = GPyOpt.methods.BayesianOptimization(f=self.getError,#Objective function
                                                             domain=choices,          # Box-constrains of the problem
@@ -40,12 +42,15 @@ class Optimizer:
 
             settings[arg['name']] = value
 
-        settings["data"] = self.dataset
+        settings["datapath"] = self.dataset
         settings["wordvec_source"] = self.vectors
         settings["num_layers"] = self.num_layers
+        settings["tune_wordvecs"] = self.tune_wordvecs
+        settings["wordvec_dim"] = self.wordvec_dim
 
         print("SETTINGS FOR THIS RUN")
         print(settings)
+        print(self.TrainerClass)
         trainer = self.TrainerClass(**settings)
         trainer.train()
         if trainer.best_accuracy > self.best_accuracy:
@@ -94,7 +99,7 @@ MLPATTN_CHOICES = []
 
 KEYVALATTN_CHOICES = []
 
-def tuneModels(dataset, model, vectors, num_layers):
+def tuneModels(dataset, model, vectors, wordvec_dim, tune_wordvecs, num_layers):
     choices = None
     trainerclass = None
 
@@ -124,7 +129,7 @@ def tuneModels(dataset, model, vectors, num_layers):
         vecs = ['googlenews']
 
     max_time = 3.5 * 60 * 60 ## maximum allowed time
-    opt = Optimizer(dataset, vecs, choices, trainerclass, max_time, num_layers)
+    opt = Optimizer(dataset, vecs, tune_wordvecs, wordvec_dim, choices, trainerclass, max_time, num_layers)
     name = '{}_{}.pt'.format(dataset, vectors)
     folder = None
     if opt.finished:
@@ -141,13 +146,16 @@ parser.add_argument('--data', type=str, default='ptb',
                     help='dataset')
 parser.add_argument('--model', type=str, default='classifier',
                     help='type of model to train')
-parser.add_argument('--vectors', type=str, default='glove',
+parser.add_argument('--vectors', type=str, default='',
                     help='vectors to use')
 parser.add_argument('--num_layers', type=int, default=1,
                     help='vectors to use')
 parser.add_argument('--tune_wordvecs', type=bool, default=True,
                     help='whether to tune wordvecs')
+parser.add_argument('--wordvec_dim', type=int, default=200,
+                    help='wordvec_dim')
 
 args = parser.parse_args()
 
-tuneModels(args.data, model = args.model, vectors = args.vectors, num_layers = args.num_layers)
+tuneModels(args.data, model = args.model, vectors = args.vectors, wordvec_dim = args.wordvec_dim,
+             tune_wordvecs = args.tune_wordvecs, num_layers = args.num_layers)

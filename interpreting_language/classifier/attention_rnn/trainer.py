@@ -27,7 +27,8 @@ NUM_EPOCHS = 40
 LEARNING_RATE = 0.0005
 BATCH_SIZE = 32
 LOG_INTERVAL = 20
-WORD_VEC_DIM = 200
+WORDVEC_DIM = 200
+GLOVE_DIM = WORDVEC_DIM
 WORDVEC_SOURCE = ['GloVe']
 TUNE_WORDVECS = False
 #['GloVe']# charLevel'
@@ -36,9 +37,9 @@ IMDB = True
 HIDDEN_SIZE = 300
 PRETRAINED = None #root_path + '/trained_models/trained_rnn.pt'
 MAX_LENGTH = 100
-SAVE_CHECKPOINT = root_path + '/trained_models/classifier/'
+SAVE_CHECKPOINT = None#root_path + '/trained_models/classifier/'
 MODEL_TYPE = 'LSTM'
-ATTN_TYPE = 'keyval'
+ATTN_TYPE = None# ['keyval', 'mlp']
 ATTENTION_DIM = 350 if ATTN_TYPE is not None else None
 L2 = 0.001
 DROPOUT = 0.5
@@ -74,7 +75,8 @@ class TrainClassifier:
                     hidden_size = HIDDEN_SIZE,
                     attention_dim = ATTENTION_DIM, #None if not using attention
                     mlp_hidden = MLP_HIDDEN,
-                    wordvec_dim = WORD_VEC_DIM,
+                    wordvec_dim = WORDVEC_DIM,
+                    glove_dim = GLOVE_DIM,
                     wordvec_source = WORDVEC_SOURCE,
                     tune_wordvecs = TUNE_WORDVECS,
                     max_length = MAX_LENGTH,
@@ -88,7 +90,6 @@ class TrainClassifier:
                     attn_type = ATTN_TYPE,
                     l2 = L2
                 ):
-
         self.savepath = savepath
 
         if torch.cuda.is_available() and use_cuda:
@@ -98,6 +99,8 @@ class TrainClassifier:
             print("Not Using CUDA")
             self.cuda = False
 
+        print("SOURCE")
+        print(wordvec_source)
         self.lr = lr
         self.datapath = datapath
         if self.datapath == 'MPQA':
@@ -128,8 +131,21 @@ class TrainClassifier:
         self.num_classes = num_classes
 
         #HYPERPARAMS
-        self.wordvec_source = wordvec_source
-        self.wordvec_dim = wordvec_dim
+        if wordvec_source == 'glove':
+            self.wordvec_source = ['GloVe']
+        elif wordvec_source == 'charlevel':
+            self.wordvec_source = ['GloVe', 'charLevel']
+        elif wordvec_source == 'google':
+            self.wordvec_source = ['googlenews']
+        else:
+            self.wordvec_source = []
+
+        self.glove_dim = glove_dim
+        if len(self.wordvec_source) == 0:
+            self.wordvec_dim = wordvec_dim
+        else:
+            self.wordvec_dim = 0
+
         self.tune_wordvecs = tune_wordvecs
         self.hidden_size = hidden_size
         self.num_layers = num_layers
@@ -164,10 +180,9 @@ class TrainClassifier:
 
     def get_data(self, path, fields, max_len, file_split = True):
 
-        print("Retrieving Data from file: {}...".format(path))
 
         if self.datapath == 'IMDB':
-
+            print("Retrieving Data from file: {}...".format(path))
             examples = []
 
             for label in ['pos', 'neg']:
@@ -188,6 +203,8 @@ class TrainClassifier:
             return out
 
         elif self.datapath == 'MPQA':
+
+            print("Retrieving Data from file: {}...".format(self.filepath))
 
             mpqa_data = pickle.load(open(self.filepath, 'rb'))
             mpqa_data[1] = [str(el) for el in mpqa_data[1]]
@@ -261,17 +278,21 @@ class TrainClassifier:
 
         for source in self.wordvec_source:
             if source == 'GloVe':
-                print('Getting GloVe Vectors with {} dims'.format(self.wordvec_dim))
-                glove = Vectors(name = 'glove.6B.{}d.txt'.format(self.wordvec_dim), cache = self.vector_cache)
+                print('Getting GloVe Vectors with {} dims'.format(self.glove_dim))
+                glove = Vectors(name = 'glove.6B.{}d.txt'.format(self.glove_dim), cache = self.vector_cache)
                 vecs.append(glove)
+                self.wordvec_dim += self.glove_dim
             if source == 'charLevel':
+                self.wordvec_dim += 100
                 print('Getting charLevel Vectors')
                 charVec = Vectors(name = 'charNgram.txt', cache = self.vector_cache)
                 vecs.append(charVec)
             if source == 'googlenews':
                 print('Getting google news vectors')
-                google = Vectors(name = 'googlenews.bin', cache = self.vector_cache)
+                self.wordvec_dim += 300
+                google = Vectors(name = 'googlenews.txt', cache = self.vector_cache)
                 vecs.append(google)
+
         print('Building Vocab...')
         if len(vecs) > 0:
             self.sentence_field.build_vocab(self.train_data, vectors = vecs)
@@ -335,6 +356,7 @@ class TrainClassifier:
             }
 
 
+
             if self.attention_dim is None:
                 self.model = VanillaRNN(**args)
                 print('Using Vanilla RNN with following args:\n{}'
@@ -346,7 +368,7 @@ class TrainClassifier:
                     'mlp_hidden' : self.mlp_hidden,
                     'attn_type' : self.attn_type,
                 }
-                args += attn_args
+                args.update(attn_args)
 
                 print('Using Attention model with following args:\n{}'
                         .format(args))
@@ -597,9 +619,11 @@ if __name__ == '__main__':
                         help='location of pretrained init')
     parser.add_argument('--mlp_hidden', type=int, default = MLP_HIDDEN,
                         help='location of pretrained init')
-    parser.add_argument('--wordvec_dim', type=int, default = WORD_VEC_DIM,
+    parser.add_argument('--glove_dim', type=int, default = GLOVE_DIM,
                         help='location of pretrained init')
-    parser.add_argument('--wordvec_source', type=list, default = WORDVEC_SOURCE,
+    parser.add_argument('--wordvec_dim', type=int, default = WORDVEC_DIM,
+                        help='location of pretrained init')
+    parser.add_argument('--wordvec_source', type=str, default = WORDVEC_SOURCE,
                         help='location of pretrained init')
     parser.add_argument('--tune_wordvecs', type=list, default = TUNE_WORDVECS,
                         help='location of pretrained init')
@@ -636,8 +660,9 @@ if __name__ == '__main__':
                         hidden_size = args.hidden_size,
                         attention_dim = args.hidden_size, #None if not using attention
                         mlp_hidden = args.mlp_hidden,
-                        wordvec_dim = args.wordvec_dim,
+                        glove_dim = args.glove_dim,
                         wordvec_source = args.wordvec_source,
+                        wordvec_dim = args.wordvec_dim,
                         tune_wordvecs = args.tune_wordvecs,
                         max_length = args.max_length,
                         use_cuda = True,
@@ -650,6 +675,5 @@ if __name__ == '__main__':
                         attn_type = args.attention,
                         l2 = args.l2
                     )
-    trainer = TrainClassifier()
     trainer.train()
 
