@@ -29,6 +29,7 @@ BATCH_SIZE = 32
 LOG_INTERVAL = 5
 WORD_VEC_DIM = 200
 WORDVEC_SOURCE = ['GloVe']
+TUNE_WORDVECS = False
 #['GloVe']# charLevel'
 SAVED_MODEL_PATH = None#'saved_model.pt'
 IMDB = True
@@ -79,6 +80,8 @@ parser.add_argument('--wordvec_dim', type=int, default = WORD_VEC_DIM,
                     help='location of pretrained init')
 parser.add_argument('--wordvec_source', type=list, default = WORDVEC_SOURCE,
                     help='location of pretrained init')
+parser.add_argument('--tune_wordvecs', type=list, default = TUNE_WORDVECS,
+                    help='location of pretrained init')
 parser.add_argument('--max_length', type=int, default = MAX_LENGTH,
                     help='location of pretrained init')
 parser.add_argument('--optim', type=str, default = 'adam',
@@ -117,6 +120,7 @@ class TrainClassifier:
                     mlp_hidden = args.mlp_hidden,
                     wordvec_dim = args.wordvec_dim,
                     wordvec_source = args.wordvec_source,
+                    tune_wordvecs = args.tune_wordvecs,
                     max_length = args.max_length,
                     use_cuda = True,
                     savepath = args.savepath,
@@ -146,9 +150,11 @@ class TrainClassifier:
 
         self.max_data_len = max_data_len
 
+        #TRAINING PARAMETERS
         self.batch_size = batch_size
         self.n_epochs = num_epochs
         self.vector_cache = vector_cache
+        self.log_interval = log_interval
 
         if objective == 'crossentropy':
             self.objective = CrossEntropyLoss()
@@ -156,7 +162,7 @@ class TrainClassifier:
         elif objective == 'nllloss':
             self.objective = NLLLoss()
 
-        #MODEL SPECS
+        #MODEL ARCHITECTURE SPECS
         self.model_type = model_type
         self.attn_type = attn_type
         self.attention_dim = attention_dim if self.attn_type is not None else None
@@ -164,9 +170,9 @@ class TrainClassifier:
         self.num_classes = num_classes
 
         #HYPERPARAMS
-        self.log_interval = log_interval
         self.wordvec_source = wordvec_source
         self.wordvec_dim = wordvec_dim
+        self.tune_wordvecs = tune_wordvecs
         self.hidden_size = hidden_size
         self.num_layers = num_layers
         self.pretrained_modelpath = pretrained_modelpath
@@ -286,7 +292,13 @@ class TrainClassifier:
     def get_vectors(self):
         vecs = []
         print('Loading Vectors From Memory...')
-        print(self.wordvec_source)
+
+        if len(self.wordvec_source) == 0:
+            print('Not using pretrained wordvectors')
+            assert self.tune_wordvecs, "You're using random vectors and not tuning them, how do you think that'll pan out?"
+        else:
+            print('Using these vectors: {}'.format(self.wordvec_source))
+
         for source in self.wordvec_source:
             if source == 'GloVe':
                 print('Getting GloVe Vectors with {} dims'.format(self.wordvec_dim))
@@ -364,7 +376,8 @@ class TrainClassifier:
                                                 dropout = self.dropout,
                                                 attn_type = self.attn_type,
                                                 hidden_size = self.hidden_size,
-                                                num_layers = self.num_layers
+                                                num_layers = self.num_layers,
+                                                train_word_vecs = self.tune_wordvecs
                                             )
 
                 #MAKING MATRIX TO SAVE ATTENTION WEIGHTS
@@ -383,6 +396,7 @@ class TrainClassifier:
                                         pretrained_rnn = pretrained_model,
                                         dropout = self.dropout,
                                         input_size = self.wordvec_dim,
+                                        train_word_vecs = self.tune_wordvecs
                                     )
             if self.cuda:
                 self.model.cuda()

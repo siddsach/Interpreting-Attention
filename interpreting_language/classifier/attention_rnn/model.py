@@ -74,6 +74,7 @@ class VanillaRNN(nn.Module):
     def init_embedding(self, pretrained_embeddings):
         self.embed.weight.data.copy_(pretrained_embeddings)# this provides the values
         if not self.train_word_vecs:
+            print('Not Tuning Word Vectors!')
             self.embed.weight.requires_grad = False
 
     def init_rnn(self, pretrained_rnn):
