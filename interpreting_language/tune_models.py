@@ -120,16 +120,9 @@ def tuneModels(dataset, model, vectors, wordvec_dim, tune_wordvecs, num_layers):
         from classifier.attention_rnn.trainer import TrainClassifier
         trainerclass = TrainClassifier
 
-    vecs = []
-    if vectors == 'glove':
-        vecs = ['GloVe']
-    elif vectors == 'charlevel':
-        vecs = ['GloVe', 'charLevel']
-    elif vectors == 'google':
-        vecs = ['googlenews']
 
     max_time = 3.5 * 60 * 60 ## maximum allowed time
-    opt = Optimizer(dataset, vecs, tune_wordvecs, wordvec_dim, choices, trainerclass, max_time, num_layers)
+    opt = Optimizer(dataset, vectors, tune_wordvecs, wordvec_dim, choices, trainerclass, max_time, num_layers)
     name = '{}_{}.pt'.format(dataset, vectors)
     folder = None
     if opt.finished:

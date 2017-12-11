@@ -5,7 +5,7 @@ import torch
 from torch.nn import CrossEntropyLoss, NLLLoss
 from torch.autograd import Variable
 from torch.optim import Adam, SGD
-from .model import VanillaRNN, SelfAttentiveRNN
+from model import VanillaRNN, SelfAttentiveRNN
 import time
 import glob
 import os
@@ -99,8 +99,6 @@ class TrainClassifier:
             print("Not Using CUDA")
             self.cuda = False
 
-        print("SOURCE")
-        print(wordvec_source)
         self.lr = lr
         self.datapath = datapath
         if self.datapath == 'MPQA':
@@ -131,7 +129,6 @@ class TrainClassifier:
         self.num_classes = num_classes
 
         #HYPERPARAMS
-        print(wordvec_source)
         if wordvec_source == 'glove':
             self.wordvec_source = ['GloVe']
         elif wordvec_source == 'charlevel':
@@ -436,6 +433,7 @@ class TrainClassifier:
         self.eval_accuracy = float(torch.sum(accuracies)) / float(torch.nonzero(accuracies).size(0))
         print('Done Evaluating: Achieved accuracy of {}'
                 .format(self.eval_accuracy))
+        print(self.model.state_dict())
 
     def train_step(self, optimizer, start_time):
 

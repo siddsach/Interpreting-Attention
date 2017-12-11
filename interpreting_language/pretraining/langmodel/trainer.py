@@ -355,6 +355,7 @@ class TrainLangModel:
         perplexity = math.exp(avg_loss)
         print('Done Evaluating: Achieved loss of {} and perplexity of {}'
                 .format(avg_loss, perplexity))
+        print(self.model.state_dict())
         return perplexity
 
 
