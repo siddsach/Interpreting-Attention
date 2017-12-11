@@ -55,7 +55,7 @@ class Optimizer:
         trainer = self.TrainerClass(**settings)
         trainer.train()
         if trainer.best_accuracy > self.best_accuracy:
-            print('Improved loss from {} to {}'.format(self.best_loss, trainer.best_loss))
+            print('Improved accuracyfrom {} to {}'.format(self.accuracy, trainer.best_accuracy))
             self.best_loss = trainer.best_loss
             self.best_args = settings
             self.model = trainer
