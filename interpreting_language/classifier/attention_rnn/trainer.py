@@ -39,8 +39,9 @@ MAX_LENGTH = 100
 SAVE_CHECKPOINT = root_path + '/trained_models/classifier/'
 ATTN_TYPE = 'keyval'
 ATTENTION_DIM = 350 if ATTN_TYPE is not None else None
-L2 = 0.02
+L2 = 0.001
 DROPOUT = 0.5
+RNN_DROPOUT = 0.0
 MLP_HIDDEN = 512
 OPTIMIZER = 'adam'
 CLIP = 1
@@ -90,6 +91,8 @@ parser.add_argument('--optim', type=str, default = 'adam',
                     help='location of pretrained init')
 parser.add_argument('--dropout', type=float, default = DROPOUT,
                     help='location of pretrained init')
+parser.add_argument('--rnn_dropout', type=float, default = RNN_DROPOUT,
+                    help='location of pretrained init')
 parser.add_argument('--max_data_len', type=int, default = MAX_DATA_LEN,
                     help='location of pretrained init')
 parser.add_argument('--clip', type=float, default = CLIP,
@@ -129,6 +132,7 @@ class TrainClassifier:
                     optim = args.optim,
                     max_data_len = args.max_data_len,
                     dropout = args.dropout,
+                    rnn_dropout =  args.rnn_dropout,
                     clip = args.clip,
                     attn_type = args.attention,
                     l2 = args.l2
@@ -183,6 +187,7 @@ class TrainClassifier:
         self.max_length = max_length
         self.optim = optim
         self.dropout = dropout
+        self.rnn_dropout = rnn_dropout
         self.l2 = l2
         self.clip = clip
 
@@ -372,6 +377,7 @@ class TrainClassifier:
                 'pretrained_rnn' : pretrained_model,
                 'input_size' : self.wordvec_dim,
                 'dropout' : self.dropout,
+                'rnn_dropout' : self.rnn_dropout,
                 'hidden_size' : self.hidden_size,
                 'num_layers' : self.num_layers,
                 'train_word_vecs' : self.tune_wordvecs

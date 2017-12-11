@@ -16,6 +16,7 @@ class VanillaRNN(nn.Module):
             hidden_size = 4096,
             num_layers = 1,
             dropout = 0.5,
+            rnn_dropout = 0.0,
             tie_weights = False,
             init_range = 0.1,
             num_classes = 2,
@@ -48,7 +49,7 @@ class VanillaRNN(nn.Module):
         self.model = getattr(nn, model_type)(input_size,
                                             hidden_size,
                                             num_layers,
-                                            dropout = dropout,
+                                            dropout = rnn_dropout,
                                             bidirectional = bidirectional,
                                             batch_first = True
                                         )
