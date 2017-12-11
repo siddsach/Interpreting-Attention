@@ -37,6 +37,7 @@ HIDDEN_SIZE = 300
 PRETRAINED = None #root_path + '/trained_models/trained_rnn.pt'
 MAX_LENGTH = 100
 SAVE_CHECKPOINT = root_path + '/trained_models/classifier/'
+MODEL_TYPE = 'LSTM'
 ATTN_TYPE = 'keyval'
 ATTENTION_DIM = 350 if ATTN_TYPE is not None else None
 L2 = 0.001
@@ -51,56 +52,6 @@ HIDDEN_SIZE = 300
 MAX_DATA_LEN = 1000
 if torch.cuda.is_available():
     MAX_DATA_LEN = None
-
-parser = argparse.ArgumentParser(description='Tuning Hyperparameters')
-parser.add_argument('--attention', type=str, default=None,
-                    help='location of the data corpus')
-parser.add_argument('--pretrained', type=str, default = PRETRAINED,
-                    help='location, of pretrained init')
-parser.add_argument('--checkpoint', type=str, default = None,
-                    help='location, of pretrained init')
-parser.add_argument('--data',  type=str, default = DATASET,
-                    help='location of pretrained init')
-parser.add_argument('--num_epochs',  type=int, default = NUM_EPOCHS,
-                    help='location of pretrained init')
-parser.add_argument('--lr', type=float, default = LEARNING_RATE,
-                    help='location of pretrained init')
-parser.add_argument('--l2', type=float, default = L2,
-                    help='location of pretrained init')
-parser.add_argument('--batch_size', type=int, default = BATCH_SIZE,
-                    help='location of pretrained init')
-parser.add_argument('--model_type', type=str, default = "LSTM",
-                    help='location of pretrained init')
-parser.add_argument('--num_layers', type=int, default = NUM_LAYERS,
-                    help='location of pretrained init')
-parser.add_argument('--hidden_size', type=int, default = HIDDEN_SIZE,
-                    help='location of pretrained init')
-parser.add_argument('--attention_dim', type=int, default = ATTENTION_DIM,
-                    help='location of pretrained init')
-parser.add_argument('--mlp_hidden', type=int, default = MLP_HIDDEN,
-                    help='location of pretrained init')
-parser.add_argument('--wordvec_dim', type=int, default = WORD_VEC_DIM,
-                    help='location of pretrained init')
-parser.add_argument('--wordvec_source', type=list, default = WORDVEC_SOURCE,
-                    help='location of pretrained init')
-parser.add_argument('--tune_wordvecs', type=list, default = TUNE_WORDVECS,
-                    help='location of pretrained init')
-parser.add_argument('--max_length', type=int, default = MAX_LENGTH,
-                    help='location of pretrained init')
-parser.add_argument('--optim', type=str, default = 'adam',
-                    help='location of pretrained init')
-parser.add_argument('--dropout', type=float, default = DROPOUT,
-                    help='location of pretrained init')
-parser.add_argument('--rnn_dropout', type=float, default = RNN_DROPOUT,
-                    help='location of pretrained init')
-parser.add_argument('--max_data_len', type=int, default = MAX_DATA_LEN,
-                    help='location of pretrained init')
-parser.add_argument('--clip', type=float, default = CLIP,
-                    help='location of pretrained init')
-parser.add_argument('--savepath', type=str, default = MODEL_SAVEPATH,
-                    help='location of pretrained init')
-args = parser.parse_args()
-
 def sorter(example):
     return len(example.text)
 
@@ -108,34 +59,34 @@ class TrainClassifier:
     def __init__(
                     self,
                     num_classes = 2,
-                    pretrained_modelpath = args.pretrained,
-                    checkpoint = args.checkpoint,
-                    datapath = args.data,
-                    num_epochs = args.num_epochs,
-                    lr = args.lr,
+                    pretrained_modelpath = PRETRAINED,
+                    checkpoint = SAVE_CHECKPOINT,
+                    datapath = DATASET,
+                    num_epochs = NUM_EPOCHS,
+                    lr = LEARNING_RATE,
                     vector_cache = VECTOR_CACHE,
                     objective = 'nllloss',
                     train = False,
                     log_interval = LOG_INTERVAL,
-                    batch_size = args.batch_size,
-                    model_type = args.model_type,
-                    num_layers = args.num_layers,
-                    hidden_size = args.hidden_size,
-                    attention_dim = args.hidden_size, #None if not using attention
-                    mlp_hidden = args.mlp_hidden,
-                    wordvec_dim = args.wordvec_dim,
-                    wordvec_source = args.wordvec_source,
-                    tune_wordvecs = args.tune_wordvecs,
-                    max_length = args.max_length,
+                    batch_size = BATCH_SIZE,
+                    model_type = MODEL_TYPE,
+                    num_layers = NUM_LAYERS,
+                    hidden_size = HIDDEN_SIZE,
+                    attention_dim = ATTENTION_DIM, #None if not using attention
+                    mlp_hidden = MLP_HIDDEN,
+                    wordvec_dim = WORD_VEC_DIM,
+                    wordvec_source = WORDVEC_SOURCE,
+                    tune_wordvecs = TUNE_WORDVECS,
+                    max_length = MAX_LENGTH,
                     use_cuda = True,
-                    savepath = args.savepath,
-                    optim = args.optim,
-                    max_data_len = args.max_data_len,
-                    dropout = args.dropout,
-                    rnn_dropout =  args.rnn_dropout,
-                    clip = args.clip,
-                    attn_type = args.attention,
-                    l2 = args.l2
+                    savepath = MODEL_SAVEPATH,
+                    optim = OPTIMIZER,
+                    max_data_len = MAX_DATA_LEN,
+                    dropout = DROPOUT,
+                    rnn_dropout =  RNN_DROPOUT,
+                    clip = CLIP,
+                    attn_type = ATTN_TYPE,
+                    l2 = L2
                 ):
 
         self.savepath = savepath
@@ -619,6 +570,86 @@ def get_accuracy(predictions, targets):
     return pct_correct
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Tuning Hyperparameters')
+    parser.add_argument('--attention', type=str, default=None,
+                        help='location of the data corpus')
+    parser.add_argument('--pretrained', type=str, default = PRETRAINED,
+                        help='location, of pretrained init')
+    parser.add_argument('--checkpoint', type=str, default = None,
+                        help='location, of pretrained init')
+    parser.add_argument('--data',  type=str, default = DATASET,
+                        help='location of pretrained init')
+    parser.add_argument('--num_epochs',  type=int, default = NUM_EPOCHS,
+                        help='location of pretrained init')
+    parser.add_argument('--lr', type=float, default = LEARNING_RATE,
+                        help='location of pretrained init')
+    parser.add_argument('--l2', type=float, default = L2,
+                        help='location of pretrained init')
+    parser.add_argument('--batch_size', type=int, default = BATCH_SIZE,
+                        help='location of pretrained init')
+    parser.add_argument('--model_type', type=str, default = "LSTM",
+                        help='location of pretrained init')
+    parser.add_argument('--num_layers', type=int, default = NUM_LAYERS,
+                        help='location of pretrained init')
+    parser.add_argument('--hidden_size', type=int, default = HIDDEN_SIZE,
+                        help='location of pretrained init')
+    parser.add_argument('--attention_dim', type=int, default = ATTENTION_DIM,
+                        help='location of pretrained init')
+    parser.add_argument('--mlp_hidden', type=int, default = MLP_HIDDEN,
+                        help='location of pretrained init')
+    parser.add_argument('--wordvec_dim', type=int, default = WORD_VEC_DIM,
+                        help='location of pretrained init')
+    parser.add_argument('--wordvec_source', type=list, default = WORDVEC_SOURCE,
+                        help='location of pretrained init')
+    parser.add_argument('--tune_wordvecs', type=list, default = TUNE_WORDVECS,
+                        help='location of pretrained init')
+    parser.add_argument('--max_length', type=int, default = MAX_LENGTH,
+                        help='location of pretrained init')
+    parser.add_argument('--optim', type=str, default = 'adam',
+                        help='location of pretrained init')
+    parser.add_argument('--dropout', type=float, default = DROPOUT,
+                        help='location of pretrained init')
+    parser.add_argument('--rnn_dropout', type=float, default = RNN_DROPOUT,
+                        help='location of pretrained init')
+    parser.add_argument('--max_data_len', type=int, default = MAX_DATA_LEN,
+                        help='location of pretrained init')
+    parser.add_argument('--clip', type=float, default = CLIP,
+                        help='location of pretrained init')
+    parser.add_argument('--savepath', type=str, default = MODEL_SAVEPATH,
+                        help='location of pretrained init')
+    args = parser.parse_args()
+
+    trainer = TrainClassifier(
+                        num_classes = 2,
+                        pretrained_modelpath = args.pretrained,
+                        checkpoint = args.checkpoint,
+                        datapath = args.data,
+                        num_epochs = args.num_epochs,
+                        lr = args.lr,
+                        vector_cache = VECTOR_CACHE,
+                        objective = 'nllloss',
+                        train = False,
+                        log_interval = LOG_INTERVAL,
+                        batch_size = args.batch_size,
+                        model_type = args.model_type,
+                        num_layers = args.num_layers,
+                        hidden_size = args.hidden_size,
+                        attention_dim = args.hidden_size, #None if not using attention
+                        mlp_hidden = args.mlp_hidden,
+                        wordvec_dim = args.wordvec_dim,
+                        wordvec_source = args.wordvec_source,
+                        tune_wordvecs = args.tune_wordvecs,
+                        max_length = args.max_length,
+                        use_cuda = True,
+                        savepath = args.savepath,
+                        optim = args.optim,
+                        max_data_len = args.max_data_len,
+                        dropout = args.dropout,
+                        rnn_dropout =  args.rnn_dropout,
+                        clip = args.clip,
+                        attn_type = args.attention,
+                        l2 = args.l2
+                    )
     trainer = TrainClassifier()
     trainer.train()
 
