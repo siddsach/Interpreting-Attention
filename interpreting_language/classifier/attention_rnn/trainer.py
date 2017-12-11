@@ -17,21 +17,21 @@ root_path = os.getcwd()
 print("ROOT_PATH: {}".format(root_path))
 
 #### DEFAULTS ####
-SPLIT = 0.9
+SPLIT = 0.75
 DATASET = 'IMDB'
 IMDB_PATH = root_path + '/data/imdb/aclImdb'# 'sentence_subjectivity.csv' #DATA MUST BE IN CSV FORMAT WITH ONE FIELD TITLED SENTENCES CONTANING ONE LINE PER SENTENCE
 MPQA_PATH = root_path + '/data/mpqa/mpqa_subj_labels.pickle'
 VECTOR_CACHE = root_path + '/vectors'
 SAVED_VECTORS = True
-NUM_EPOCHS = 10
-LEARNING_RATE = 0.06
+NUM_EPOCHS = 20
+LEARNING_RATE = 0.0005
 BATCH_SIZE = 32
 LOG_INTERVAL = 5
 WORD_VEC_DIM = 200
 WORDVEC_SOURCE = ['GloVe']
 TUNE_WORDVECS = False
 #['GloVe']# charLevel'
-SAVED_MODEL_PATH = None#'saved_model.pt'
+MODEL_SAVEPATH = None#'saved_model.pt'
 IMDB = True
 HIDDEN_SIZE = 300
 PRETRAINED = None #root_path + '/trained_models/trained_rnn.pt'
@@ -50,7 +50,7 @@ HIDDEN_SIZE = 300
 
 MAX_DATA_LEN = 1000
 if torch.cuda.is_available():
-    MAX_DATA_LEN = 5000
+    MAX_DATA_LEN = None
 
 parser = argparse.ArgumentParser(description='Tuning Hyperparameters')
 parser.add_argument('--attention', type=str, default=None,
@@ -97,7 +97,7 @@ parser.add_argument('--max_data_len', type=int, default = MAX_DATA_LEN,
                     help='location of pretrained init')
 parser.add_argument('--clip', type=float, default = CLIP,
                     help='location of pretrained init')
-parser.add_argument('--savepath', type=str, default = SAVE_CHECKPOINT,
+parser.add_argument('--savepath', type=str, default = MODEL_SAVEPATH,
                     help='location of pretrained init')
 args = parser.parse_args()
 
