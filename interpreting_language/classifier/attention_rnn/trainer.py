@@ -360,55 +360,51 @@ class TrainClassifier:
             self.ntokens = len(self.sentence_field.vocab)
 
             pretrained_model = None
-
             if self.pretrained_modelpath is not None:
                 pretrained_model = torch.load(self.pretrained_modelpath)
                 print('Using Pretrained RNN from path: {}'.format(self.pretrained_modelpath))
 
-            if self.attention_dim is not None:
-                print('Using {} Attention model with {} dimensions and {} layers'
-                        .format(self.attn_type, self.attention_dim, self.num_layers))
-                self.model = SelfAttentiveRNN(vocab_size = self.ntokens,
-                                                num_classes = self.num_classes,
-                                                batch_size = self.batch_size,
-                                                cuda = self.cuda,
-                                                vectors = self.sentence_field.vocab.vectors,
-                                                pretrained_rnn = pretrained_model,
-                                                attention_dim = self.attention_dim,
-                                                mlp_hidden = self.mlp_hidden,
-                                                input_size = self.wordvec_dim,
-                                                dropout = self.dropout,
-                                                attn_type = self.attn_type,
-                                                hidden_size = self.hidden_size,
-                                                num_layers = self.num_layers,
-                                                train_word_vecs = self.tune_wordvecs
-                                            )
+            args = {'vocab_size' : self.ntokens,
+                'num_classes' : self.num_classes,
+                'batch_size' : self.batch_size,
+                'cuda' : self.cuda,
+                'vectors' : self.sentence_field.vocab.vectors,
+                'pretrained_rnn' : pretrained_model,
+                'input_size' : self.wordvec_dim,
+                'dropout' : self.dropout,
+                'hidden_size' : self.hidden_size,
+                'num_layers' : self.num_layers,
+                'train_word_vecs' : self.tune_wordvecs
+            }
+
+
+            if self.attention_dim is None:
+                self.model = VanillaRNN(**args)
+                print('Using Vanilla RNN with following args:\n{}'
+                        .format(args))
+
+            else:
+                attn_args = {
+                    'attention_dim' : self.attention_dim,
+                    'mlp_hidden' : self.mlp_hidden,
+                    'attn_type' : self.attn_type,
+                }
+                args += attn_args
+
+                print('Using Attention model with following args:\n{}'
+                        .format(args))
+                self.model = SelfAttentiveRNN(**args)
 
                 #MAKING MATRIX TO SAVE ATTENTION WEIGHTS
                 self.train_attns = torch.zeros(2, len(self.train_data), self.max_length)
                 self.eval_attns = torch.zeros(2, len(self.test_data), self.max_length)
-            else:
-                print('Using Vanilla RNN with {} dimensions and {} layers'
-                        .format(self.hidden_size, self.num_layers))
-                self.model = VanillaRNN(vocab_size = self.ntokens,
-                                        num_classes = self.num_classes,
-                                        batch_size = self.batch_size,
-                                        cuda = self.cuda,
-                                        hidden_size = self.hidden_size,
-                                        num_layers = self.num_layers,
-                                        vectors = self.sentence_field.vocab.vectors,
-                                        pretrained_rnn = pretrained_model,
-                                        dropout = self.dropout,
-                                        input_size = self.wordvec_dim,
-                                        train_word_vecs = self.tune_wordvecs
-                                    )
+
+
             if self.cuda:
                 self.model.cuda()
         else:
             print('Loading Model from checkpoint')
             self.model = torch.load(self.checkpoint_path)
-
-
 
 
     def repackage_hidden(self, h):
