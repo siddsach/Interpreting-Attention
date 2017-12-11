@@ -131,6 +131,7 @@ class TrainClassifier:
         self.num_classes = num_classes
 
         #HYPERPARAMS
+        print(wordvec_source)
         if wordvec_source == 'glove':
             self.wordvec_source = ['GloVe']
         elif wordvec_source == 'charlevel':
@@ -294,6 +295,7 @@ class TrainClassifier:
                 vecs.append(google)
 
         print('Building Vocab...')
+        print(vecs)
         if len(vecs) > 0:
             self.sentence_field.build_vocab(self.train_data, vectors = vecs)
             self.target_field.build_vocab(self.train_data)
