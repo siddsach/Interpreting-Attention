@@ -39,7 +39,7 @@ MAX_LENGTH = 100
 SAVE_CHECKPOINT = root_path + '/trained_models/classifier/'
 ATTN_TYPE = 'keyval'
 ATTENTION_DIM = 350 if ATTN_TYPE is not None else None
-L2 = 0.0001
+L2 = 0.02
 DROPOUT = 0.5
 MLP_HIDDEN = 512
 OPTIMIZER = 'adam'
@@ -63,6 +63,8 @@ parser.add_argument('--data',  type=str, default = DATASET,
 parser.add_argument('--num_epochs',  type=int, default = NUM_EPOCHS,
                     help='location of pretrained init')
 parser.add_argument('--lr', type=float, default = LEARNING_RATE,
+                    help='location of pretrained init')
+parser.add_argument('--l2', type=float, default = L2,
                     help='location of pretrained init')
 parser.add_argument('--batch_size', type=int, default = BATCH_SIZE,
                     help='location of pretrained init')
@@ -128,7 +130,8 @@ class TrainClassifier:
                     max_data_len = args.max_data_len,
                     dropout = args.dropout,
                     clip = args.clip,
-                    attn_type = args.attention
+                    attn_type = args.attention,
+                    l2 = args.l2
                 ):
 
         self.savepath = savepath
@@ -180,6 +183,7 @@ class TrainClassifier:
         self.max_length = max_length
         self.optim = optim
         self.dropout = dropout
+        self.l2 = l2
         self.clip = clip
 
         self.accuracies = torch.zeros(self.n_epochs)
@@ -560,7 +564,7 @@ class TrainClassifier:
         if self.optim == 'adam':
             optimizer = Adam(parameters, lr = self.lr)
         elif self.optim == 'SGD':
-            optimizer = SGD(parameters, lr = self.lr, weight_decay = L2)
+            optimizer = SGD(parameters, lr = self.lr, weight_decay = self.l2)
 
         return optimizer
 
