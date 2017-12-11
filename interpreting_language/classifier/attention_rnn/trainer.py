@@ -23,10 +23,10 @@ IMDB_PATH = root_path + '/data/imdb/aclImdb'# 'sentence_subjectivity.csv' #DATA 
 MPQA_PATH = root_path + '/data/mpqa/mpqa_subj_labels.pickle'
 VECTOR_CACHE = root_path + '/vectors'
 SAVED_VECTORS = True
-NUM_EPOCHS = 20
+NUM_EPOCHS = 40
 LEARNING_RATE = 0.0005
 BATCH_SIZE = 32
-LOG_INTERVAL = 5
+LOG_INTERVAL = 20
 WORD_VEC_DIM = 200
 WORDVEC_SOURCE = ['GloVe']
 TUNE_WORDVECS = False
@@ -584,7 +584,7 @@ class TrainClassifier:
         not_better = 0
 
         for epoch in range(self.n_epochs):
-            print("Completing Train Step...")
+            print("Completing Train Step at {}th epoch...".format(epoch))
             optimizer = self.train_step(optimizer, start_time)
             print("Evaluating...")
             self.evaluate()
@@ -597,13 +597,14 @@ class TrainClassifier:
                     if self.optim == 'vanilla_grad':
                         #Annealing
                         self.lr /= 4
-                elif not_better >= 20:
+                elif not_better >= 10:
                     print('Model not improving. Stopping early with {}'
                            'loss at {} epochs.'.format(self.best_accuracy, self.epoch))
                     break
             else:
                 self.best_accuracy = self.eval_accuracy
                 self.best_model = self.model
+                not_better = 0
 
         if self.savepath is not None:
 

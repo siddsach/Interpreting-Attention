@@ -3,7 +3,7 @@ import argparse
 
 
 class Optimizer:
-    def __init__(self, dataset, vectors, choices, TrainerClass, timelimit):
+    def __init__(self, dataset, vectors, choices, TrainerClass, timelimit, num_layers):
 
         print('Building Bayesian Optimizer for \n data:{} \n choices:{}'.format(dataset, choices))
 
@@ -14,6 +14,7 @@ class Optimizer:
         self.model = None
         self.vectors = vectors
         self.runs = []
+        self.Number = num_layers
 
         myBopt = GPyOpt.methods.BayesianOptimization(f=self.getError,#Objective function
                                                             domain=choices,          # Box-constrains of the problem
@@ -26,8 +27,7 @@ class Optimizer:
 
         myBopt.run_optimization(max_time = timelimit)
 
-        print("ATTRIBUTES")
-        print(myBopt.__dict__)
+        print("\n\n\nRESULTS:\n{}".format(self.runs))
 
     def getError(self, params):
         settings = {}
@@ -42,12 +42,13 @@ class Optimizer:
 
         settings["data"] = self.dataset
         settings["wordvec_source"] = self.vectors
+        settings["num_layers"] = self.num_layers
 
         print("SETTINGS FOR THIS RUN")
         print(settings)
         trainer = self.TrainerClass(**settings)
         trainer.train()
-        if trainer.best_loss < self.best_loss:
+        if trainer.best_accuracy > self.best_accuracy:
             print('Improved loss from {} to {}'.format(self.best_loss, trainer.best_loss))
             self.best_loss = trainer.best_loss
             self.best_args = settings
@@ -68,7 +69,7 @@ class Optimizer:
 
 # TRAIN LANGUAGE MODELS
 LANGMODEL_CHOICES = [
-    {"name":"learning_rate", "type": "continuous", "domain":[2, 30]},
+    {"name":"lr", "type": "continuous", "domain":[0.00005, 0.005]},
     {"name":"batch_size", "type": "discrete", "domain": [20, 50, 80]},
     {"name":"seq_len", "type":"discrete", "domain":[20, 35, 50]},
     {"name":"dropout", "type": "continuous", "domain": [0,1]},
@@ -78,15 +79,22 @@ LANGMODEL_CHOICES = [
 
 
 CLASSIFIER_CHOICES = [
+                {"name":"lr", "type": "continuous", "domain":[0.00005, 0.005]},
+                {"name":"rnn_dropout", "type": "continuous", "domain": [0,1]},
+                {"name":"dropout", "type": "continuous", "domain": [0,1]},
+                {"name":"l2", "type": "continuous", "domain": [0, 1]},
+            ]
+
+ATTNCLF_CHOICES = [
                 {"name": "attention_dim", "type": "discrete", "domain": [5, 100]},
-                {"name": "mlp_hidden", "type": "discrete", "domain": [20, 500]},
+                {"name": "mlp_hidden", "type": "discrete", "domain": [20, 500]}
             ]
 
 MLPATTN_CHOICES = []
 
 KEYVALATTN_CHOICES = []
 
-def tuneModels(dataset, model, vectors):
+def tuneModels(dataset, model, vectors, num_layers):
     choices = None
     trainerclass = None
 
@@ -116,7 +124,7 @@ def tuneModels(dataset, model, vectors):
         vecs = ['googlenews']
 
     max_time = 3.5 * 60 * 60 ## maximum allowed time
-    opt = Optimizer(dataset, vecs, choices, trainerclass, max_time)
+    opt = Optimizer(dataset, vecs, choices, trainerclass, max_time, num_layers)
     name = '{}_{}.pt'.format(dataset, vectors)
     folder = None
     if opt.finished:
@@ -124,18 +132,22 @@ def tuneModels(dataset, model, vectors):
     else:
         folder = 'optimizing/'
 
-    opt.model.save_checkpoint(folder + name)
+    #opt.model.save_checkpoint(folder + name)
 
 
 
 parser = argparse.ArgumentParser(description='Tuning Hyperparameters')
 parser.add_argument('--data', type=str, default='ptb',
                     help='dataset')
-parser.add_argument('--model', type=str, default='langmodel',
+parser.add_argument('--model', type=str, default='classifier',
                     help='type of model to train')
 parser.add_argument('--vectors', type=str, default='glove',
                     help='vectors to use')
+parser.add_argument('--num_layers', type=int, default=1,
+                    help='vectors to use')
+parser.add_argument('--tune_wordvecs', type=bool, default=True,
+                    help='whether to tune wordvecs')
 
 args = parser.parse_args()
 
-tuneModels(args.data, model = args.model, vectors = args.vectors)
+tuneModels(args.data, model = args.model, vectors = args.vectors, num_layers = args.num_layers)
