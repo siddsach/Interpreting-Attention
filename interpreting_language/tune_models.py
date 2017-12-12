@@ -143,7 +143,7 @@ def tuneModels(dataset, model, vectors, wordvec_dim, tune_wordvecs, num_layers, 
         trainerclass = TrainClassifier
 
 
-    max_time = 3 * 60 * 60 ## maximum allowed time
+    max_time = 30# * 60 * 60 ## maximum allowed time
     opt = Optimizer(dataset, vectors, tune_wordvecs, wordvec_dim, choices, trainerclass, max_time, num_layers, batch_size, seq_len)
 
 
