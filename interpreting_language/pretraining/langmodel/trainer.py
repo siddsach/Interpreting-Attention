@@ -71,6 +71,7 @@ class TrainLangModel:
                     tie_weights = TIE_WEIGHTS,
                     optim = OPTIMIZER,
                     dropout = DROPOUT,
+                    rnn_dropout = DROPOUT,
                     few_batches = FEW_BATCHES,
                     anneal = ANNEAL
                 ):
@@ -88,6 +89,7 @@ class TrainLangModel:
         self.optim = optim
         self.anneal = anneal
         self.dropout = dropout
+        self.rnn_dropout = rnn_dropout
         self.few_batches = few_batches
 
         self.n_epochs = num_epochs
@@ -249,7 +251,7 @@ class TrainLangModel:
                                 decoder = 'softmax',
                                 num_layers = self.num_layers,
                                 hidden_size = self.hidden_size,
-                                rnn_dropout = self.dropout,
+                                rnn_dropout = self.rnn_dropout,
                                 linear_dropout = self.dropout,
                                 input_size = self.wordvec_dim
                             )
@@ -264,7 +266,7 @@ class TrainLangModel:
                                 decoder = 'nce',
                                 num_layers = self.num_layers,
                                 hidden_size = self.hidden_size,
-                                rnn_dropout = self.dropout,
+                                rnn_dropout = self.rnn_dropout,
                                 linear_dropout = self.dropout,
                                 input_size = self.wordvec_dim,
                                 tune_wordvecs = self.tune_wordvecs
@@ -397,7 +399,7 @@ class TrainLangModel:
         print('Begin Training...')
 
         not_better = 0
-        self.best_loss = 10000
+        self.best_loss = 100000000
         self.best_model = None
 
         for epoch in range(self.n_epochs):
