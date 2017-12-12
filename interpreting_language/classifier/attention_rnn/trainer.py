@@ -5,7 +5,7 @@ import torch
 from torch.nn import CrossEntropyLoss, NLLLoss
 from torch.autograd import Variable
 from torch.optim import Adam, SGD
-from model import VanillaRNN, SelfAttentiveRNN
+from .model import VanillaRNN, SelfAttentiveRNN
 import time
 import glob
 import os
@@ -23,7 +23,7 @@ IMDB_PATH = root_path + '/data/imdb/aclImdb'# 'sentence_subjectivity.csv' #DATA 
 MPQA_PATH = root_path + '/data/mpqa/mpqa_subj_labels.pickle'
 VECTOR_CACHE = root_path + '/vectors'
 SAVED_VECTORS = True
-NUM_EPOCHS = 1
+NUM_EPOCHS = 60
 LEARNING_RATE = 0.0005
 BATCH_SIZE = 32
 LOG_INTERVAL = 20
@@ -433,7 +433,6 @@ class TrainClassifier:
         self.eval_accuracy = float(torch.sum(accuracies)) / float(torch.nonzero(accuracies).size(0))
         print('Done Evaluating: Achieved accuracy of {}'
                 .format(self.eval_accuracy))
-        print(self.model.state_dict())
 
     def train_step(self, optimizer, start_time):
 
