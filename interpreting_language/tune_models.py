@@ -1,10 +1,13 @@
 import GPyOpt
 import argparse
+from time import time
 
 
 class Optimizer:
     def __init__(self, dataset, vectors, tune_wordvecs, wordvec_dim, choices, TrainerClass, timelimit, num_layers, \
             batch_size, seq_len):
+
+        self.start_time = time()
 
         print('Building Bayesian Optimizer for \n data:{} \n choices:{}'.format(dataset, choices))
 
@@ -20,6 +23,7 @@ class Optimizer:
         self.best_accuracy = -10000000
         self.batch_size = batch_size
         self.seq_len = seq_len
+        self.timelimit = timelimit
 
         self.runs = []
         self.model = None
@@ -33,7 +37,10 @@ class Optimizer:
 
         myBopt.run_optimization(max_iter = 1, max_time = timelimit)
 
-        print(myBopt.cum_time)
+        self.save()
+
+
+    def save(self):
 
         savepath = '{}/optimized/{}bsz_{}seq_len_{}layers_{}vectors_{}tune_{}accuracy.pt'.format(self.dataset, self.batch_size, self.seq_len, self.num_layers, self.vectors, self.tune_wordvecs, self.best_accuracy)
 
@@ -73,6 +80,10 @@ class Optimizer:
 
         print(self.model)
         self.runs.append({"params":settings, "best_accuracy": trainer.best_accuracy})
+
+        current_time = time()
+        if current_time - self.start_time >= self.timelimit:
+            self.save()
 
         return -trainer.best_accuracy
 
@@ -132,7 +143,7 @@ def tuneModels(dataset, model, vectors, wordvec_dim, tune_wordvecs, num_layers, 
         trainerclass = TrainClassifier
 
 
-    max_time = 60 ## maximum allowed time
+    max_time = 3 * 60 * 60 ## maximum allowed time
     opt = Optimizer(dataset, vectors, tune_wordvecs, wordvec_dim, choices, trainerclass, max_time, num_layers, batch_size, seq_len)
 
 
