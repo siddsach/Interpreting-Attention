@@ -23,7 +23,7 @@ VECTOR_CACHE = project_path + '/vectors'
 
 #TRAIN_PATH = project_path + 'data/gigaword/gigaword_cleaned_small.txt'#'data/wikitext-2/wikitext-2/wiki.train.tokens'
 
-NUM_EPOCHS = 2 if not torch.cuda.is_available() else None
+NUM_EPOCHS = 2 if not torch.cuda.is_available() else 5
 LEARNING_RATE = 20
 LOG_INTERVAL = 50
 BPTT_SEQUENCE_LENGTH = 35
@@ -41,7 +41,7 @@ MODEL_TYPE = 'LSTM'
 OPTIMIZER = 'vanilla_grad'
 DROPOUT = 0.2
 HIDDEN_SIZE = 4096
-FEW_BATCHES = 10 if not torch.cuda.is_available() else None
+FEW_BATCHES = 10 if not torch.cuda.is_available() else 10
 MAX_VOCAB = None
 MIN_FREQ = 5
 ANNEAL = 4.0
@@ -399,7 +399,7 @@ class TrainLangModel:
         print('Begin Training...')
 
         not_better = 0
-        self.best_loss = 100000000
+        self.best_loss = 10000000000
         self.best_model = None
 
         for epoch in range(self.n_epochs):

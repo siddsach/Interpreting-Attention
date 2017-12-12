@@ -33,6 +33,8 @@ class Optimizer:
 
         myBopt.run_optimization(max_iter = 1, max_time = timelimit)
 
+        print(myBopt.cum_time)
+
         savepath = '{}/optimized/{}bsz_{}seq_len_{}layers_{}vectors_{}tune_{}accuracy.pt'.format(self.dataset, self.batch_size, self.seq_len, self.num_layers, self.vectors, self.tune_wordvecs, self.best_accuracy)
 
         self.model.save_checkpoint(savepath)
@@ -130,7 +132,7 @@ def tuneModels(dataset, model, vectors, wordvec_dim, tune_wordvecs, num_layers, 
         trainerclass = TrainClassifier
 
 
-    max_time = 3.5 * 60 * 60 ## maximum allowed time
+    max_time = 60 ## maximum allowed time
     opt = Optimizer(dataset, vectors, tune_wordvecs, wordvec_dim, choices, trainerclass, max_time, num_layers, batch_size, seq_len)
 
 
