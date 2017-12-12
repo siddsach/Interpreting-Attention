@@ -23,13 +23,14 @@ VECTOR_CACHE = project_path + '/vectors'
 
 #TRAIN_PATH = project_path + 'data/gigaword/gigaword_cleaned_small.txt'#'data/wikitext-2/wikitext-2/wiki.train.tokens'
 
-NUM_EPOCHS = 200
+NUM_EPOCHS = 2 if not torch.cuda.is_available() else None
 LEARNING_RATE = 20
 LOG_INTERVAL = 50
 BPTT_SEQUENCE_LENGTH = 35
 BATCH_SIZE = 20
 WORDVEC_DIM = 200
-WORDVEC_SOURCE = []#'GloVe', 'charLevel']
+GLOVE_DIM = 200
+WORDVEC_SOURCE = ''#GloVe', 'charLevel']
 CHARNGRAM_DIM = 100
 TUNE_WORDVECS = True
 PRETRAINED_WORDVEC = False
@@ -40,7 +41,7 @@ MODEL_TYPE = 'LSTM'
 OPTIMIZER = 'vanilla_grad'
 DROPOUT = 0.2
 HIDDEN_SIZE = 4096
-FEW_BATCHES = 50 if not torch.cuda.is_available() else None
+FEW_BATCHES = 10 if not torch.cuda.is_available() else None
 MAX_VOCAB = None
 MIN_FREQ = 5
 ANNEAL = 4.0
@@ -60,7 +61,8 @@ class TrainLangModel:
                     log_interval = LOG_INTERVAL,
                     model_type = MODEL_TYPE,
                     savepath = MODEL_SAVE_PATH,
-                    glove_dim = WORDVEC_DIM,
+                    wordvec_dim = WORDVEC_DIM,
+                    glove_dim = GLOVE_DIM,
                     wordvec_source = WORDVEC_SOURCE,
                     tune_wordvecs = TUNE_WORDVECS,
                     num_layers = NUM_LAYERS,
@@ -92,28 +94,31 @@ class TrainLangModel:
 
         self.num_layers = num_layers
 
-
         self.clip = clip
 
-        self.wordvec_source = wordvec_source
+        #HYPERPARAMS
+        if wordvec_source == 'glove':
+            self.wordvec_source = ['GloVe']
+        elif wordvec_source == 'charlevel':
+            self.wordvec_source = ['GloVe', 'charLevel']
+        elif wordvec_source == 'google':
+            self.wordvec_source = ['googlenews']
+        else:
+            self.wordvec_source = []
+
         self.glove_dim = glove_dim
-        self.wordvec_dim = 0
+
+        if len(self.wordvec_source) == 0:
+            self.wordvec_dim = wordvec_dim
+        else:
+            self.wordvec_dim = 0
+
         self.pretrained_wordvecs = len(self.wordvec_source) > 0
 
-        for src in self.wordvec_source:
-            if src == 'GloVe':
-                self.wordvec_dim += self.glove_dim
-            if src == 'charLevel':
-                self.wordvec_dim += CHARNGRAM_DIM
-            if src == 'googlenews':
-                pass
+        self.hidden_size = hidden_size
 
         self.tie_weights = tie_weights
 
-        if self.tie_weights:
-            self.hidden_size = self.wordvec_dim
-        else:
-            self.hidden_size = hidden_size
 
         self.tune_wordvecs = True if not self.pretrained_wordvecs else tune_wordvecs
 
@@ -192,16 +197,21 @@ class TrainLangModel:
                 if source == 'GloVe':
                     glove = Vectors(name = 'glove.6B.{}d.txt'.format(self.glove_dim), cache = self.vector_cache)
                     vecs.append(glove)
+                    self.wordvec_dim += self.glove_dim
                 if source == 'charLevel':
                     charVec = Vectors(name = 'charNgram.txt',cache = self.vector_cache)
                     vecs.append(charVec)
+                    self.wordvec_dim += 100
                 if source == 'googlenews':
                     googlenews = Vectors(name = 'googlenews.txt', cache = self.vector_cache)
                     vecs.append(googlenews)
+                    self.wordvec_dim += 300
         print('Building Vocab...')
         self.sentence_field.build_vocab(self.train_sentences, vectors = vecs, max_size = MAX_VOCAB, min_freq = MIN_FREQ)
         print('Found {} tokens'.format(len(self.sentence_field.vocab)))
 
+        if self.tie_weights:
+            self.hidden_size = self.wordvec_dim
 
     def get_iterator(self, dataset):
         print('Getting Batches...')
@@ -224,6 +234,10 @@ class TrainLangModel:
         pretrained_vecs = None
         if self.pretrained_wordvecs:
             pretrained_vecs = self.sentence_field.vocab.vectors
+
+        print('here')
+        print(self.wordvec_dim)
+        print(self.hidden_size)
 
         if self.objective_function == 'crossentropy':
             print('Using Cross Entropy Loss ...')
@@ -255,7 +269,7 @@ class TrainLangModel:
                                 input_size = self.wordvec_dim,
                                 tune_wordvecs = self.tune_wordvecs
                             )
-            self.objective = NCELoss(self.ntokens, self.model.hidden_size, self.noise, self.cuda)
+            #self.objective = NCELoss(self.ntokens, self.model.hidden_size, self.noise, self.cuda)
 
         if self.cuda:
             self.model.cuda()
@@ -355,7 +369,6 @@ class TrainLangModel:
         perplexity = math.exp(avg_loss)
         print('Done Evaluating: Achieved loss of {} and perplexity of {}'
                 .format(avg_loss, perplexity))
-        print(self.model.state_dict())
         return perplexity
 
 
@@ -411,6 +424,8 @@ class TrainLangModel:
                 self.best_loss = this_perplexity
                 self.best_model = self.model
                 not_better = 0
+
+        self.best_accuracy = - self.best_loss
 
         print('Finished Training.')
 

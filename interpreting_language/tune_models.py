@@ -3,7 +3,8 @@ import argparse
 
 
 class Optimizer:
-    def __init__(self, dataset, vectors, tune_wordvecs, wordvec_dim, choices, TrainerClass, timelimit, num_layers):
+    def __init__(self, dataset, vectors, tune_wordvecs, wordvec_dim, choices, TrainerClass, timelimit, num_layers, \
+            batch_size, seq_len):
 
         print('Building Bayesian Optimizer for \n data:{} \n choices:{}'.format(dataset, choices))
 
@@ -13,11 +14,15 @@ class Optimizer:
         self.TrainerClass = TrainerClass
         self.model = None
         self.vectors = vectors
-        self.runs = []
         self.num_layers = num_layers
         self.tune_wordvecs = tune_wordvecs
         self.wordvec_dim = wordvec_dim
-        self.best_accuracy = 0.0
+        self.best_accuracy = -10000000
+        self.batch_size = batch_size
+        self.seq_len = seq_len
+
+        self.runs = []
+        self.model = None
 
         myBopt = GPyOpt.methods.BayesianOptimization(f=self.getError,#Objective function
                                                             domain=choices,          # Box-constrains of the problem
@@ -26,9 +31,11 @@ class Optimizer:
                                                             exact_feval = True
                                                         )
 
+        myBopt.run_optimization(max_iter = 1, max_time = timelimit)
 
+        savepath = '{}/optimized/{}bsz_{}seq_len_{}layers_{}vectors_{}tune_{}accuracy.pt'.format(self.dataset, self.batch_size, self.seq_len, self.num_layers, self.vectors, self.tune_wordvecs, self.best_accuracy)
 
-        myBopt.run_optimization(max_time = timelimit)
+        self.model.save_checkpoint(savepath)
 
         print("\n\n\nRESULTS:\n{}".format(self.runs))
 
@@ -43,23 +50,29 @@ class Optimizer:
 
             settings[arg['name']] = value
 
-        settings["datapath"] = self.dataset
+        settings["data"] = self.dataset
         settings["wordvec_source"] = self.vectors
         settings["num_layers"] = self.num_layers
         settings["tune_wordvecs"] = self.tune_wordvecs
         settings["wordvec_dim"] = self.wordvec_dim
+        settings["batch_size"] = self.batch_size
+        settings["seq_len"] = self.seq_len
 
         print("SETTINGS FOR THIS RUN")
         print(settings)
-        print(self.TrainerClass)
         trainer = self.TrainerClass(**settings)
         trainer.train()
+
         if trainer.best_accuracy > self.best_accuracy:
-            print('Improved accuracyfrom {} to {}'.format(self.accuracy, trainer.best_accuracy))
-            self.best_loss = trainer.best_loss
+            print('Improved accuracy from {} to {}'.format(self.best_accuracy, trainer.best_accuracy))
+            self.best_accuracy = trainer.best_accuracy
             self.best_args = settings
             self.model = trainer
-        self.runs.append({"params":settings, "loss": trainer.best_loss})
+
+        print("TRAINER CLASS")
+        print(self.model)
+
+        self.runs.append({"params":settings, "loss": trainer.best_accuracy})
 
         return trainer.best_loss
 
@@ -76,11 +89,8 @@ class Optimizer:
 # TRAIN LANGUAGE MODELS
 LANGMODEL_CHOICES = [
     {"name":"lr", "type": "continuous", "domain":[0.00005, 0.005]},
-    {"name":"batch_size", "type": "discrete", "domain": [20, 50, 80]},
-    {"name":"seq_len", "type":"discrete", "domain":[20, 35, 50]},
     {"name":"dropout", "type": "continuous", "domain": [0,1]},
     {"name":"anneal", "type": "continuous", "domain": [2, 8]},
-    {"name":"num_layers", "type": "discrete", "domain": [2, 3]}
 ]
 
 
@@ -100,7 +110,7 @@ MLPATTN_CHOICES = []
 
 KEYVALATTN_CHOICES = []
 
-def tuneModels(dataset, model, vectors, wordvec_dim, tune_wordvecs, num_layers):
+def tuneModels(dataset, model, vectors, wordvec_dim, tune_wordvecs, num_layers, batch_size, seq_len):
     choices = None
     trainerclass = None
 
@@ -123,16 +133,7 @@ def tuneModels(dataset, model, vectors, wordvec_dim, tune_wordvecs, num_layers):
 
 
     max_time = 3.5 * 60 * 60 ## maximum allowed time
-    opt = Optimizer(dataset, vectors, tune_wordvecs, wordvec_dim, choices, trainerclass, max_time, num_layers)
-    name = '{}_{}.pt'.format(dataset, vectors)
-    folder = None
-    if opt.finished:
-        folder = 'optimized/'
-    else:
-        folder = 'optimizing/'
-
-    #opt.model.save_checkpoint(folder + name)
-
+    opt = Optimizer(dataset, vectors, tune_wordvecs, wordvec_dim, choices, trainerclass, max_time, num_layers, batch_size, seq_len)
 
 
 parser = argparse.ArgumentParser(description='Tuning Hyperparameters')
@@ -146,10 +147,15 @@ parser.add_argument('--num_layers', type=int, default=1,
                     help='vectors to use')
 parser.add_argument('--tune_wordvecs', type=bool, default=True,
                     help='whether to tune wordvecs')
+parser.add_argument('--batch_size', type=int, default=20,
+                    help='wordvec_dim')
 parser.add_argument('--wordvec_dim', type=int, default=200,
+                    help='wordvec_dim')
+parser.add_argument('--seq_len', type=int, default=35,
                     help='wordvec_dim')
 
 args = parser.parse_args()
 
 tuneModels(args.data, model = args.model, vectors = args.vectors, wordvec_dim = args.wordvec_dim,
-             tune_wordvecs = args.tune_wordvecs, num_layers = args.num_layers)
+             tune_wordvecs = args.tune_wordvecs, num_layers = args.num_layers, batch_size = args.batch_size,
+             seq_len = args.seq_len)
