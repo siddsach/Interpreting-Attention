@@ -4,7 +4,7 @@ import torch
 from torch.nn import CrossEntropyLoss
 from torch.autograd import Variable
 from torch.optim import Adam, lr_scheduler
-from .model import LangModel
+from model import LangModel
 from time import time
 #from nce import NCELoss
 import os
@@ -30,7 +30,7 @@ BPTT_SEQUENCE_LENGTH = 35
 BATCH_SIZE = 20
 WORDVEC_DIM = 200
 GLOVE_DIM = 200
-WORDVEC_SOURCE = ''#GloVe', 'charLevel']
+WORDVEC_SOURCE = 'gigavec'#GloVe', 'charLevel']
 CHARNGRAM_DIM = 100
 TUNE_WORDVECS = True
 PRETRAINED_WORDVEC = False
@@ -105,6 +105,8 @@ class TrainLangModel:
             self.wordvec_source = ['GloVe', 'charLevel']
         elif wordvec_source == 'google':
             self.wordvec_source = ['googlenews']
+        elif wordvec_source == 'gigavec':
+            self.wordvec_source = ['gigavec']
         else:
             self.wordvec_source = []
 
@@ -196,6 +198,7 @@ class TrainLangModel:
     def get_vectors(self):
         vecs = []
         print('Loading Vectors From Memory...')
+        print(self.wordvec_source)
         if self.pretrained_wordvecs:
             print('Using these vectors: ' + str(self.wordvec_source))
             for source in self.wordvec_source:
@@ -216,7 +219,7 @@ class TrainLangModel:
                 if source == 'gigavec':
                     gigavec = Vectors(name = 'gigamodel.vec', cache = self.vector_cache)
                     vecs.append(gigavec)
-                    self.wordvec_dim += 1
+                    self.wordvec_dim += 300
 
         print('Building Vocab...')
         self.sentence_field.build_vocab(self.train_sentences, vectors = vecs, max_size = MAX_VOCAB, min_freq = MIN_FREQ)
@@ -246,10 +249,6 @@ class TrainLangModel:
         pretrained_vecs = None
         if self.pretrained_wordvecs:
             pretrained_vecs = self.sentence_field.vocab.vectors
-
-        print('here')
-        print(self.wordvec_dim)
-        print(self.hidden_size)
 
         if self.objective_function == 'crossentropy':
             print('Using Cross Entropy Loss ...')
@@ -338,7 +337,7 @@ class TrainLangModel:
 
             if ((i + 1) % self.log_interval) == 0:
                 current_loss = total_loss / self.log_interval
-                elapsed = time.time() - start_time
+                elapsed = time()
                 total_loss = 0
                 print('At time: {elapsed} and batch: {i}, loss is {current_loss}'
                         ' and perplexity is {ppl}'.format(i=i+1, elapsed=elapsed,
@@ -405,7 +404,7 @@ class TrainLangModel:
     def train(self):
         optimizer, scheduler = self.start_train()
 
-        start_time = time.time()
+        start_time = time()
         print('Begin Training...')
 
         not_better = 0
