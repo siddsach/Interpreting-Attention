@@ -22,7 +22,7 @@ class LangModel(nn.Module):
         ):
 
         super(LangModel, self).__init__()
-
+        #TRY NOT TYING WEIGHTS WITH FIXED WORD VECTORS
 
         self.embed = nn.Embedding(vocab_size, input_size) # this creates a layer
 

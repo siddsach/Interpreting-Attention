@@ -5,7 +5,7 @@ from torch.nn import CrossEntropyLoss
 from torch.autograd import Variable
 from torch.optim import Adam, lr_scheduler
 from .model import LangModel
-import time
+from time import time
 #from nce import NCELoss
 import os
 import math
@@ -130,6 +130,8 @@ class TrainLangModel:
 
         self.log_interval = log_interval
 
+        self.time = time
+
 
     def load_data(self):
 
@@ -139,7 +141,8 @@ class TrainLangModel:
                             use_vocab = True,
                             init_token = '<BOS>',
                             eos_token = '<EOS>',
-                            preprocessing = data.Pipeline(convert_token = preprocess), #function to preprocess if needed, already converted to lower, probably need to strip stuff
+                            #function to preprocess
+                            preprocessing = data.Pipeline(convert_token = preprocess),
                             tensor_type = torch.LongTensor,
                             lower = True,
                             tokenize = 'spacy'
@@ -197,17 +200,24 @@ class TrainLangModel:
             print('Using these vectors: ' + str(self.wordvec_source))
             for source in self.wordvec_source:
                 if source == 'GloVe':
-                    glove = Vectors(name = 'glove.6B.{}d.txt'.format(self.glove_dim), cache = self.vector_cache)
+                    glove = Vectors(name = 'glove.6B.{}d.txt'
+                            .format(self.glove_dim), cache = self.vector_cache)
                     vecs.append(glove)
                     self.wordvec_dim += self.glove_dim
                 if source == 'charLevel':
-                    charVec = Vectors(name = 'charNgram.txt',cache = self.vector_cache)
+                    charVec = Vectors(name = 'charNgram.txt',
+                            cache = self.vector_cache)
                     vecs.append(charVec)
                     self.wordvec_dim += 100
                 if source == 'googlenews':
                     googlenews = Vectors(name = 'googlenews.txt', cache = self.vector_cache)
                     vecs.append(googlenews)
                     self.wordvec_dim += 300
+                if source == 'gigavec':
+                    gigavec = Vectors(name = 'gigamodel.vec', cache = self.vector_cache)
+                    vecs.append(gigavec)
+                    self.wordvec_dim += 1
+
         print('Building Vocab...')
         self.sentence_field.build_vocab(self.train_sentences, vectors = vecs, max_size = MAX_VOCAB, min_freq = MIN_FREQ)
         print('Found {} tokens'.format(len(self.sentence_field.vocab)))
@@ -431,13 +441,16 @@ class TrainLangModel:
 
         print('Finished Training.')
 
+    def start_from_checkpoint(self, checkpoint):
+        current = torch.load(checkpoint)
+
 
     def save_checkpoint(self, name = None):
         print("Saving Model Parameters and Results...")
         state = {
                     'epoch': self.epoch + 1,
                     'state_dict': self.model.state_dict(),
-                    'best_valid_loss': self.best_loss,
+                    'best_valid_loss': self.best_loss
                 }
         savepath = self.savepath + ''.join(str(datetime.now()).split())
         print(self.savepath)
