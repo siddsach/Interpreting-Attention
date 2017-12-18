@@ -23,7 +23,7 @@ GIGA_PATH = project_path + '/data/gigaword/'
 MODEL_SAVE_PATH = project_path + '/trained_models/langmodel/'
 VECTOR_CACHE = project_path + '/vectors'
 
-NUM_EPOCHS = 1 if not torch.cuda.is_available() else 5
+NUM_EPOCHS = 3 if not torch.cuda.is_available() else 5
 LEARNING_RATE = 20
 LOG_INTERVAL = 50
 BPTT_SEQUENCE_LENGTH = 35
@@ -399,7 +399,7 @@ class TrainLangModel:
                     total_loss = 0
                     print('At time: {time} and batch: {i}, loss is {loss}'
                             ' and perplexity is {ppl}'.format(i=i+1, time=elapsed,
-                            loss = self.current_loss, ppl = math.exp(self.current_loss[-1])))
+                            loss=self.current_loss, ppl=math.exp(self.current_loss[-1])))
         print('Finished Train Step')
 
         return optimizer
