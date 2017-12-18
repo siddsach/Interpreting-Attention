@@ -8,6 +8,7 @@ class LangModel(nn.Module):
             self,
             vocab_size,
             pretrained_vecs,
+            checkpoint,
             decoder = 'softmax',
             model_type = 'LSTM',
             input_size = 300,
@@ -34,7 +35,6 @@ class LangModel(nn.Module):
         self.decoder = decoder
         if decoder == 'softmax':
             self.linear = nn.Linear(hidden_size, vocab_size)
-            self.init_weights(init_range)
 
 
         if tie_weights:
@@ -47,7 +47,12 @@ class LangModel(nn.Module):
         self.num_layers = num_layers
         self.tune_wordvecs = tune_wordvecs
 
-        self.init_embedding(pretrained_vecs)
+        if checkpoint is not None:
+            print('Reverting model to checkpoint...')
+            self.load_state_dict(checkpoint)
+        else:
+            self.init_embedding(pretrained_vecs)
+            self.init_weights(init_range)
 
     def init_embedding(self, pretrained_embeddings):
         if pretrained_embeddings is not None:

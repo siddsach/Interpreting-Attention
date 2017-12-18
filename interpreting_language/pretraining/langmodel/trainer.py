@@ -4,16 +4,18 @@ import torch
 from torch.nn import CrossEntropyLoss
 from torch.autograd import Variable
 from torch.optim import Adam, lr_scheduler
-from .model import LangModel
+from model import LangModel
 from time import time
 #from nce import NCELoss
 import os
 import math
 from datetime import datetime
+import argparse
 
 current_path = os.getcwd()
 project_path = current_path#[:len(current_path)-len('/pretraining/langmodel')]
 
+TIME_LIMIT = 30
 DATASET = 'ptb'
 WIKI_PATH = project_path + '/data/wikitext-2/wikitext-2/'
 PTB_PATH = project_path + '/data/penn/'
@@ -21,9 +23,7 @@ GIGA_PATH = project_path + '/data/gigaword/'
 MODEL_SAVE_PATH = project_path + '/trained_models/langmodel/'
 VECTOR_CACHE = project_path + '/vectors'
 
-#TRAIN_PATH = project_path + 'data/gigaword/gigaword_cleaned_small.txt'#'data/wikitext-2/wikitext-2/wiki.train.tokens'
-
-NUM_EPOCHS = 2 if not torch.cuda.is_available() else 5
+NUM_EPOCHS = 1 if not torch.cuda.is_available() else 5
 LEARNING_RATE = 20
 LOG_INTERVAL = 50
 BPTT_SEQUENCE_LENGTH = 35
@@ -40,11 +40,38 @@ TIE_WEIGHTS = True
 MODEL_TYPE = 'LSTM'
 OPTIMIZER = 'vanilla_grad'
 DROPOUT = 0.2
+RNN_DROPOUT = 0.2
 HIDDEN_SIZE = 4096
-FEW_BATCHES = 10 if not torch.cuda.is_available() else 10
+FEW_BATCHES = 1000 if not torch.cuda.is_available() else 10
 MAX_VOCAB = None
 MIN_FREQ = 5
 ANNEAL = 4.0
+REINIT_ARGS = [
+                    'data',
+                    'num_epochs',
+                    'seq_len',
+                    'clip',
+                    'batch_size',
+                    'vector_cache',
+                    'objective_function',
+                    'log_interval',
+                    'model_type',
+                    'savepath',
+                    'wordvec_dim',
+                    'glove_dim',
+                    'wordvec_source',
+                    'tune_wordvecs',
+                    'num_layers',
+                    'hidden_size',
+                    'tie_weights',
+                    'optim',
+                    'dropout',
+                    'rnn_dropout',
+                    'few_batches',
+                    'anneal',
+                    'current_batch'
+            ]
+
 
 class TrainLangModel:
     def __init__(
@@ -56,7 +83,7 @@ class TrainLangModel:
                     clip = CLIP,
                     batch_size = BATCH_SIZE,
                     vector_cache = VECTOR_CACHE,
-                    objective = 'crossentropy',
+                    objective_function = 'crossentropy',
                     train = False,
                     log_interval = LOG_INTERVAL,
                     model_type = MODEL_TYPE,
@@ -73,7 +100,8 @@ class TrainLangModel:
                     dropout = DROPOUT,
                     rnn_dropout = DROPOUT,
                     few_batches = FEW_BATCHES,
-                    anneal = ANNEAL
+                    anneal = ANNEAL,
+                    current_batch = 0
                 ):
         if torch.cuda.is_available() and use_cuda:
             self.cuda = True
@@ -85,51 +113,39 @@ class TrainLangModel:
 
         self.model_type = model_type
         self.batch_size = batch_size
-        self.bptt_len = seq_len
+        self.seq_len = seq_len
         self.optim = optim
         self.anneal = anneal
         self.dropout = dropout
         self.rnn_dropout = rnn_dropout
         self.few_batches = few_batches
 
-        self.n_epochs = num_epochs
+        self.num_epochs = num_epochs
 
         self.num_layers = num_layers
 
         self.clip = clip
 
         #HYPERPARAMS
-        if wordvec_source == 'glove':
-            self.wordvec_source = ['GloVe']
-        elif wordvec_source == 'charlevel':
-            self.wordvec_source = ['GloVe', 'charLevel']
-        elif wordvec_source == 'google':
-            self.wordvec_source = ['googlenews']
-        else:
-            self.wordvec_source = []
-
         self.glove_dim = glove_dim
+        self.wordvec_source = wordvec_source
+        self.pretrained_vecs = self.wordvec_source in ['google', 'glove', 'charlevel', 'fasttext']
+        self.wordvec_dim = 0 if self.pretrained_vecs else wordvec_dim
 
-        if len(self.wordvec_source) == 0:
-            self.wordvec_dim = wordvec_dim
-        else:
-            self.wordvec_dim = 0
-
-        self.pretrained_wordvecs = len(self.wordvec_source) > 0
 
         self.hidden_size = hidden_size
 
         self.tie_weights = tie_weights
 
 
-        self.tune_wordvecs = True if not self.pretrained_wordvecs else tune_wordvecs
+        self.tune_wordvecs = True if not self.pretrained_vecs else tune_wordvecs
 
-        self.objective_function = objective
+        self.objective_function = objective_function
 
         self.vector_cache = vector_cache
 
         self.log_interval = log_interval
-
+        self.current_batch = current_batch
         self.time = time
 
 
@@ -137,16 +153,16 @@ class TrainLangModel:
 
         print("Preparing Data Loaders")
         self.sentence_field = data.Field(
-                            sequential = True,
-                            use_vocab = True,
-                            init_token = '<BOS>',
-                            eos_token = '<EOS>',
-                            #function to preprocess
-                            preprocessing = data.Pipeline(convert_token = preprocess),
-                            tensor_type = torch.LongTensor,
-                            lower = True,
-                            tokenize = 'spacy'
-                        )
+                    sequential = True,
+                    use_vocab = True,
+                    init_token = '<BOS>',
+                    eos_token = '<EOS>',
+                    #function to preprocess
+                    preprocessing = data.Pipeline(convert_token = preprocess),
+                    tensor_type = torch.LongTensor,
+                    lower = True,
+                    tokenize = 'spacy'
+                )
 
         datapath = None
         trainpath, validpath, testpath = None, None, None
@@ -154,7 +170,8 @@ class TrainLangModel:
         if self.data == 'wikitext':
             datapath = WIKI_PATH
 
-            paths = [datapath + 'wiki.' + s + '.tokens' for s in ['train', 'valid', 'test']]
+            paths = [datapath + 'wiki.' + s + '.tokens' for s \
+                                 in ['train', 'valid', 'test']]
 
             trainpath, validpath, testpath = paths[0], paths[1], paths[2]
 
@@ -177,50 +194,70 @@ class TrainLangModel:
             testpath = datapath + 'gigaword_small_test.txt'
 
         print("Retrieving Train Data from file: {}...".format(trainpath))
-        self.train_sentences = datasets.LanguageModelingDataset(trainpath, self.sentence_field, newline_eos = False)
-        print("Got Train Dataset with {n_tokens} words".format(n_tokens=len(self.train_sentences.examples[0].text)))
+        self.train_sentences = datasets.LanguageModelingDataset(trainpath,\
+                self.sentence_field, newline_eos = False)
+        print("Got Train Dataset with {n_tokens} words".format(n_tokens =\
+                len(self.train_sentences.examples[0].text)))
 
 
         if validpath is not None:
 
             print("Retrieving Valid Data from file: {}...".format(validpath))
-            self.valid_sentences = datasets.LanguageModelingDataset(validpath, self.sentence_field, newline_eos = False)
+            self.valid_sentences = datasets.LanguageModelingDataset(validpath,\
+                    self.sentence_field, newline_eos = False)
 
         if testpath is not None:
 
             print("Retrieving Test Data from file: {}...".format(testpath))
-            self.test_sentences = datasets.LanguageModelingDataset(testpath, self.sentence_field, newline_eos = False)
+            self.test_sentences = datasets.LanguageModelingDataset(testpath,\
+                    self.sentence_field, newline_eos = False)
 
 
 
-    def get_vectors(self):
-        vecs = []
-        print('Loading Vectors From Memory...')
-        if self.pretrained_wordvecs:
-            print('Using these vectors: ' + str(self.wordvec_source))
-            for source in self.wordvec_source:
-                if source == 'GloVe':
-                    glove = Vectors(name = 'glove.6B.{}d.txt'
-                            .format(self.glove_dim), cache = self.vector_cache)
-                    vecs.append(glove)
-                    self.wordvec_dim += self.glove_dim
-                if source == 'charLevel':
-                    charVec = Vectors(name = 'charNgram.txt',
-                            cache = self.vector_cache)
-                    vecs.append(charVec)
-                    self.wordvec_dim += 100
-                if source == 'googlenews':
-                    googlenews = Vectors(name = 'googlenews.txt', cache = self.vector_cache)
-                    vecs.append(googlenews)
-                    self.wordvec_dim += 300
-                if source == 'gigavec':
-                    gigavec = Vectors(name = 'gigamodel.vec', cache = self.vector_cache)
-                    vecs.append(gigavec)
-                    self.wordvec_dim += 1
+    def get_vectors(self, vocab):
+        sources = None
+        if self.wordvec_source == 'glove':
+            sources = ['GloVe']
+        elif self.wordvec_source == 'charlevel':
+            sources = ['GloVe', 'charLevel']
+        elif self.wordvec_source == 'google':
+            sources = ['googlenews']
+        else:
+            sources = []
 
         print('Building Vocab...')
-        self.sentence_field.build_vocab(self.train_sentences, vectors = vecs, max_size = MAX_VOCAB, min_freq = MIN_FREQ)
-        print('Found {} tokens'.format(len(self.sentence_field.vocab)))
+        if vocab is not None:
+            self.sentence_field.vocab = vocab
+        else:
+            vecs = []
+            print('Loading Vectors From Memory...')
+            if self.pretrained_vecs:
+                print('Using these vectors: ' + str(self.wordvec_source))
+                for source in sources:
+                    if source == 'GloVe':
+                        glove = Vectors(name = 'glove.6B.{}d.txt'
+                                .format(self.glove_dim), cache = self.vector_cache)
+                        vecs.append(glove)
+                        self.wordvec_dim += self.glove_dim
+                    if source == 'charLevel':
+                        charVec = Vectors(name = 'charNgram.txt',
+                                cache = self.vector_cache)
+                        vecs.append(charVec)
+                        self.wordvec_dim += 100
+                    if source == 'googlenews':
+                        googlenews = Vectors(name = 'googlenews.txt',\
+                                cache = self.vector_cache)
+                        vecs.append(googlenews)
+                        self.wordvec_dim += 300
+                    if source == 'gigavec':
+                        gigavec = Vectors(name = 'gigamodel.vec',\
+                                cache = self.vector_cache)
+                        vecs.append(gigavec)
+                        self.wordvec_dim += 1
+
+            self.sentence_field.build_vocab(self.train_sentences, vectors = vecs, \
+                    max_size = MAX_VOCAB, min_freq = MIN_FREQ)
+            print('Found {} tokens'.format(len(self.sentence_field.vocab)))
 
         if self.tie_weights:
             self.hidden_size = self.wordvec_dim
@@ -229,35 +266,40 @@ class TrainLangModel:
         print('Getting Batches...')
 
         if self.cuda:
-            iterator = data.BPTTIterator(dataset, sort_key = None, bptt_len = self.bptt_len, batch_size = self.batch_size)
+            iterator = data.BPTTIterator(dataset, sort_key = None,\
+                    bptt_len = self.seq_len, batch_size = self.batch_size)
             iterator.repeat = False
         else:
-            iterator = data.BPTTIterator(dataset, sort_key = None, bptt_len = self.bptt_len,  batch_size = self.batch_size, device = -1)
+            iterator = data.BPTTIterator(dataset, sort_key = None,\
+                    bptt_len = self.seq_len,  batch_size = self.batch_size, device = -1)
             iterator.repeat = False
 
         print("Created Iterator with {num} batches".format(num = len(iterator)))
         return iterator
 
-    def get_model(self):
+    def get_model(self, checkpoint = None):
         print('Initializing Model parameters...')
         self.ntokens = len(self.sentence_field.vocab)
-        print('Constructing {} with {} layers and {} hidden size...'.format(self.model_type, self.num_layers, self.hidden_size))
+        print('Constructing {} with {} layers and {} hidden size...'
+                .format(self.model_type, self.num_layers, self.hidden_size))
+
+
+        model = None
 
         pretrained_vecs = None
-        if self.pretrained_wordvecs:
+        if self.pretrained_vecs and checkpoint is None:
             pretrained_vecs = self.sentence_field.vocab.vectors
 
-        print('here')
-        print(self.wordvec_dim)
-        print(self.hidden_size)
 
+        print(self.objective_function)
         if self.objective_function == 'crossentropy':
             print('Using Cross Entropy Loss ...')
             self.objective = CrossEntropyLoss()
 
 
-            self.model = LangModel(vocab_size = self.ntokens,
+            model = LangModel(vocab_size = self.ntokens,
                                 pretrained_vecs = pretrained_vecs,
+                                checkpoint = checkpoint,
                                 decoder = 'softmax',
                                 num_layers = self.num_layers,
                                 hidden_size = self.hidden_size,
@@ -281,10 +323,13 @@ class TrainLangModel:
                                 input_size = self.wordvec_dim,
                                 tune_wordvecs = self.tune_wordvecs
                             )
-            #self.objective = NCELoss(self.ntokens, self.model.hidden_size, self.noise, self.cuda)
+            #self.objective = NCELoss(self.ntokens, self.model.hidden_size,\
+                    #self.noise, self.cuda)
 
         if self.cuda:
-            self.model.cuda()
+            model = model.cuda()
+
+        return model
 
 
     def repackage_hidden(self, h):
@@ -301,48 +346,61 @@ class TrainLangModel:
         print('Completing Train Step...')
         hidden = self.model.init_hidden(self.batch_size)
         total_loss = 0
+        self.current_loss = []
         for i, batch in enumerate(self.train_iterator):
-            hidden = self.repackage_hidden(hidden)
-            data, targets = batch.text, batch.target.view(-1)
 
-            if self.cuda:
-                data = data.cuda()
-                targets = targets.cuda()
+            if i >= self.current_batch:
+                elapsed = time() - start_time
+                self.current_batch = i
 
-            output, hidden = model(data, hidden)
-
-            if self.objective_function == 'crossentropy':
-                output = output.view(-1, self.ntokens)
-            else:
-                output = output.view(output.size(0) * output.size(1), output.size(2))
-
-            loss = self.objective(output, targets)
-            loss.backward()
-            if self.clip is not None:
-                torch.nn.utils.clip_grad_norm(self.model.parameters(), self.clip)
-
-            total_loss += loss.data[0]
-
-            if self.optim == 'adam':
-                optimizer.step()
-                optimizer.zero_grad()
-
-            elif self.optim == 'vanilla_grad':
-                parameters = filter(lambda p: p.requires_grad, self.model.parameters())
-                for p in parameters:
-                    p.data.add_(-self.lr, p.grad.data)
-
-            if self.few_batches is not None:
-                if i >= self.few_batches:
+                if elapsed > TIME_LIMIT:
+                    print('REACHED TIME LIMIT!')
+                    self.save_checkpoint('{}/training/{}.pt'.format(self.data, 'model'))
                     break
 
-            if ((i + 1) % self.log_interval) == 0:
-                current_loss = total_loss / self.log_interval
-                elapsed = time.time() - start_time
-                total_loss = 0
-                print('At time: {elapsed} and batch: {i}, loss is {current_loss}'
-                        ' and perplexity is {ppl}'.format(i=i+1, elapsed=elapsed,
-                        current_loss = current_loss, ppl = math.exp(current_loss)))
+                hidden = self.repackage_hidden(hidden)
+                data, targets = batch.text, batch.target.view(-1)
+
+                if self.cuda:
+                    data = data.cuda()
+                    targets = targets.cuda()
+
+                output, hidden = model(data, hidden)
+
+                if self.objective_function == 'crossentropy':
+                    output = output.view(-1, self.ntokens)
+                else:
+                    output = output.view(output.size(0) * output.size(1), \
+                            output.size(2))
+
+                loss = self.objective(output, targets)
+                loss.backward()
+                if self.clip is not None:
+                    torch.nn.utils.clip_grad_norm(self.model.parameters(),\
+                            self.clip)
+
+                total_loss += loss.data[0]
+
+                if self.optim == 'adam':
+                    optimizer.step()
+                    optimizer.zero_grad()
+
+                elif self.optim == 'vanilla_grad':
+                    parameters = filter(lambda p: p.requires_grad,\
+                            self.model.parameters())
+                    for p in parameters:
+                        p.data.add_(-self.lr, p.grad.data)
+
+                if self.few_batches is not None:
+                    if i >= self.few_batches:
+                        break
+
+                if ((i + 1) % self.log_interval) == 0:
+                    self.current_loss.append(total_loss / self.log_interval)
+                    total_loss = 0
+                    print('At time: {time} and batch: {i}, loss is {loss}'
+                            ' and perplexity is {ppl}'.format(i=i+1, time=elapsed,
+                            loss = self.current_loss, ppl = math.exp(self.current_loss[-1])))
         print('Finished Train Step')
 
         return optimizer
@@ -356,6 +414,7 @@ class TrainLangModel:
         total_loss = 0
         self.valid_iterator = self.get_iterator(self.valid_sentences)
         for i, batch in enumerate(self.valid_iterator):
+
             hidden = self.repackage_hidden(hidden)
             data, targets = batch.text, batch.target.view(-1)
 
@@ -368,7 +427,8 @@ class TrainLangModel:
             if self.objective_function == 'crossentropy':
                 output = output.view(-1, self.ntokens)
             else:
-                output = output.view(output.size(0) * output.size(1), output.size(2))
+                output = output.view(output.size(0) * output.size(1), \
+                        output.size(2))
 
             loss = self.objective(output, targets)
             total_loss += loss.data
@@ -384,38 +444,46 @@ class TrainLangModel:
         return perplexity
 
 
-    def start_train(self):
+    def start_train(self, vocab = None, checkpoint_params = None, best_params = None):
         self.load_data()
-        self.get_vectors()
+        self.get_vectors(vocab)
         self.train_iterator = self.get_iterator(self.train_sentences)
-        self.get_model()
+        self.model = self.get_model(checkpoint_params)
         self.model.train()
+
+        self.best_loss = 10000000000
+        self.best_model = self.get_model(best_params)
 
         optimizer = None
         scheduler = None
         if self.optim == 'adam':
-            parameters = filter(lambda p: p.requires_grad, self.model.parameters())
-            optimizer = Adam(parameters, lr = self.lr, betas = (0, 0.999), eps = 10**-9)
 
-            scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode = 'min', factor = 0.1)
+            parameters = filter(lambda p: p.requires_grad, \
+                    self.model.parameters())
+            optimizer = Adam(parameters, lr = self.lr, betas = (0, 0.999),\
+                    eps = 10**-9)
+
+            scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode = 'min',\
+                    factor = 0.1)
 
         return optimizer, scheduler
 
 
-    def train(self):
-        optimizer, scheduler = self.start_train()
-
-        start_time = time.time()
+    def train(self, optimizer, scheduler):
+        start_time = time()
         print('Begin Training...')
 
         not_better = 0
-        self.best_loss = 10000000000
-        self.best_model = None
-
-        for epoch in range(self.n_epochs):
+        self.epoch = 0
+        for epoch in range(self.num_epochs):
             print('Finished {} epochs...'.format(epoch))
+            self.epoch += 1
             optimizer = self.train_step(optimizer, self.model, start_time)
-            this_perplexity = self.evaluate()
+            this_perplexity = None
+            if False:
+                this_perplexity = self.evaluate()
+            else:
+                this_perplexity = sum(self.current_loss)/(len(self.current_loss) + 0.000001)
             self.epoch = epoch
             if this_perplexity > self.best_loss:
                 not_better += 1
@@ -428,8 +496,8 @@ class TrainLangModel:
                     scheduler.step(this_perplexity)
 
                 if not_better >= 5:
-                    print('Model not improving. Stopping early with {}'
-                           'loss at {} epochs.'.format(self.best_loss, self.epoch))
+                    print('Model not improving. Stopping early with {} loss'
+                           'at {} epochs.'.format(self.best_loss, self.epoch))
                     break
 
             else:
@@ -441,16 +509,20 @@ class TrainLangModel:
 
         print('Finished Training.')
 
-    def start_from_checkpoint(self, checkpoint):
-        current = torch.load(checkpoint)
-
 
     def save_checkpoint(self, name = None):
+
         print("Saving Model Parameters and Results...")
+
+        args = {name: self.__dict__[name] for name in REINIT_ARGS}
         state = {
+                    'args': args,
                     'epoch': self.epoch + 1,
                     'state_dict': self.model.state_dict(),
-                    'best_valid_loss': self.best_loss
+                    'best_model': self.best_model.state_dict(),
+                    'train_loss': self.current_loss,
+                    'best_loss': self.best_loss,
+                    'vocab': self.sentence_field.vocab
                 }
         savepath = self.savepath + ''.join(str(datetime.now()).split())
         print(self.savepath)
@@ -458,6 +530,8 @@ class TrainLangModel:
             savepath = self.savepath + name
 
         torch.save(state, savepath)
+
+
 
 # HELPER FUNCTIONS
 def preprocess(x):
@@ -498,9 +572,72 @@ def build_unigram_noise(freq):
 
 if __name__ == '__main__':
 
-    trainer = TrainLangModel()
-    trainer.train()
-    trainer.save_checkpoint()
 
+    parser = argparse.ArgumentParser(description='Tuning Hyperparameters')
+    parser.add_argument('--checkpoint', type=str, default = None,
+                        help='location, of pretrained init')
+    parser.add_argument('--data',  type=str, default = DATASET,
+                        help='location of pretrained init')
+    parser.add_argument('--num_epochs',  type=int, default = NUM_EPOCHS,
+                        help='location of pretrained init')
+    parser.add_argument('--lr', type=float, default = LEARNING_RATE,
+                        help='location of pretrained init')
+    parser.add_argument('--batch_size', type=int, default = BATCH_SIZE,
+                        help='location of pretrained init')
+    parser.add_argument('--model_type', type=str, default = "LSTM",
+                        help='location of pretrained init')
+    parser.add_argument('--num_layers', type=int, default = NUM_LAYERS,
+                        help='location of pretrained init')
+    parser.add_argument('--hidden_size', type=int, default = HIDDEN_SIZE,
+                        help='location of pretrained init')
+    parser.add_argument('--glove_dim', type=int, default = GLOVE_DIM,
+                        help='location of pretrained init')
+    parser.add_argument('--wordvec_dim', type=int, default = WORDVEC_DIM,
+                        help='location of pretrained init')
+    parser.add_argument('--wordvec_source', type=str, default = WORDVEC_SOURCE,
+                        help='location of pretrained init')
+    parser.add_argument('--tune_wordvecs', type=list, default = TUNE_WORDVECS,
+                        help='location of pretrained init')
+    parser.add_argument('--dropout', type=float, default = DROPOUT,
+                        help='location of pretrained init')
+    parser.add_argument('--rnn_dropout', type=float, default = RNN_DROPOUT,
+                        help='location of pretrained init')
+    parser.add_argument('--clip', type=float, default = CLIP,
+                        help='location of pretrained init')
+    parser.add_argument('--savepath', type=str, default = MODEL_SAVE_PATH,
+                        help='location of pretrained init')
+    args = parser.parse_args()
 
-
+    if args.checkpoint is None:
+        trainer = TrainLangModel(
+                            data = args.data,
+                            num_epochs = args.num_epochs,
+                            lr = args.lr,
+                            batch_size = args.batch_size,
+                            model_type = args.model_type,
+                            num_layers = args.num_layers,
+                            hidden_size = args.hidden_size,
+                            glove_dim = args.glove_dim,
+                            wordvec_source = args.wordvec_source,
+                            wordvec_dim = args.wordvec_dim,
+                            tune_wordvecs = args.tune_wordvecs,
+                            use_cuda = True,
+                            savepath = args.savepath,
+                            dropout = args.dropout,
+                            rnn_dropout =  args.rnn_dropout,
+                            clip = args.clip
+                        )
+        optimizer, scheduler = trainer.start_train()
+        trainer.train(optimizer, scheduler)
+    else:
+        current = torch.load(current_path + '/trained_models/langmodel/{}/training/'.format(args.data) + args.checkpoint)
+        trainer = TrainLangModel(**current['args'])
+        optimizer, scheduler = trainer.start_train(
+                vocab = current['vocab'],
+                checkpoint_params = current['state_dict'], \
+                best_params = current['best_model']
+            )
+        trainer.epoch = current['epoch']
+        trainer.current_loss = current['train_loss']
+        trainer.best_loss = current['best_loss']
+        trainer.train(optimizer, scheduler)
