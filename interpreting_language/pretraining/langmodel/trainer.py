@@ -30,7 +30,7 @@ BPTT_SEQUENCE_LENGTH = 35
 BATCH_SIZE = 20
 WORDVEC_DIM = 200
 GLOVE_DIM = 200
-WORDVEC_SOURCE = ''#GloVe', 'charLevel']
+WORDVEC_SOURCE = 'gigavec'#GloVe', 'charLevel']
 CHARNGRAM_DIM = 100
 TUNE_WORDVECS = True
 PRETRAINED_WORDVEC = False
@@ -291,7 +291,6 @@ class TrainLangModel:
             pretrained_vecs = self.sentence_field.vocab.vectors
 
 
-        print(self.objective_function)
         if self.objective_function == 'crossentropy':
             print('Using Cross Entropy Loss ...')
             self.objective = CrossEntropyLoss()
