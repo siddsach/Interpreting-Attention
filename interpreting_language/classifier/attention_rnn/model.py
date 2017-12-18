@@ -184,18 +184,15 @@ class SelfAttentiveRNN(VanillaRNN):
             M = torch.sum(A.unsqueeze(2).expand_as(out) * out, 1)
 
         elif self.attn_type == 'keyval':
-            #GET HIDDENS
+            #GET HIDDEN STATES
             last_hiddens = h[0][self.num_layers - 1, :, :]
 
-            # KEY-VALUE ATTENTION
+            # GET ATTENTION WEIGHTS
             # A = (all_hiddens x W x last_hidden)
-
             transformed = self.W.unsqueeze(0).expand(self.batch_size, self.W.size(0), self.W.size(1))
             weighted_seq = torch.bmm(out, transformed)
-
             batched_last_hiddens = last_hiddens.unsqueeze(2)
             A = torch.bmm(weighted_seq, batched_last_hiddens)
-
             A = A.squeeze(2).unsqueeze(1)
 
             #GET ATTENTION WEIGHTED CONTEXT VECTOR

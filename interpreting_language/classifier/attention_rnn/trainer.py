@@ -19,7 +19,8 @@ print("ROOT_PATH: {}".format(root_path))
 #### DEFAULTS ####
 SPLIT = 0.75
 DATASET = 'IMDB'
-IMDB_PATH = root_path + '/data/imdb/aclImdb'# 'sentence_subjectivity.csv' #DATA MUST BE IN CSV FORMAT WITH ONE FIELD TITLED SENTENCES CONTANING ONE LINE PER SENTENCE
+# 'sentence_subjectivity.csv' #DATA MUST BE IN CSV FORMAT WITH ONE FIELD TITLED SENTENCES CONTANING ONE LINE PER SENTENCE
+IMDB_PATH = root_path + '/data/imdb/aclImdb'
 MPQA_PATH = root_path + '/data/mpqa/mpqa_subj_labels.pickle'
 VECTOR_CACHE = root_path + '/vectors'
 SAVED_VECTORS = True
@@ -124,7 +125,7 @@ class TrainClassifier:
         #MODEL ARCHITECTURE SPECS
         self.model_type = model_type
         self.attn_type = attn_type
-        self.attention_dim = attention_dim if self.attn_type is not None else None
+        self.attention_dim = None if self.attn_type is None else attention_dim
         self.mlp_hidden = mlp_hidden
         self.num_classes = num_classes
 
@@ -165,7 +166,8 @@ class TrainClassifier:
                             eos_token = '<EOS>',
                             fix_length = self.max_length,
                             include_lengths = True,
-                            preprocessing = None, #function to preprocess if needed, already converted to lower, probably need to strip stuff
+                            #converted to lower, probably need to strip stuff
+                            preprocessing = None,
                             tensor_type = torch.LongTensor,
                             lower = True,
                             tokenize = 'spacy',
@@ -173,8 +175,6 @@ class TrainClassifier:
                         )
 
         self.target_field = data.Field(sequential = False, batch_first = True)
-
-
 
     def get_data(self, path, fields, max_len, file_split = True):
 
@@ -193,7 +193,7 @@ class TrainClassifier:
 
                     with open(fname, 'r') as f:
                         text = f.readline()
-                    examples.append(data.Example.fromlist([text, label], fields))
+                    examples.append(data.Example.fromlist([text,label], fields))
 
                     c += 1
 
@@ -210,8 +210,10 @@ class TrainClassifier:
             n_ex = len(mpqa_data[0])
             boundary = int(SPLIT*n_ex)
 
-            train_data, train_labels = mpqa_data[0][:boundary], mpqa_data[1][:boundary]
-            test_data, test_labels = mpqa_data[0][boundary:], mpqa_data[1][boundary:]
+            train_data = mpqa_data[0][:boundary]
+            train_labels = mpqa_data[1][:boundary]
+            test_data = mpqa_data[0][boundary:]
+            test_labels = mpqa_data[1][boundary:]
 
             train_examples = []
             test_examples = []
@@ -219,8 +221,7 @@ class TrainClassifier:
             c = 0
             for text, label in zip(train_data, train_labels):
 
-
-                train_examples.append(data.Example.fromlist([text, label], fields))
+                train_examples.append(data.Example.fromlist([text,label],fields))
                 if max_len is not None:
                     if c > max_len:
                         break
@@ -228,13 +229,13 @@ class TrainClassifier:
 
             c = 0
             for text, label in zip(test_data, test_labels):
-                test_examples.append(data.Example.fromlist([text, label], fields))
+                test_examples.append(data.Example.fromlist([text,label],fields))
                 if max_len is not None:
                     if c > max_len:
                         break
                 c += 1
 
-            return data.Dataset(train_examples, fields), data.Dataset(test_examples, fields)
+            return data.Dataset(train_examples, fields),data.Dataset(test_examples,fields)
 
 
 
@@ -520,6 +521,10 @@ class TrainClassifier:
             savepath = checkpointpath + name
 
         torch.save(state, savepath)
+
+    def start_from_checkpoint(self, checkpoint):
+        current = torch.load(checkpoint)
+        self.model.load_
 
 
     def dump_attns(self, attn_path):
