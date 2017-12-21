@@ -36,7 +36,7 @@ TUNE_WORDVECS = False
 MODEL_SAVEPATH = None#'saved_model.pt'
 IMDB = True
 HIDDEN_SIZE = 300
-PRETRAINED = None #root_path + '/trained_models/trained_rnn.pt'
+PRETRAINED = root_path + '/trained_models/langmodel/wikitext/main.pt'
 MAX_LENGTH = 100
 SAVE_CHECKPOINT = None#root_path + '/trained_models/classifier/'
 MODEL_TYPE = 'LSTM'
@@ -61,7 +61,7 @@ class TrainClassifier:
     def __init__(
                     self,
                     num_classes = 2,
-                    pretrained_modelpath = PRETRAINED,
+                    pretrained = PRETRAINED,
                     checkpoint = SAVE_CHECKPOINT,
                     datapath = DATASET,
                     num_epochs = NUM_EPOCHS,
@@ -148,7 +148,7 @@ class TrainClassifier:
         self.tune_wordvecs = tune_wordvecs
         self.hidden_size = hidden_size
         self.num_layers = num_layers
-        self.pretrained_modelpath = pretrained_modelpath
+        self.pretrained = pretrained
         self.checkpoint_path = checkpoint
         self.max_length = max_length
         self.optim = optim
@@ -302,7 +302,6 @@ class TrainClassifier:
             self.target_field.build_vocab(self.train_data)
 
 
-
     def build_batches(self, dataset):
         print('Getting Batches...')
         if self.cuda:
@@ -336,17 +335,22 @@ class TrainClassifier:
 
             self.ntokens = len(self.sentence_field.vocab)
 
-            pretrained_model = None
-            if self.pretrained_modelpath is not None:
-                pretrained_model = torch.load(self.pretrained_modelpath)
-                print('Using Pretrained RNN from path: {}'.format(self.pretrained_modelpath))
+
+            pretrained_weights = None
+            if self.pretrained is not None:
+                print('Using Pretrained RNN from path: {}'.format(self.pretrained))
+                pretrained_weights = torch.load(self.pretrained)['state_dict']
+                dims = pretrained_weights['weight_ih_l0'].shape
+                pretrain_hiddensize, pretrain_inpsize = dims[0] / 4, dims[1]
+                assert pretrain_hiddensize == self.hidden_size, 'pretrained model has a different hidden size'
+                assert pretrain_inpsize == self.wordvec_dim, 'pretrained model has a different embed dim'
+
 
             args = {'vocab_size' : self.ntokens,
                 'num_classes' : self.num_classes,
                 'batch_size' : self.batch_size,
                 'cuda' : self.cuda,
                 'vectors' : self.sentence_field.vocab.vectors,
-                'pretrained_rnn' : pretrained_model,
                 'input_size' : self.wordvec_dim,
                 'dropout' : self.dropout,
                 'rnn_dropout' : self.rnn_dropout,
@@ -354,8 +358,6 @@ class TrainClassifier:
                 'num_layers' : self.num_layers,
                 'train_word_vecs' : self.tune_wordvecs
             }
-
-
 
             if self.attention_dim is None:
                 self.model = VanillaRNN(**args)
@@ -378,6 +380,7 @@ class TrainClassifier:
                 self.train_attns = torch.zeros(2, len(self.train_data), self.max_length)
                 self.eval_attns = torch.zeros(2, len(self.test_data), self.max_length)
 
+            self.model.init_pretrained(pretrained_weights, ignore_embed = )
 
             if self.cuda:
                 self.model.cuda()
@@ -522,9 +525,9 @@ class TrainClassifier:
 
         torch.save(state, savepath)
 
-    def start_from_checkpoint(self, checkpoint):
-        current = torch.load(checkpoint)
-        self.model.load_
+    #def start_from_checkpoint(self, checkpoint):
+        #current = torch.load(checkpoint)
+        #self.model.load_
 
 
     def dump_attns(self, attn_path):

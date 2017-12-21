@@ -10,7 +10,6 @@ class VanillaRNN(nn.Module):
             vectors,
             batch_size,
             cuda,
-            pretrained_rnn = None,
             model_type = 'LSTM',
             input_size = 300,
             hidden_size = 4096,
@@ -54,8 +53,6 @@ class VanillaRNN(nn.Module):
                                             batch_first = True
                                         )
 
-        if pretrained_rnn is not None:
-            self.init_rnn(pretrained_rnn)
 
 
         self.decode_dim = hidden_size * 2 if bidirectional else hidden_size
@@ -78,10 +75,24 @@ class VanillaRNN(nn.Module):
             print('Not Tuning Word Vectors!')
             self.embed.weight.requires_grad = False
 
-    def init_rnn(self, pretrained_rnn):
+    def init_pretrained(self, pretrained, use_embed = False, tune_rnn = True):
         try:
-            if pretrained_rnn is not None:
-                self.model.load_state_dict(pretrained_rnn.model.model)
+            if not use_embed:
+                for key in pretrained.keys():
+                    if 'embed' in key:
+                        del pretrained[key]
+
+            #LOAD PARAMS FROM PRETRAINED MODEL, IGNORING IRRELEVANT ONES
+            self.load_state_dict(pretrained, strict = False)
+
+            #OPTION TO FIX PRETRAINED PARAMETERS
+            if not tune_rnn:
+                for key in pretrained.keys():
+                    if key in self.model._parameters.keys():
+                        if 'embed' not in key or use_embed:
+                            self.model._paramaters[key].requires_grad = False
+
+
         except:
             print("ERROR LOADING RNN WEIGHTS. PROCEEDING WITHOUT PRETRAINED_WEIGHTS")
 
