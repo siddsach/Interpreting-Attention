@@ -5,7 +5,7 @@ import torch
 from torch.nn import CrossEntropyLoss, NLLLoss
 from torch.autograd import Variable
 from torch.optim import Adam, SGD
-from .model import VanillaRNN, SelfAttentiveRNN
+from model import VanillaRNN, SelfAttentiveRNN
 import time
 import glob
 import os
@@ -36,7 +36,7 @@ TUNE_WORDVECS = False
 MODEL_SAVEPATH = None#'saved_model.pt'
 IMDB = True
 HIDDEN_SIZE = 300
-PRETRAINED = root_path + '/trained_models/langmodel/wikitext/main.pt'
+PRETRAINED = root_path + '/trained_models/langmodel/ptb/training/model.pt'
 MAX_LENGTH = 100
 SAVE_CHECKPOINT = None#root_path + '/trained_models/classifier/'
 MODEL_TYPE = 'LSTM'
@@ -149,6 +149,8 @@ class TrainClassifier:
         self.hidden_size = hidden_size
         self.num_layers = num_layers
         self.pretrained = pretrained
+
+
         self.checkpoint_path = checkpoint
         self.max_length = max_length
         self.optim = optim
@@ -265,41 +267,47 @@ class TrainClassifier:
                             fields = fields
                         )
 
-    def get_vectors(self):
-        vecs = []
-        print('Loading Vectors From Memory...')
+    def get_vectors(self, pretrained_vocab = None):
+        if pretrained_vocab is None:
+            vecs = []
+            print('Loading Vectors From Memory...')
 
-        if len(self.wordvec_source) == 0:
-            print('Not using pretrained wordvectors')
-            assert self.tune_wordvecs, "You're using random vectors and not tuning them, how do you think that'll pan out?"
+            if len(self.wordvec_source) == 0:
+                print('Not using pretrained wordvectors')
+                assert self.tune_wordvecs, "You're using random vectors and not tuning them, how do you think that'll pan out?"
+            else:
+                print('Using these vectors: {}'.format(self.wordvec_source))
+
+            for source in self.wordvec_source:
+                if source == 'GloVe':
+                    print('Getting GloVe Vectors with {} dims'.format(self.glove_dim))
+                    glove = Vectors(name = 'glove.6B.{}d.txt'.format(self.glove_dim), cache = self.vector_cache)
+                    vecs.append(glove)
+                    self.wordvec_dim += self.glove_dim
+                if source == 'charLevel':
+                    self.wordvec_dim += 100
+                    print('Getting charLevel Vectors')
+                    charVec = Vectors(name = 'charNgram.txt', cache = self.vector_cache)
+                    vecs.append(charVec)
+                if source == 'googlenews':
+                    print('Getting google news vectors')
+                    self.wordvec_dim += 300
+                    google = Vectors(name = 'googlenews.txt', cache = self.vector_cache)
+                    vecs.append(google)
+
+            print('Building Vocab...')
+            print(vecs)
+            if len(vecs) > 0:
+                self.sentence_field.build_vocab(self.train_data, vectors = vecs)
+            else:
+                self.sentence_field.build_vocab(self.train_data)
+
         else:
-            print('Using these vectors: {}'.format(self.wordvec_source))
+            print('Loading Pretrained Vocab...')
+            self.sentence_field.vocab = pretrained_vocab
 
-        for source in self.wordvec_source:
-            if source == 'GloVe':
-                print('Getting GloVe Vectors with {} dims'.format(self.glove_dim))
-                glove = Vectors(name = 'glove.6B.{}d.txt'.format(self.glove_dim), cache = self.vector_cache)
-                vecs.append(glove)
-                self.wordvec_dim += self.glove_dim
-            if source == 'charLevel':
-                self.wordvec_dim += 100
-                print('Getting charLevel Vectors')
-                charVec = Vectors(name = 'charNgram.txt', cache = self.vector_cache)
-                vecs.append(charVec)
-            if source == 'googlenews':
-                print('Getting google news vectors')
-                self.wordvec_dim += 300
-                google = Vectors(name = 'googlenews.txt', cache = self.vector_cache)
-                vecs.append(google)
+        self.target_field.build_vocab(self.train_data)
 
-        print('Building Vocab...')
-        print(vecs)
-        if len(vecs) > 0:
-            self.sentence_field.build_vocab(self.train_data, vectors = vecs)
-            self.target_field.build_vocab(self.train_data)
-        else:
-            self.sentence_field.build_vocab(self.train_data)
-            self.target_field.build_vocab(self.train_data)
 
 
     def build_batches(self, dataset):
@@ -329,21 +337,24 @@ class TrainClassifier:
         if self.test_data is not None:
             self.test_iterator = self.build_batches(self.test_data)
 
-    def get_model(self, num_tokens = None):
+    def get_model(self, pretrained_weights, pretrained_args, num_tokens = None):
         if self.checkpoint_path is None:
             print('Building model...')
 
             self.ntokens = len(self.sentence_field.vocab)
 
+            if pretrained_args is not None:
 
-            pretrained_weights = None
-            if self.pretrained is not None:
-                print('Using Pretrained RNN from path: {}'.format(self.pretrained))
-                pretrained_weights = torch.load(self.pretrained)['state_dict']
-                dims = pretrained_weights['weight_ih_l0'].shape
-                pretrain_hiddensize, pretrain_inpsize = dims[0] / 4, dims[1]
-                assert pretrain_hiddensize == self.hidden_size, 'pretrained model has a different hidden size'
-                assert pretrain_inpsize == self.wordvec_dim, 'pretrained model has a different embed dim'
+                #MUST USE EMBEDDINGS FROM PRETRAINED MODEL
+                self.sentence_field.vocab.vectors = None
+
+                if pretrained_args['hidden_size'] != self.hidden_size:
+                    print('WARNING: pretrained model has a different hidden size, changing hidden size')
+                    self.hidden_size = pretrained_args['hidden_size']
+
+                if pretrained_args['wordvec_dim'] != self.wordvec_dim:
+                    print('WARNING: pretrained model has a different embed dim, so ignoring embedding from pretrained model')
+                    self.wordvec_dim = pretrained_args['wordvec_dim']
 
 
             args = {'vocab_size' : self.ntokens,
@@ -380,7 +391,7 @@ class TrainClassifier:
                 self.train_attns = torch.zeros(2, len(self.train_data), self.max_length)
                 self.eval_attns = torch.zeros(2, len(self.test_data), self.max_length)
 
-            self.model.init_pretrained(pretrained_weights, ignore_embed = )
+            self.model.init_pretrained(pretrained_weights)
 
             if self.cuda:
                 self.model.cuda()
@@ -534,12 +545,28 @@ class TrainClassifier:
         if self.test_attns is not None:
             torch.save(self.test_attns, attn_path)
 
+    def get_pretrained(self):
+
+        if self.pretrained is not None:
+            print('Using Pretrained RNN from path: {}'.format(self.pretrained))
+            pretrained = torch.load(self.pretrained)
+            pretrained_vocab = pretrained['vocab']
+            pretrained_args = pretrained['args']
+            pretrained_weights = pretrained['best_state_dict']
+            return pretrained_vocab, pretrained_args, pretrained_weights
+        else:
+            return None, None, None
+
+
     def start_train(self):
         print("Building RNN Classifier...")
         self.load_data()
-        self.get_vectors()
+
+        pretrained_vocab, pretrained_args, pretrained_weights = self.get_pretrained()
+
+        self.get_vectors(pretrained_vocab)
         self.get_batches()
-        self.get_model()
+        self.get_model(pretrained_weights, pretrained_args)
         self.model.train()
         parameters = filter(lambda p: p.requires_grad, self.model.parameters())
         optimizer = None
@@ -551,8 +578,7 @@ class TrainClassifier:
         return optimizer
 
 
-    def train(self):
-        optimizer = self.start_train()
+    def train(self, optimizer):
 
         start_time = time.time()
         print('Begin Training...')
@@ -652,7 +678,7 @@ if __name__ == '__main__':
 
     trainer = TrainClassifier(
                         num_classes = 2,
-                        pretrained_modelpath = args.pretrained,
+                        pretrained = args.pretrained,
                         checkpoint = args.checkpoint,
                         datapath = args.data,
                         num_epochs = args.num_epochs,
@@ -682,5 +708,6 @@ if __name__ == '__main__':
                         attn_type = args.attention,
                         l2 = args.l2
                     )
-    trainer.train()
+    optimizer = trainer.start_train()
+    trainer.train(optimizer)
 

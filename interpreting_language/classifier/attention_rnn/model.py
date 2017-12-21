@@ -75,26 +75,26 @@ class VanillaRNN(nn.Module):
             print('Not Tuning Word Vectors!')
             self.embed.weight.requires_grad = False
 
-    def init_pretrained(self, pretrained, use_embed = False, tune_rnn = True):
-        try:
-            if not use_embed:
-                for key in pretrained.keys():
-                    if 'embed' in key:
-                        del pretrained[key]
+    def init_pretrained(self, pretrained, fix_pretrained = True):
+#        try:
 
-            #LOAD PARAMS FROM PRETRAINED MODEL, IGNORING IRRELEVANT ONES
-            self.load_state_dict(pretrained, strict = False)
+        print("PRETRAINED")
+        print(pretrained.keys())
+        print("PARAMS")
+        print(self.model._parameters.keys())
 
-            #OPTION TO FIX PRETRAINED PARAMETERS
-            if not tune_rnn:
-                for key in pretrained.keys():
-                    if key in self.model._parameters.keys():
-                        if 'embed' not in key or use_embed:
-                            self.model._paramaters[key].requires_grad = False
+        #LOAD PARAMS FROM PRETRAINED MODEL, IGNORING IRRELEVANT ONES
+        self.load_state_dict(pretrained, strict = False)
+
+        #OPTION TO FIX PRETRAINED PARAMETERS
+        if fix_pretrained:
+            for key in pretrained.keys():
+                if key in self.model._parameters.keys():
+                    self.model._paramaters[key].requires_grad = False
 
 
-        except:
-            print("ERROR LOADING RNN WEIGHTS. PROCEEDING WITHOUT PRETRAINED_WEIGHTS")
+#        except:
+#            print("ERROR LOADING RNN WEIGHTS. PROCEEDING WITHOUT PRETRAINED_WEIGHTS")
 
 
 
