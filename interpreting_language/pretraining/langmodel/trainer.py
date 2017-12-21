@@ -4,7 +4,7 @@ import torch
 from torch.nn import CrossEntropyLoss
 from torch.autograd import Variable
 from torch.optim import Adam, lr_scheduler
-from model import LangModel
+from .model import LangModel
 from time import time
 #from nce import NCELoss
 import os
@@ -15,7 +15,7 @@ import argparse
 current_path = os.getcwd()
 project_path = current_path#[:len(current_path)-len('/pretraining/langmodel')]
 
-TIME_LIMIT = 30
+TIME_LIMIT = None
 DATASET = 'ptb'
 WIKI_PATH = project_path + '/data/wikitext-2/wikitext-2/'
 PTB_PATH = project_path + '/data/penn/'
@@ -23,8 +23,8 @@ GIGA_PATH = project_path + '/data/gigaword/'
 MODEL_SAVE_PATH = project_path + '/trained_models/langmodel/'
 VECTOR_CACHE = project_path + '/vectors'
 
-NUM_EPOCHS = 3 if not torch.cuda.is_available() else 5
-LEARNING_RATE = 20
+NUM_EPOCHS = 3 if not torch.cuda.is_available() else 20
+LEARNING_RATE = 5
 LOG_INTERVAL = 50
 BPTT_SEQUENCE_LENGTH = 35
 BATCH_SIZE = 20
@@ -42,7 +42,7 @@ OPTIMIZER = 'vanilla_grad'
 DROPOUT = 0.2
 RNN_DROPOUT = 0.2
 HIDDEN_SIZE = 4096
-FEW_BATCHES = 1000 if not torch.cuda.is_available() else 10
+FEW_BATCHES = 1000 if not torch.cuda.is_available() else None
 MAX_VOCAB = None
 MIN_FREQ = 5
 ANNEAL = 4.0
@@ -129,7 +129,7 @@ class TrainLangModel:
         #HYPERPARAMS
         self.glove_dim = glove_dim
         self.wordvec_source = wordvec_source
-        self.pretrained_vecs = self.wordvec_source in ['google', 'glove', 'charlevel', 'fasttext']
+        self.pretrained_vecs = self.wordvec_source in ['google', 'glove', 'charlevel', 'gigavec']
         self.wordvec_dim = 0 if self.pretrained_vecs else wordvec_dim
 
 
@@ -222,6 +222,8 @@ class TrainLangModel:
             sources = ['GloVe', 'charLevel']
         elif self.wordvec_source == 'google':
             sources = ['googlenews']
+        elif self.wordvec_source == 'gigavec':
+            sources = ['gigavec']
         else:
             sources = []
 
@@ -253,7 +255,7 @@ class TrainLangModel:
                         gigavec = Vectors(name = 'gigamodel.vec',\
                                 cache = self.vector_cache)
                         vecs.append(gigavec)
-                        self.wordvec_dim += 1
+                        self.wordvec_dim += 300
 
             self.sentence_field.build_vocab(self.train_sentences, vectors = vecs, \
                     max_size = MAX_VOCAB, min_freq = MIN_FREQ)
@@ -352,10 +354,13 @@ class TrainLangModel:
                 elapsed = time() - start_time
                 self.current_batch = i
 
-                if elapsed > TIME_LIMIT:
-                    print('REACHED TIME LIMIT!')
-                    self.save_checkpoint('{}/training/{}.pt'.format(self.data, 'model'))
-                    break
+                if TIME_LIMIT is not None:
+                    print("yello")
+                    print(TIME_LIMIT)
+                    if elapsed > TIME_LIMIT:
+                        print('REACHED TIME LIMIT!')
+                        self.save_checkpoint('{}/training/{}.pt'.format(self.data, 'model'))
+                        break
 
                 hidden = self.repackage_hidden(hidden)
                 data, targets = batch.text, batch.target.view(-1)
@@ -399,8 +404,9 @@ class TrainLangModel:
                     total_loss = 0
                     print('At time: {time} and batch: {i}, loss is {loss}'
                             ' and perplexity is {ppl}'.format(i=i+1, time=elapsed,
-                            loss=self.current_loss, ppl=math.exp(self.current_loss[-1])))
+                            loss=self.current_loss[-1], ppl=math.exp(self.current_loss[-1])))
         print('Finished Train Step')
+        self.current_batch = 0
 
         return optimizer
 
@@ -475,15 +481,16 @@ class TrainLangModel:
         not_better = 0
         self.epoch = 0
         for epoch in range(self.num_epochs):
-            print('Finished {} epochs...'.format(epoch))
+            print('finished {} epochs...'.format(epoch))
+            elapsed = time() - start_time
+            if TIME_LIMIT is not None:
+                if elapsed > TIME_LIMIT:
+                    break
             self.epoch += 1
             optimizer = self.train_step(optimizer, self.model, start_time)
-            this_perplexity = None
-            if False:
-                this_perplexity = self.evaluate()
-            else:
-                this_perplexity = sum(self.current_loss)/(len(self.current_loss) + 0.000001)
+            this_perplexity = self.evaluate()
             self.epoch = epoch
+
             if this_perplexity > self.best_loss:
                 not_better += 1
 
@@ -570,7 +577,6 @@ def build_unigram_noise(freq):
 
 
 if __name__ == '__main__':
-
 
     parser = argparse.ArgumentParser(description='Tuning Hyperparameters')
     parser.add_argument('--checkpoint', type=str, default = None,
