@@ -4,7 +4,7 @@ import torch
 from torch.nn import CrossEntropyLoss
 from torch.autograd import Variable
 from torch.optim import Adam, lr_scheduler
-from .model import LangModel
+from model import LangModel
 from time import time
 #from nce import NCELoss
 import os
@@ -15,35 +15,35 @@ import argparse
 current_path = os.getcwd()
 project_path = current_path#[:len(current_path)-len('/pretraining/langmodel')]
 
-TIME_LIMIT = None
-DATASET = 'ptb'
+TIME_LIMIT = 3 * 60 * 60
+DATASET = 'gigasmall'
 WIKI_PATH = project_path + '/data/wikitext-2/wikitext-2/'
 PTB_PATH = project_path + '/data/penn/'
 GIGA_PATH = project_path + '/data/gigaword/'
 MODEL_SAVE_PATH = project_path + '/trained_models/langmodel/'
 VECTOR_CACHE = project_path + '/vectors'
 
-NUM_EPOCHS = 3 if not torch.cuda.is_available() else 20
+NUM_EPOCHS = 1 if not torch.cuda.is_available() else 5
 LEARNING_RATE = 5
 LOG_INTERVAL = 50
 BPTT_SEQUENCE_LENGTH = 35
 BATCH_SIZE = 20
-WORDVEC_DIM = 200
-GLOVE_DIM = 200
+WORDVEC_DIM = 300
+GLOVE_DIM = 300
 WORDVEC_SOURCE = 'gigavec'#GloVe', 'charLevel']
 CHARNGRAM_DIM = 100
-TUNE_WORDVECS = True
+TUNE_WORDVECS = False
 PRETRAINED_WORDVEC = False
 CLIP = 0.25
-NUM_LAYERS = 2
-TIE_WEIGHTS = True
+NUM_LAYERS = 3
+TIE_WEIGHTS = False
 MODEL_TYPE = 'LSTM'
 OPTIMIZER = 'vanilla_grad'
-DROPOUT = 0.2
+DROPOUT = 0.4
 RNN_DROPOUT = 0.2
-HIDDEN_SIZE = 4096
+HIDDEN_SIZE = 1024
 FEW_BATCHES = 1000 if not torch.cuda.is_available() else None
-MAX_VOCAB = None
+MAX_VOCAB = 100000
 MIN_FREQ = 5
 ANNEAL = 4.0
 REINIT_ARGS = [
@@ -488,7 +488,7 @@ class TrainLangModel:
                     break
             self.epoch += 1
             optimizer = self.train_step(optimizer, self.model, start_time)
-            this_perplexity = self.evaluate()
+            this_perplexity = self.current_loss[-1] #self.evaluate()
             self.epoch = epoch
 
             if this_perplexity > self.best_loss:
