@@ -6,7 +6,7 @@ import pickle
 data_dir = "data/gigaword"
 
 max_files = 4
-total_files = 22
+total_files = 16
 path = "https://s3.amazonaws.com/gigaword/thread{}.txt"
 filenames= [path.format(i+1) for i in range(total_files)]
 
@@ -14,16 +14,19 @@ num_docs = 0
 locs = {}
 all_docs = []
 
+print('Downloading Data...')
+
 for i, a in enumerate(filenames):
     bashCommand = "wget " + a + " -P " + data_dir
     process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
     output, error = process.communicate()
-    reader = open(data_dir + "/thread{}.txt".format(i), 'r')
-    docs = [el.split("\t")[1] for el in reader.read().split("\n")]
+    reader = open(data_dir + "/thread{}.txt".format(i + 1), 'r')
+    docs = [el.split("\t") for el in reader.read().split("\n")]
+    docs = [el[2] if len(el)==3 else "" for el in docs]
     locs[i] = (num_docs, num_docs + len(docs))
     all_docs += docs
 
-    bashCommand = "rm" + data_dir + "/thread{}.txt".format(i)
+    bashCommand = "rm " + data_dir + "/thread{}.txt".format(i + 1)
     process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
     output, error = process.communicate()
     del docs
