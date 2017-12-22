@@ -4,7 +4,7 @@ import torch
 from torch.nn import CrossEntropyLoss
 from torch.autograd import Variable
 from torch.optim import Adam, lr_scheduler
-from .model import LangModel
+from model import LangModel
 from time import time
 #from nce import NCELoss
 import os
@@ -23,14 +23,14 @@ GIGA_PATH = project_path + '/data/gigaword/'
 MODEL_SAVE_PATH = project_path + '/trained_models/langmodel/'
 VECTOR_CACHE = project_path + '/vectors'
 
-NUM_EPOCHS = 3 if not torch.cuda.is_available() else 20
+NUM_EPOCHS = 1 if not torch.cuda.is_available() else 20
 LEARNING_RATE = 5
 LOG_INTERVAL = 50
 BPTT_SEQUENCE_LENGTH = 35
 BATCH_SIZE = 20
 WORDVEC_DIM = 200
 GLOVE_DIM = 200
-WORDVEC_SOURCE = 'gigavec'#GloVe', 'charLevel']
+WORDVEC_SOURCE = 'glove'#GloVe', 'charLevel']
 CHARNGRAM_DIM = 100
 TUNE_WORDVECS = True
 PRETRAINED_WORDVEC = False
@@ -76,7 +76,6 @@ REINIT_ARGS = [
 class TrainLangModel:
     def __init__(
                     self,
-                    data = DATASET,
                     num_epochs = NUM_EPOCHS,
                     seq_len = BPTT_SEQUENCE_LENGTH,
                     lr = LEARNING_RATE,
@@ -149,8 +148,8 @@ class TrainLangModel:
         self.time = time
 
 
-    def load_data(self):
-
+    #IF already_read is False, data is the name of a dataset, else it is the dataset itself
+    def load_data(self, dataset, already_read = False):
         print("Preparing Data Loaders")
         self.sentence_field = data.Field(
                     sequential = True,
@@ -164,53 +163,60 @@ class TrainLangModel:
                     tokenize = 'spacy'
                 )
 
-        datapath = None
-        trainpath, validpath, testpath = None, None, None
+        if not already_read:
 
-        if self.data == 'wikitext':
-            datapath = WIKI_PATH
+            datapath = None
+            trainpath, validpath, testpath = None, None, None
 
-            paths = [datapath + 'wiki.' + s + '.tokens' for s \
-                                 in ['train', 'valid', 'test']]
+            if dataset == 'wikitext':
+                datapath = WIKI_PATH
 
-            trainpath, validpath, testpath = paths[0], paths[1], paths[2]
+                paths = [datapath + 'wiki.' + s + '.tokens' for s \
+                                     in ['train', 'valid', 'test']]
 
-        elif self.data == 'ptb':
-            datapath = PTB_PATH
-            paths = [datapath + s + '.txt' for s in ['train', 'valid', 'test']]
+                trainpath, validpath, testpath = paths[0], paths[1], paths[2]
 
-            trainpath, validpath, testpath = paths[0], paths[1], paths[2]
+            elif dataset == 'ptb':
+                datapath = PTB_PATH
+                paths = [datapath + s + '.txt' for s in ['train', 'valid', 'test']]
 
-        elif self.data == 'gigaword':
-            datapath = GIGA_PATH
-            trainpath = datapath + 'gigaword_train.txt'
-            validpath = datapath + 'gigaword_val.txt'
-            testpath = datapath + 'gigaword_test.txt'
+                trainpath, validpath, testpath = paths[0], paths[1], paths[2]
 
-        elif self.data == 'gigasmall':
-            datapath = GIGA_PATH
-            trainpath = datapath + 'gigaword_small_train.txt'
-            validpath = datapath + 'gigaword_small_val.txt'
-            testpath = datapath + 'gigaword_small_test.txt'
+            elif dataset == 'gigaword':
+                datapath = GIGA_PATH
+                trainpath = datapath + 'gigaword_train.txt'
+                validpath = datapath + 'gigaword_val.txt'
+                testpath = datapath + 'gigaword_test.txt'
 
-        print("Retrieving Train Data from file: {}...".format(trainpath))
-        self.train_sentences = datasets.LanguageModelingDataset(trainpath,\
-                self.sentence_field, newline_eos = False)
-        print("Got Train Dataset with {n_tokens} words".format(n_tokens =\
-                len(self.train_sentences.examples[0].text)))
+            elif dataset == 'gigasmall':
+                datapath = GIGA_PATH
+                trainpath = datapath + 'gigaword_small_train.txt'
+                validpath = datapath + 'gigaword_small_val.txt'
+                testpath = datapath + 'gigaword_small_test.txt'
 
-
-        if validpath is not None:
-
-            print("Retrieving Valid Data from file: {}...".format(validpath))
-            self.valid_sentences = datasets.LanguageModelingDataset(validpath,\
+            print("Retrieving Train Data from file: {}...".format(trainpath))
+            self.train_sentences = datasets.LanguageModelingDataset(trainpath,\
                     self.sentence_field, newline_eos = False)
+            print("Got Train Dataset with {n_tokens} words".format(n_tokens =\
+                    len(self.train_sentences.examples[0].text)))
 
-        if testpath is not None:
 
-            print("Retrieving Test Data from file: {}...".format(testpath))
-            self.test_sentences = datasets.LanguageModelingDataset(testpath,\
-                    self.sentence_field, newline_eos = False)
+            if validpath is not None:
+
+                print("Retrieving Valid Data from file: {}...".format(validpath))
+                self.valid_sentences = datasets.LanguageModelingDataset(validpath,\
+                        self.sentence_field, newline_eos = False)
+
+            if testpath is not None:
+
+                print("Retrieving Test Data from file: {}...".format(testpath))
+                self.test_sentences = datasets.LanguageModelingDataset(testpath,\
+                        self.sentence_field, newline_eos = False)
+        else:
+            fields = [('text', self.sentence_field)]
+            examples = [data.Example.fromlist([dataset], fields)]
+            self.train_sentences = data.Dataset(examples, fields)
+
 
 
 
@@ -449,10 +455,12 @@ class TrainLangModel:
         return perplexity
 
 
-    def start_train(self, vocab = None, checkpoint_params = None, best_params = None):
-        self.load_data()
+    def prepare_data(self, data, vocab = None):
+        self.load_data(data)
         self.get_vectors(vocab)
         self.train_iterator = self.get_iterator(self.train_sentences)
+
+    def init_model(self, checkpoint_params = None, best_params = None):
         self.model = self.get_model(checkpoint_params)
         self.model.train()
 
@@ -472,7 +480,6 @@ class TrainLangModel:
                     factor = 0.1)
 
         return optimizer, scheduler
-
 
     def train(self, optimizer, scheduler):
         start_time = time()
@@ -615,7 +622,6 @@ if __name__ == '__main__':
 
     if args.checkpoint is None:
         trainer = TrainLangModel(
-                            data = args.data,
                             num_epochs = args.num_epochs,
                             lr = args.lr,
                             batch_size = args.batch_size,
@@ -632,8 +638,10 @@ if __name__ == '__main__':
                             rnn_dropout =  args.rnn_dropout,
                             clip = args.clip
                         )
-        optimizer, scheduler = trainer.start_train()
+        trainer.prepare_data(args.data)
+        optimizer, scheduler = trainer.init_model()
         trainer.train(optimizer, scheduler)
+        trainer.save_checkpoint(trainer.data + '/model.pt')
     else:
         current = torch.load(current_path + '/trained_models/langmodel/{}/training/'.format(args.data) + args.checkpoint)
         trainer = TrainLangModel(**current['args'])
