@@ -1,13 +1,14 @@
 
 params = {}
 
-params['data'] = ['ptb', 'wikitext', 'gigasmall']
+params['data'] = ['ptb', 'wikitext']
 params['model'] = ['langmodel']
-params['batch_size'] = [20, 50, 80]
-params['seq_len'] = [20, 35, 50]
+params['batch_size'] = [32]
+params['seq_len'] = [35]
 params['tune_wordvecs'] = [True, False]
-params['vectors'] = ['', 'glove']
+params['vectors'] = ['None', 'glove', 'google', 'gigavec']
 params['num_layers'] = [1,2,3]
+params['tie_weights'] = [True, False]
 
 
 combinations = []
@@ -18,14 +19,18 @@ for data in params['data']:
         for bsz in params['batch_size']:
             for seq in params['seq_len']:
                 for tune in params['tune_wordvecs']:
-                    for v in params['vectors']:
-                        combinations.append({"data":data,
-                            "model": model,
-                            "batch_size": bsz,
-                            "seq_len": seq,
-                            "tune_wordvecs": tune,
-                            "vectors": v
-                        })
+                    for tie in params['tie_weights']:
+                        for v in params['vectors']:
+                            for n in params['num_layers']:
+                                combinations.append({"data":data,
+                                    "model": model,
+                                    "batch_size": bsz,
+                                    "seq_len": seq,
+                                    "tune_wordvecs": tune,
+                                    "vectors": v,
+                                    "tie_weights": tie,
+                                    "num_layers": n
+                                })
 commands = ''
 
 for each in combinations:

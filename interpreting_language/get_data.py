@@ -14,8 +14,8 @@ class Download:
                 charngram = False,
                 wiki = False,
                 gigaword = False,
-                gigawordsmall = False,
-                imdb = True,
+                gigawordsmall = True,
+                imdb = False,
                 mpqa_subj = False
             ):
         self.glove = glove
