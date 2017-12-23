@@ -16,7 +16,7 @@ current_path = os.getcwd()
 project_path = current_path#[:len(current_path)-len('/pretraining/langmodel')]
 
 TIME_LIMIT = 3 * 60 * 60
-DATASET = 'gigasmall'
+DATASET = 'gigaword'
 WIKI_PATH = project_path + '/data/wikitext-2/wikitext-2/'
 PTB_PATH = project_path + '/data/penn/'
 GIGA_PATH = project_path + '/data/gigaword/'
@@ -102,6 +102,7 @@ class TrainLangModel:
                     anneal = ANNEAL,
                     current_batch = 0
                 ):
+
         if torch.cuda.is_available() and use_cuda:
             self.cuda = True
         else:
@@ -184,9 +185,7 @@ class TrainLangModel:
 
             elif dataset == 'gigaword':
                 datapath = GIGA_PATH
-                trainpath = datapath + 'gigaword_train.txt'
-                validpath = datapath + 'gigaword_val.txt'
-                testpath = datapath + 'gigaword_test.txt'
+                trainpath = datapath + 'thread5.txt'
 
             elif dataset == 'gigasmall':
                 datapath = GIGA_PATH
@@ -195,8 +194,11 @@ class TrainLangModel:
                 testpath = datapath + 'gigaword_small_test.txt'
 
             print("Retrieving Train Data from file: {}...".format(trainpath))
+            start = time()
             self.train_sentences = datasets.LanguageModelingDataset(trainpath,\
                     self.sentence_field, newline_eos = False)
+            finish = time() - start
+            print("Downloaded in {} minutes".format(finish / 60))
             print("Got Train Dataset with {n_tokens} words".format(n_tokens =\
                     len(self.train_sentences.examples[0].text)))
 
