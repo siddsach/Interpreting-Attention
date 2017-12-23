@@ -4,7 +4,7 @@ import torch
 from torch.nn import CrossEntropyLoss
 from torch.autograd import Variable
 from torch.optim import Adam, lr_scheduler
-from model import LangModel
+from .model import LangModel
 from time import time
 #from nce import NCELoss
 import os
@@ -47,7 +47,6 @@ MAX_VOCAB = 100000
 MIN_FREQ = 5
 ANNEAL = 4.0
 REINIT_ARGS = [
-                    'data',
                     'num_epochs',
                     'seq_len',
                     'clip',
@@ -108,7 +107,6 @@ class TrainLangModel:
         else:
             self.cuda = False
         self.lr = lr
-        self.data = data
         self.savepath = savepath
 
         self.model_type = model_type
@@ -363,8 +361,6 @@ class TrainLangModel:
                 self.current_batch = i
 
                 if TIME_LIMIT is not None:
-                    print("yello")
-                    print(TIME_LIMIT)
                     if elapsed > TIME_LIMIT:
                         print('REACHED TIME LIMIT!')
                         self.save_checkpoint('{}/training/{}.pt'.format(self.data, 'model'))
@@ -457,8 +453,8 @@ class TrainLangModel:
         return perplexity
 
 
-    def prepare_data(self, data, vocab = None):
-        self.load_data(data)
+    def prepare_data(self, data, already_read = False, vocab = None):
+        self.load_data(data, already_read)
         self.get_vectors(vocab)
         self.train_iterator = self.get_iterator(self.train_sentences)
 
