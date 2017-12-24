@@ -36,7 +36,7 @@ TUNE_WORDVECS = False
 MODEL_SAVEPATH = None#'saved_model.pt'
 IMDB = True
 HIDDEN_SIZE = 300
-PRETRAINED = root_path + '/trained_models/langmodel/ptb/training/model.pt'
+PRETRAINED = root_path + '/trained_models/langmodel/ptb/model.pt'
 MAX_LENGTH = 100
 SAVE_CHECKPOINT = None#root_path + '/trained_models/classifier/'
 MODEL_TYPE = 'LSTM'
@@ -552,7 +552,7 @@ class TrainClassifier:
             pretrained = torch.load(self.pretrained)
             pretrained_vocab = pretrained['vocab']
             pretrained_args = pretrained['args']
-            pretrained_weights = pretrained['best_state_dict']
+            pretrained_weights = pretrained['best_model']
             return pretrained_vocab, pretrained_args, pretrained_weights
         else:
             return None, None, None

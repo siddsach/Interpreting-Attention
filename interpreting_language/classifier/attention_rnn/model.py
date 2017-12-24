@@ -78,10 +78,8 @@ class VanillaRNN(nn.Module):
     def init_pretrained(self, pretrained, fix_pretrained = True):
 #        try:
 
-        print("PRETRAINED")
-        print(pretrained.keys())
-        print("PARAMS")
-        print(self.model._parameters.keys())
+        use = lambda key: ('model' in key or 'embed' in key)
+        pretrained = {key: pretrained[key] for key in pretrained if use(key)}
 
         #LOAD PARAMS FROM PRETRAINED MODEL, IGNORING IRRELEVANT ONES
         self.load_state_dict(pretrained, strict = False)
