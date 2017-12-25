@@ -40,7 +40,7 @@ PRETRAINED =  None#root_path + '/trained_models/langmodel/ptb/model.pt'
 MAX_LENGTH = 100
 SAVE_CHECKPOINT = None#root_path + '/trained_models/classifier/'
 MODEL_TYPE = 'LSTM'
-ATTN_TYPE = 'keyval'# ['keyval', 'mlp']
+ATTN_TYPE = 'MLP'# ['keyval', 'mlp']
 ATTENTION_DIM = 350 if ATTN_TYPE is not None else None
 TUNE_ATTN = "True"
 L2 = 0.001
@@ -489,7 +489,7 @@ class TrainClassifier:
                 predictions = output.view(-1, self.num_classes)
                 accuracies[i % self.log_interval] = get_accuracy(predictions, targets)
 
-                if A is not None and False:
+                if A is not None:
                     #SAVING ATTENTION WEIGHTS
                     self.save_attns(i, data, A, 'train')
 

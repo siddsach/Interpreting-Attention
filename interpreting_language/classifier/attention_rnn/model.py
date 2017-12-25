@@ -187,6 +187,7 @@ class SelfAttentiveRNN(VanillaRNN):
         out, lens = torch.nn.utils.rnn.pad_packed_sequence(out, batch_first = True)
 
         M = None
+        A = None
         if self.attn_type == 'MLP':
             # GET SELF-ATTENTION WEIGHTS
             s1 = self.W1(out)
