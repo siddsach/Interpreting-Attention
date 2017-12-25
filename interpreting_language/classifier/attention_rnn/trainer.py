@@ -602,19 +602,23 @@ class TrainClassifier:
             self.epoch = epoch
             if self.eval_accuracy < self.best_accuracy:
                 not_better += 1
+                print('Not better for {}'.format(not_better))
 
-                if not_better >= 5:
+                if not_better >= 3:
                     if self.optim == 'vanilla_grad':
                         #Annealing
                         self.lr /= 4
-                elif not_better >= 10:
-                    print('Model not improving. Stopping early with {}'
-                           'loss at {} epochs.'.format(self.best_accuracy, self.epoch))
+                if not_better >= 10:
+                    print('Model not improving. Stopping early'
+                           'at {} epochs.'.format(self.best_accuracy, self.epoch))
                     break
             else:
+                print('Achieved new best!')
                 self.best_accuracy = self.eval_accuracy
                 self.best_model = self.model
                 not_better = 0
+
+        print('Done Training. Achieved Best Accuracy of {}'.format(self.best_accuracy))
 
         if self.savepath is not None:
 
