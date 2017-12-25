@@ -536,7 +536,7 @@ class TrainClassifier:
             self.test_attns[1, index: index + self.batch_size, :attns.size(1)] = attns.data
 
 
-    def save_checkpoint(self, optimizer, checkpointpath, name = None):
+    def save_checkpoint(self, checkpointpath, optimizer = None, name = None):
         state = {
                     'epoch': self.epoch + 1,
                     'state_dict': self.model.state_dict(),
@@ -633,7 +633,7 @@ class TrainClassifier:
         if self.savepath is not None:
 
             print("Saving Model Parameters and Results...")
-            self.save_checkpoint(optimizer, self.savepath)
+            self.save_checkpoint(self.savepath, optimizer)
 
             print('Finished Training.')
 
