@@ -42,6 +42,7 @@ SAVE_CHECKPOINT = None#root_path + '/trained_models/classifier/'
 MODEL_TYPE = 'LSTM'
 ATTN_TYPE = 'keyval'# ['keyval', 'mlp']
 ATTENTION_DIM = 350 if ATTN_TYPE is not None else None
+TUNE_ATTN = True
 L2 = 0.001
 DROPOUT = 0.5
 RNN_DROPOUT = 0.0
@@ -75,6 +76,7 @@ class TrainClassifier:
                     num_layers = NUM_LAYERS,
                     hidden_size = HIDDEN_SIZE,
                     attention_dim = ATTENTION_DIM, #None if not using attention
+                    tune_attn = TUNE_ATTN,
                     mlp_hidden = MLP_HIDDEN,
                     wordvec_dim = WORDVEC_DIM,
                     glove_dim = GLOVE_DIM,
@@ -126,6 +128,7 @@ class TrainClassifier:
         self.model_type = model_type
         self.attn_type = attn_type
         self.attention_dim = None if self.attn_type is None else attention_dim
+        self.tune_attn = tune_attn
         self.mlp_hidden = mlp_hidden
         self.num_classes = num_classes
 
@@ -380,6 +383,7 @@ class TrainClassifier:
             else:
                 attn_args = {
                     'attention_dim' : self.attention_dim,
+                    'tune_attn': self.tune_attn,
                     'mlp_hidden' : self.mlp_hidden,
                     'attn_type' : self.attn_type,
                 }
@@ -653,6 +657,8 @@ if __name__ == '__main__':
                         help='location of pretrained init')
     parser.add_argument('--attention_dim', type=int, default = ATTENTION_DIM,
                         help='location of pretrained init')
+    parser.add_argument('--tune_attn', type=bool, default = TUNE_ATTN,
+                        help='location of pretrained init')
     parser.add_argument('--mlp_hidden', type=int, default = MLP_HIDDEN,
                         help='location of pretrained init')
     parser.add_argument('--glove_dim', type=int, default = GLOVE_DIM,
@@ -695,6 +701,7 @@ if __name__ == '__main__':
                         num_layers = args.num_layers,
                         hidden_size = args.hidden_size,
                         attention_dim = args.hidden_size, #None if not using attention
+                        tune_attn = args.tune_attn,
                         mlp_hidden = args.mlp_hidden,
                         glove_dim = args.glove_dim,
                         wordvec_source = args.wordvec_source,

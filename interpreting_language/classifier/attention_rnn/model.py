@@ -141,7 +141,8 @@ class SelfAttentiveRNN(VanillaRNN):
             attention_dim,
             mlp_hidden,
             train_hidden = True,
-            attn_type = 'keyval',
+            attn_type = 'similarity',
+            tune_attn = True,
             **kwargs
         ):
 
@@ -168,8 +169,13 @@ class SelfAttentiveRNN(VanillaRNN):
             self.W2 = nn.Linear(self.attention_dim, 1, bias=False )
 
 
-        elif self.attn_type == 'keyval':
-            self.W = nn.Parameter(torch.randn(self.input_hidden_size, self.input_hidden_size))
+        elif self.attn_type == 'similarity':
+            if tune_attn:
+                self.W = nn.Parameter(torch.randn(self.input_hidden_size, self.input_hidden_size))
+            else:
+                self.W = torch.Tensor(self.input_hidden_size, self.input_hidden_size)
+                nn.init.eye(self.W)
+
 
         # MLP AND DECODER TO OUTPUT
         self.MLP = nn.Linear(self.input_hidden_size, mlp_hidden)
@@ -192,14 +198,14 @@ class SelfAttentiveRNN(VanillaRNN):
             #GET EMBEDDING MATRIX GIVEN ATTENTION WEIGHTS
             M = torch.sum(A.unsqueeze(2).expand_as(out) * out, 1)
 
-        elif self.attn_type == 'keyval':
+        elif self.attn_type in 'similarity':
             #GET HIDDEN STATES
             last_hiddens = h[0][self.num_layers - 1, :, :]
 
             # GET ATTENTION WEIGHTS
             # A = (all_hiddens x W x last_hidden)
-            transformed = self.W.unsqueeze(0).expand(self.batch_size, self.W.size(0), self.W.size(1))
-            weighted_seq = torch.bmm(out, transformed)
+            attn_params = self.W.unsqueeze(0).expand(self.batch_size, self.W.size(0), self.W.size(1))
+            weighted_seq = torch.bmm(out, attn_params)
             batched_last_hiddens = last_hiddens.unsqueeze(2)
             A = torch.bmm(weighted_seq, batched_last_hiddens)
             A = A.squeeze(2).unsqueeze(1)
