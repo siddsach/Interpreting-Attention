@@ -5,7 +5,7 @@ import torch
 from torch.nn import CrossEntropyLoss, NLLLoss
 from torch.autograd import Variable
 from torch.optim import Adam, SGD
-from model import VanillaRNN, SelfAttentiveRNN
+from .model import VanillaRNN, SelfAttentiveRNN
 import time
 import glob
 import os
@@ -64,7 +64,7 @@ class TrainClassifier:
                     num_classes = 2,
                     pretrained = PRETRAINED,
                     checkpoint = SAVE_CHECKPOINT,
-                    datapath = DATASET,
+                    data = DATASET,
                     num_epochs = NUM_EPOCHS,
                     lr = LEARNING_RATE,
                     vector_cache = VECTOR_CACHE,
@@ -103,7 +103,7 @@ class TrainClassifier:
             self.cuda = False
 
         self.lr = lr
-        self.datapath = datapath
+        self.datapath = data
         if self.datapath == 'MPQA':
             self.filepath = MPQA_PATH
         elif self.datapath == 'IMDB':
