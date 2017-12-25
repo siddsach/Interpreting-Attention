@@ -138,8 +138,7 @@ class SelfAttentiveRNN(VanillaRNN):
 
     def __init__(
             self,
-            attention_dim,
-            mlp_hidden,
+            attention_dim = 300,
             train_hidden = True,
             attn_type = 'similarity',
             tune_attn = True,
@@ -151,14 +150,12 @@ class SelfAttentiveRNN(VanillaRNN):
         if not train_hidden:
             self.model.weight.requires_grad = False
 
-        self.attention_dim = attention_dim
-
         if self.bidirectional:
             self.input_hidden_size = self.hidden_size * 2
         else:
             self.input_hidden_size = self.hidden_size
 
-        assert attn_type == 'MLP' or attn_type == 'keyval', "ATTENTION TYPE MUST BE MLP OR KEYVAL"
+        assert attn_type == 'MLP' or attn_type == 'similarity', "ATTENTION TYPE MUST BE MLP OR similarity"
 
         self.attn_type = attn_type
 
@@ -166,20 +163,20 @@ class SelfAttentiveRNN(VanillaRNN):
 
             # ATTENTION LAYERS
             self.W1 = nn.Linear(self.input_hidden_size, attention_dim, bias=False)
-            self.W2 = nn.Linear(self.attention_dim, 1, bias=False )
+            self.W2 = nn.Linear(attention_dim, 1, bias=False )
 
 
         elif self.attn_type == 'similarity':
             if tune_attn:
                 self.W = nn.Parameter(torch.randn(self.input_hidden_size, self.input_hidden_size))
             else:
-                self.W = torch.Tensor(self.input_hidden_size, self.input_hidden_size)
+                self.W = Variable(torch.Tensor(self.input_hidden_size, self.input_hidden_size))
                 nn.init.eye(self.W)
+                self.W.requires_grad = False
 
 
         # MLP AND DECODER TO OUTPUT
-        self.MLP = nn.Linear(self.input_hidden_size, mlp_hidden)
-        self.decoder = nn.Linear(mlp_hidden, self.num_classes)
+        self.decoder = nn.Linear(self.input_hidden_size, self.num_classes)
 
     def forward(self, inp, lengths = None):
 
@@ -189,6 +186,7 @@ class SelfAttentiveRNN(VanillaRNN):
         out, h = self.model(packed_vecs, self.hiddens)
         out, lens = torch.nn.utils.rnn.pad_packed_sequence(out, batch_first = True)
 
+        M = None
         if self.attn_type == 'MLP':
             # GET SELF-ATTENTION WEIGHTS
             s1 = self.W1(out)
@@ -198,7 +196,7 @@ class SelfAttentiveRNN(VanillaRNN):
             #GET EMBEDDING MATRIX GIVEN ATTENTION WEIGHTS
             M = torch.sum(A.unsqueeze(2).expand_as(out) * out, 1)
 
-        elif self.attn_type in 'similarity':
+        elif self.attn_type == 'similarity':
             #GET HIDDEN STATES
             last_hiddens = h[0][self.num_layers - 1, :, :]
 
@@ -214,8 +212,7 @@ class SelfAttentiveRNN(VanillaRNN):
             M = torch.bmm(A, out).squeeze(1)
 
         # DECODING ATTENTION EMBEDDED MATRICES TO OUTPUT
-        MLPhidden = self.MLP(M)
-        decoded = self.normalize(self.decoder(nn.functional.relu(MLPhidden)))
+        decoded = self.normalize(self.decoder(M))
 
         return decoded, h, A
 

@@ -31,7 +31,7 @@ LOG_INTERVAL = 20
 WORDVEC_DIM = 300
 GLOVE_DIM = WORDVEC_DIM
 WORDVEC_SOURCE = 'glove'
-TUNE_WORDVECS = False
+TUNE_WORDVECS = 'False'
 #['GloVe']# charLevel'
 MODEL_SAVEPATH = None#'saved_model.pt'
 IMDB = True
@@ -42,11 +42,10 @@ SAVE_CHECKPOINT = None#root_path + '/trained_models/classifier/'
 MODEL_TYPE = 'LSTM'
 ATTN_TYPE = 'keyval'# ['keyval', 'mlp']
 ATTENTION_DIM = 350 if ATTN_TYPE is not None else None
-TUNE_ATTN = True
+TUNE_ATTN = "True"
 L2 = 0.001
 DROPOUT = 0.5
 RNN_DROPOUT = 0.0
-MLP_HIDDEN = 512
 OPTIMIZER = 'adam'
 CLIP = 1
 NUM_LAYERS = 1
@@ -77,7 +76,6 @@ class TrainClassifier:
                     hidden_size = HIDDEN_SIZE,
                     attention_dim = ATTENTION_DIM, #None if not using attention
                     tune_attn = TUNE_ATTN,
-                    mlp_hidden = MLP_HIDDEN,
                     wordvec_dim = WORDVEC_DIM,
                     glove_dim = GLOVE_DIM,
                     wordvec_source = WORDVEC_SOURCE,
@@ -129,7 +127,6 @@ class TrainClassifier:
         self.attn_type = attn_type
         self.attention_dim = None if self.attn_type is None else attention_dim
         self.tune_attn = tune_attn
-        self.mlp_hidden = mlp_hidden
         self.num_classes = num_classes
 
         #HYPERPARAMS
@@ -385,7 +382,6 @@ class TrainClassifier:
                 attn_args = {
                     'attention_dim' : self.attention_dim,
                     'tune_attn': self.tune_attn,
-                    'mlp_hidden' : self.mlp_hidden,
                     'attn_type' : self.attn_type,
                 }
                 args.update(attn_args)
@@ -658,9 +654,7 @@ if __name__ == '__main__':
                         help='location of pretrained init')
     parser.add_argument('--attention_dim', type=int, default = ATTENTION_DIM,
                         help='location of pretrained init')
-    parser.add_argument('--tune_attn', type=bool, default = TUNE_ATTN,
-                        help='location of pretrained init')
-    parser.add_argument('--mlp_hidden', type=int, default = MLP_HIDDEN,
+    parser.add_argument('--tune_attn', type=str, default = TUNE_ATTN,
                         help='location of pretrained init')
     parser.add_argument('--glove_dim', type=int, default = GLOVE_DIM,
                         help='location of pretrained init')
@@ -668,7 +662,7 @@ if __name__ == '__main__':
                         help='location of pretrained init')
     parser.add_argument('--wordvec_source', type=str, default = WORDVEC_SOURCE,
                         help='location of pretrained init')
-    parser.add_argument('--tune_wordvecs', type=list, default = TUNE_WORDVECS,
+    parser.add_argument('--tune_wordvecs', type=str, default = TUNE_WORDVECS,
                         help='location of pretrained init')
     parser.add_argument('--max_length', type=int, default = MAX_LENGTH,
                         help='location of pretrained init')
@@ -685,6 +679,15 @@ if __name__ == '__main__':
     parser.add_argument('--savepath', type=str, default = MODEL_SAVEPATH,
                         help='location of pretrained init')
     args = parser.parse_args()
+    def str2bool(v):
+        if v.lower() in ('yes', 'true', 't', 'y', '1'):
+            return True
+        elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+            return False
+        else:
+            raise argparse.ArgumentTypeError('Boolean value expected.')
+    args.tune_wordvecs = str2bool(args.tune_wordvecs)
+    args.tune_attn = str2bool(args.tune_attn)
 
     trainer = TrainClassifier(
                         num_classes = 2,
@@ -703,7 +706,6 @@ if __name__ == '__main__':
                         hidden_size = args.hidden_size,
                         attention_dim = args.hidden_size, #None if not using attention
                         tune_attn = args.tune_attn,
-                        mlp_hidden = args.mlp_hidden,
                         glove_dim = args.glove_dim,
                         wordvec_source = args.wordvec_source,
                         wordvec_dim = args.wordvec_dim,
