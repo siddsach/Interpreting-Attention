@@ -28,19 +28,19 @@ NUM_EPOCHS = 60
 LEARNING_RATE = 0.0005
 BATCH_SIZE = 32
 LOG_INTERVAL = 20
-WORDVEC_DIM = 200
+WORDVEC_DIM = 300
 GLOVE_DIM = WORDVEC_DIM
-WORDVEC_SOURCE = ['GloVe']
+WORDVEC_SOURCE = 'glove'
 TUNE_WORDVECS = False
 #['GloVe']# charLevel'
 MODEL_SAVEPATH = None#'saved_model.pt'
 IMDB = True
 HIDDEN_SIZE = 300
-PRETRAINED = root_path + '/trained_models/langmodel/ptb/model.pt'
+PRETRAINED =  None#root_path + '/trained_models/langmodel/ptb/model.pt'
 MAX_LENGTH = 100
 SAVE_CHECKPOINT = None#root_path + '/trained_models/classifier/'
 MODEL_TYPE = 'LSTM'
-ATTN_TYPE = None# ['keyval', 'mlp']
+ATTN_TYPE = 'keyval'# ['keyval', 'mlp']
 ATTENTION_DIM = 350 if ATTN_TYPE is not None else None
 TUNE_ATTN = True
 L2 = 0.001
@@ -185,6 +185,7 @@ class TrainClassifier:
 
 
         if self.datapath == 'IMDB':
+            start = time()
             print("Retrieving Data from file: {}...".format(path))
             examples = []
 
@@ -203,6 +204,7 @@ class TrainClassifier:
                     c += 1
 
             out = torchtext.data.Dataset(examples, fields)
+            print("Got {} examples in {} seconds".format(len(out), time() - start))
             return out
 
         elif self.datapath == 'MPQA':
@@ -331,7 +333,7 @@ class TrainClassifier:
                                         )
             iterator_object.repeat = False
 
-        print("Created Iterator with {num} batches".format(num = iterator_object))
+        print("Created Iterator with {num} batches".format(num = len(iterator_object)))
         return iterator_object
 
     def get_batches(self):
@@ -395,7 +397,8 @@ class TrainClassifier:
                 self.train_attns = torch.zeros(2, len(self.train_data), self.max_length)
                 self.eval_attns = torch.zeros(2, len(self.test_data), self.max_length)
 
-            self.model.init_pretrained(pretrained_weights)
+            if pretrained_weights is not None:
+                self.model.init_pretrained(pretrained_weights)
 
             if self.cuda:
                 self.model.cuda()
@@ -503,7 +506,7 @@ class TrainClassifier:
                     current_accuracy = float(torch.sum(accuracies)) / float(torch.nonzero(accuracies).size(0))
                     current_loss = total_loss[0] / self.log_interval
                     total_loss = 0
-                    elapsed = time.time() - start_time
+                    elapsed = time() - start_time
                     accuracies = torch.zeros(self.log_interval)
                     print('At time: {elapsed} accuracy is {current_accuracy} and loss is {loss}'\
                             .format(elapsed=elapsed, current_accuracy = current_accuracy, loss = current_loss))
@@ -584,7 +587,7 @@ class TrainClassifier:
 
     def train(self, optimizer):
 
-        start_time = time.time()
+        start_time = time()
         print('Begin Training...')
 
         self.eval_accuracy = 0
