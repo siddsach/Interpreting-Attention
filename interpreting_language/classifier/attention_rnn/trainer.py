@@ -6,7 +6,7 @@ from torch.nn import CrossEntropyLoss, NLLLoss
 from torch.autograd import Variable
 from torch.optim import Adam, SGD
 from model import VanillaRNN, SelfAttentiveRNN
-import time
+from time import time
 import glob
 import os
 from datetime import datetime
@@ -164,22 +164,6 @@ class TrainClassifier:
 
         self.accuracies = torch.zeros(self.n_epochs)
 
-        self.sentence_field = data.Field(
-                            sequential = True,
-                            use_vocab = True,
-                            init_token = '<BOS>',
-                            eos_token = '<EOS>',
-                            fix_length = self.max_length,
-                            include_lengths = True,
-                            #converted to lower, probably need to strip stuff
-                            preprocessing = None,
-                            tensor_type = torch.LongTensor,
-                            lower = True,
-                            tokenize = 'spacy',
-                            batch_first = True
-                        )
-
-        self.target_field = data.Field(sequential = False, batch_first = True)
 
     def get_data(self, path, fields, max_len, file_split = True):
 
@@ -249,6 +233,23 @@ class TrainClassifier:
 
 
     def load_data(self):
+        self.sentence_field = data.Field(
+                            sequential = True,
+                            use_vocab = True,
+                            init_token = '<BOS>',
+                            eos_token = '<EOS>',
+                            fix_length = self.max_length,
+                            include_lengths = True,
+                            #converted to lower, probably need to strip stuff
+                            preprocessing = None,
+                            tensor_type = torch.LongTensor,
+                            lower = True,
+                            tokenize = 'spacy',
+                            batch_first = True
+                        )
+
+        self.target_field = data.Field(sequential = False, batch_first = True)
+
         fields = [('text', self.sentence_field),
                   ('label', self.target_field)]
         if self.datapath == 'IMDB':
@@ -605,19 +606,23 @@ class TrainClassifier:
             self.epoch = epoch
             if self.eval_accuracy < self.best_accuracy:
                 not_better += 1
+                print('Not better for {}'.format(not_better))
 
-                if not_better >= 5:
+                if not_better >= 3:
                     if self.optim == 'vanilla_grad':
                         #Annealing
                         self.lr /= 4
-                elif not_better >= 10:
-                    print('Model not improving. Stopping early with {}'
-                           'loss at {} epochs.'.format(self.best_accuracy, self.epoch))
+                if not_better >= 10:
+                    print('Model not improving. Stopping early'
+                           'at {} epochs.'.format(self.best_accuracy, self.epoch))
                     break
             else:
+                print('Achieved new best!')
                 self.best_accuracy = self.eval_accuracy
                 self.best_model = self.model
                 not_better = 0
+
+        print('Done Training. Achieved Best Accuracy of {}'.format(self.best_accuracy))
 
         if self.savepath is not None:
 
@@ -689,7 +694,7 @@ if __name__ == '__main__':
                         num_classes = 2,
                         pretrained = args.pretrained,
                         checkpoint = args.checkpoint,
-                        datapath = args.data,
+                        data = args.data,
                         num_epochs = args.num_epochs,
                         lr = args.lr,
                         vector_cache = VECTOR_CACHE,
