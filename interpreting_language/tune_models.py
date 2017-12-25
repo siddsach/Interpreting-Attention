@@ -18,7 +18,7 @@ CLASSIFIER_CHOICES = [
             ]
 
 ATTNCLF_CHOICES = [
-                {"name": "attention_dim", "type": "attention_dim", "domain": [5, 100]}
+                {"name": "attention_dim", "type": "continuous", "domain": [5, 100]}
             ]
 
 class Optimizer:
@@ -47,7 +47,7 @@ class Optimizer:
 
         self.dataset = dataset
         self.best_loss = 100000
-        self.model = None
+        self.model = model
         self.vectors = vectors
         self.num_layers = num_layers
         self.tune_wordvecs = tune_wordvecs
@@ -59,7 +59,6 @@ class Optimizer:
         self.timelimit = timelimit
 
         self.runs = []
-        self.model = None
 
         myBopt = GPyOpt.methods.BayesianOptimization(f=self.getError,#Objective function
                                                             domain=self.choices,          # Box-constrains of the problem
@@ -88,7 +87,10 @@ class Optimizer:
             if arg["type"] == "discrete":
                 value = int(value)
             elif arg["type"] == "continuous":
-                value = float(value)
+                if arg["name"] == "attention_dim":
+                    value = round(value)
+                else:
+                    value = float(value)
 
             settings[arg['name']] = value
 
@@ -99,9 +101,16 @@ class Optimizer:
         settings["wordvec_dim"] = self.wordvec_dim
         settings["batch_size"] = self.batch_size
 
+        print('model')
+        print(self.model)
         if self.model == 'langmodel':
             settings["seq_len"] = self.seq_len
-        elif self.model == ['keyvalattn']:
+        elif self.model == 'classifier':
+            settings["attn_type"] = None
+        elif self.model == 'mlpattn':
+            settings["attn_type"] = "MLP"
+        elif self.model == 'keyvalattn':
+            settings["attn_type"] = "similarity"
             settings["tune_attn"] = self.tune_attn
 
         print("SETTINGS FOR THIS RUN")

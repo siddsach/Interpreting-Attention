@@ -5,7 +5,7 @@ import torch
 from torch.nn import CrossEntropyLoss, NLLLoss
 from torch.autograd import Variable
 from torch.optim import Adam, SGD
-from model import VanillaRNN, SelfAttentiveRNN
+from .model import VanillaRNN, SelfAttentiveRNN
 from time import time
 import glob
 import os
@@ -124,6 +124,8 @@ class TrainClassifier:
 
         #MODEL ARCHITECTURE SPECS
         self.model_type = model_type
+        print('here')
+        print(attn_type)
         self.attn_type = attn_type
         self.attention_dim = None if self.attn_type is None else attention_dim
         self.tune_attn = tune_attn
@@ -136,6 +138,8 @@ class TrainClassifier:
             self.wordvec_source = ['GloVe', 'charLevel']
         elif wordvec_source == 'google':
             self.wordvec_source = ['googlenews']
+        elif wordvec_source == 'gigavec':
+            self.wordvec_source = ['gigavec']
         else:
             self.wordvec_source = []
 
@@ -297,6 +301,11 @@ class TrainClassifier:
                     self.wordvec_dim += 300
                     google = Vectors(name = 'googlenews.txt', cache = self.vector_cache)
                     vecs.append(google)
+                if source == 'gigavec':
+                    gigavec = Vectors(name = 'gigamodel.vec',\
+                            cache = self.vector_cache)
+                    vecs.append(gigavec)
+                    self.wordvec_dim += 300
 
             print('Building Vocab...')
             print(vecs)
@@ -379,6 +388,7 @@ class TrainClassifier:
                         .format(args))
 
             else:
+                print(self.attn_type)
                 attn_args = {
                     'attention_dim' : self.attention_dim,
                     'tune_attn': self.tune_attn,
