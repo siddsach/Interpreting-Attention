@@ -402,7 +402,7 @@ class TrainClassifier:
 
                 #MAKING MATRIX TO SAVE ATTENTION WEIGHTS
                 self.train_attns = torch.zeros(2, len(self.train_data), self.max_length)
-                self.eval_attns = torch.zeros(2, len(self.test_data), self.max_length)
+                self.test_attns = torch.zeros(2, len(self.test_data), self.max_length)
 
             if pretrained_weights is not None:
                 self.model.init_pretrained(pretrained_weights)
@@ -542,7 +542,10 @@ class TrainClassifier:
                     'state_dict': self.model.state_dict(),
                     'best_valid_accuracy': self.eval_accuracy,
                     'optimizer': None if optimizer is None else optimizer.state_dict(),
-                    'accuracies': self.accuracies
+                    'accuracies': self.accuracies,
+                    'vocab': self.sentence_field.vocab,
+                    'train_attns':self.train_attns,
+                    'test_attns': self.test_attns
                 }
         savepath = checkpointpath + ''.join(str(datetime.now()).split())
         if name is not None:
