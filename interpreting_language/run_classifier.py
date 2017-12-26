@@ -2,7 +2,7 @@ import argparse
 import torch
 from classifier.attention_rnn.trainer import TrainClassifier
 import os
-from visualize import plot_attns
+#from visualize import plot_attn
 
 root_path = os.getcwd()
 print("ROOT_PATH: {}".format(root_path))
@@ -97,6 +97,8 @@ parser.add_argument('--clip', type=float, default = CLIP,
                     help='location of pretrained init')
 parser.add_argument('--savepath', type=str, default = MODEL_SAVEPATH,
                     help='location of pretrained init')
+parser.add_argument('--fix_pretrained', type=int, default=None,
+                    help='how many layers to fix')
 args = parser.parse_args()
 def str2bool(v):
     if v.lower() in ('yes', 'true', 't', 'y', '1'):
@@ -138,15 +140,30 @@ trainer = TrainClassifier(
                     rnn_dropout =  args.rnn_dropout,
                     clip = args.clip,
                     attn_type = args.attention,
-                    l2 = args.l2
+                    l2 = args.l2,
+                    fix_pretrained = args.fix_pretrained
                 )
-'''
 optimizer = trainer.start_train()
 trainer.train(optimizer)
-trainer.save_checkpoint("", name = "viztestdata.pt")
-'''
+trainer.save_checkpoint('', optimizer, name = 'clf4attn.pt')
 
-a = torch.load("viztestdata.pt")
-word_dic = a["vocab"].itos
-matrix = a["train_attns"]
+trained = torch.load('clf4attn.pt')
+vocab = trained['vocab']
+train_attns = trained['train_attns']
+
+numrows = train_attns[0].size(0)
+datawords = numrows * ['']
+datavals = numrows * ['']
+
+for i in range(numrows):
+    words = [vocab.itos[i] for i in train_attns[0][i] if i!=0]
+    datawords[i] = words
+    vals = [i for i in train_attns[1][i] if i < len(words)]
+    datavals[i] = vals
+
+#plot_attn(datawords, datavals, savepath = 'test.png')
+
+
+if args.attention is not None:
+    print(trainer.train_attns)
 

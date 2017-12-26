@@ -67,16 +67,18 @@ class Optimizer:
                                                             exact_feval = True
                                                         )
 
-        myBopt.run_optimization(max_iter = 1, max_time = timelimit)
+        myBopt.run_optimization(max_time = timelimit)
+        print("\n\n\nRESULTS:\n{}".format(self.runs))
 
-        self.save()
+        #self.save()
 
 
     def save(self):
 
-        savepath = '{}/optimized/{}bsz_{}seq_len_{}layers_{}vectors_{}tune_{}accuracy.pt'.format(self.dataset, self.batch_size, self.seq_len, self.num_layers, self.vectors, self.tune_wordvecs, self.best_accuracy)
+        savepath = 'trained_models/classifier/{}/optimized/'.format(self.dataset)
+        name = '{}bsz_{}seq_len_{}layers_{}vectors_{}tune_{}accuracy.pt'.format(self.batch_size, self.seq_len, self.num_layers, self.vectors, self.tune_wordvecs, self.best_accuracy)
 
-        self.model.save_checkpoint(savepath)
+        self.best_model.save_checkpoint(savepath, name = name)
 
         print("\n\n\nRESULTS:\n{}".format(self.runs))
 
@@ -101,8 +103,6 @@ class Optimizer:
         settings["wordvec_dim"] = self.wordvec_dim
         settings["batch_size"] = self.batch_size
 
-        print('model')
-        print(self.model)
         if self.model == 'langmodel':
             settings["seq_len"] = self.seq_len
         elif self.model == 'classifier':
@@ -123,14 +123,16 @@ class Optimizer:
             print('Improved accuracyfrom {} to {}'.format(self.best_accuracy, trainer.best_accuracy))
             self.best_accuracy = trainer.best_accuracy
             self.best_args = settings
-            self.model = trainer
+            self.best_model = trainer
 
         print(self.model)
         self.runs.append({"params":settings, "best_accuracy": trainer.best_accuracy})
 
         current_time = time()
         if current_time - self.start_time >= self.timelimit:
-            self.save()
+
+            print("\n\n\nRESULTS:\n{}".format(self.runs))
+            #self.save()
 
         return -trainer.best_accuracy
 
@@ -159,7 +161,7 @@ if __name__ == '__main__':
                         help='whether to tune wordvecs')
     parser.add_argument('--batch_size', type=int, default=20,
                         help='wordvec_dim')
-    parser.add_argument('--wordvec_dim', type=int, default=200,
+    parser.add_argument('--wordvec_dim', type=int, default=300,
                         help='wordvec_dim')
     parser.add_argument('--timelimit', type=int, default=3*60*60,
                         help='wordvec_dim')
