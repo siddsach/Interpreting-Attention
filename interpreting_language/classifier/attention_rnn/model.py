@@ -75,20 +75,32 @@ class VanillaRNN(nn.Module):
             print('Not Tuning Word Vectors!')
             self.embed.weight.requires_grad = False
 
-    def init_pretrained(self, pretrained, fix_pretrained = True):
+    def init_pretrained(self, pretrained, fix_pretrained = 2):
 #        try:
 
         use = lambda key: ('model' in key or 'embed' in key)
         pretrained = {key: pretrained[key] for key in pretrained if use(key)}
 
+
         #LOAD PARAMS FROM PRETRAINED MODEL, IGNORING IRRELEVANT ONES
         self.load_state_dict(pretrained, strict = False)
 
+        #check
+        for key in pretrained.keys():
+            try:
+                assert self.state_dict()[key].equal(pretrained[key]), 'key not the same:{}'.format(key)
+            except:
+                print('THIS:{}'.format(self.state_dict()[key]))
+                print('PRETRAINED:{}'.format(pretrained[key]))
+
         #OPTION TO FIX PRETRAINED PARAMETERS
-        if fix_pretrained:
-            for key in pretrained.keys():
-                if key in self.model._parameters.keys():
-                    self.model._paramaters[key].requires_grad = False
+        if fix_pretrained is not None:
+            self.embed.weight.requires_grad = False
+            for i in range(fix_pretrained):
+                for param in self.model._parameters.keys():
+                    if str(i) in param:
+                        print('Keeping pretrained param:{} fixed'.format(param))
+                        self.model._parameters[param].requires_grad = False
 
 
 #        except:

@@ -89,7 +89,8 @@ class TrainClassifier:
                     rnn_dropout =  RNN_DROPOUT,
                     clip = CLIP,
                     attn_type = ATTN_TYPE,
-                    l2 = L2
+                    l2 = L2,
+                    fix_pretrained = None
                 ):
         self.savepath = savepath
 
@@ -153,7 +154,7 @@ class TrainClassifier:
         self.hidden_size = hidden_size
         self.num_layers = num_layers
         self.pretrained = pretrained
-
+        self.fix_pretrained = fix_pretrained
 
         self.checkpoint_path = checkpoint
         self.max_length = max_length
@@ -404,11 +405,12 @@ class TrainClassifier:
                 self.train_attns = torch.zeros(2, len(self.train_data), self.max_length)
                 self.test_attns = torch.zeros(2, len(self.test_data), self.max_length)
 
-            if pretrained_weights is not None:
-                self.model.init_pretrained(pretrained_weights)
-
             if self.cuda:
                 self.model.cuda()
+
+            if pretrained_weights is not None:
+                self.model.init_pretrained(pretrained_weights, fix_pretrained = self.fix_pretrained)
+
         else:
             print('Loading Model from checkpoint')
             self.model = torch.load(self.checkpoint_path)

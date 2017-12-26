@@ -2,7 +2,6 @@ import argparse
 import torch
 from classifier.attention_rnn.trainer import TrainClassifier
 import os
-from visualize import plot_heat_map
 
 root_path = os.getcwd()
 print("ROOT_PATH: {}".format(root_path))
@@ -97,6 +96,8 @@ parser.add_argument('--clip', type=float, default = CLIP,
                     help='location of pretrained init')
 parser.add_argument('--savepath', type=str, default = MODEL_SAVEPATH,
                     help='location of pretrained init')
+parser.add_argument('--fix_pretrained', type=int, default=None,
+                    help='how many layers to fix')
 args = parser.parse_args()
 def str2bool(v):
     if v.lower() in ('yes', 'true', 't', 'y', '1'):
@@ -138,9 +139,12 @@ trainer = TrainClassifier(
                     rnn_dropout =  args.rnn_dropout,
                     clip = args.clip,
                     attn_type = args.attention,
-                    l2 = args.l2
+                    l2 = args.l2,
+                    fix_pretrained = args.fix_pretrained
                 )
 optimizer = trainer.start_train()
 trainer.train(optimizer)
-print(trainer.train_attns)
+trainer.save_checkpoint('', optimizer, name = 'clf4attn.pt')
+if args.attention is not None:
+    print(trainer.train_attns)
 
