@@ -2,7 +2,7 @@ import argparse
 import torch
 from classifier.attention_rnn.trainer import TrainClassifier
 import os
-from visualize import plot_heat_map
+from visualize import plot_attns
 
 root_path = os.getcwd()
 print("ROOT_PATH: {}".format(root_path))
@@ -140,7 +140,13 @@ trainer = TrainClassifier(
                     attn_type = args.attention,
                     l2 = args.l2
                 )
+'''
 optimizer = trainer.start_train()
 trainer.train(optimizer)
-print(trainer.train_attns)
+trainer.save_checkpoint("", name = "viztestdata.pt")
+'''
+
+a = torch.load("viztestdata.pt")
+word_dic = a["vocab"].itos
+matrix = a["train_attns"]
 
