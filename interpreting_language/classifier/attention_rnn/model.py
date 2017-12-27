@@ -34,12 +34,12 @@ class VanillaRNN(nn.Module):
         self.batch_size = batch_size
 
         if cuda:
-
             self.hiddens  = tuple(nn.Parameter(torch.randn(num_layers, self.batch_size * num_directions, self.hidden_size)
                             .type(torch.cuda.FloatTensor), requires_grad=True) for i in range(num_states))
         else:
             self.hiddens  = tuple(nn.Parameter(torch.randn(num_layers, self.batch_size * num_directions, self.hidden_size)
                             .type(torch.FloatTensor), requires_grad=True) for i in range(num_states))
+
 
         self.hiddens = self.hiddens[0] if (num_states == 1) else self.hiddens
 
@@ -68,6 +68,7 @@ class VanillaRNN(nn.Module):
 
         if vectors is not None:
             self.init_embedding(vectors)
+
 
     def init_embedding(self, pretrained_embeddings):
         self.embed.weight.data.copy_(pretrained_embeddings)# this provides the values
@@ -182,7 +183,7 @@ class SelfAttentiveRNN(VanillaRNN):
             if tune_attn:
                 self.W = nn.Parameter(torch.randn(self.input_hidden_size, self.input_hidden_size))
             else:
-                self.W = Variable(torch.Tensor(self.input_hidden_size, self.input_hidden_size))
+                self.W = Variable(torch.randn(self.input_hidden_size, self.input_hidden_size))
                 nn.init.eye(self.W)
                 self.W.requires_grad = False
 
@@ -206,9 +207,6 @@ class SelfAttentiveRNN(VanillaRNN):
             s2 = self.W2(nn.functional.tanh(s1))
             A = torch.squeeze(nn.functional.softmax(s2))
 
-            #GET EMBEDDING MATRIX GIVEN ATTENTION WEIGHTS
-            M = torch.sum(A.unsqueeze(2).expand_as(out) * out, 1)
-
         elif self.attn_type == 'similarity':
             #GET HIDDEN STATES
             last_hiddens = h[0][self.num_layers - 1, :, :]
@@ -218,12 +216,11 @@ class SelfAttentiveRNN(VanillaRNN):
             attn_params = self.W.unsqueeze(0).expand(self.batch_size, self.W.size(0), self.W.size(1))
             weighted_seq = torch.bmm(out, attn_params)
             batched_last_hiddens = last_hiddens.unsqueeze(2)
-            A = torch.bmm(weighted_seq, batched_last_hiddens)
-            A = A.squeeze(2).unsqueeze(1)
+            A = torch.bmm(weighted_seq, batched_last_hiddens).squeeze(2)
 
-            #GET ATTENTION WEIGHTED CONTEXT VECTOR
-            M = torch.bmm(A, out).squeeze(1)
 
+        #GET EMBEDDING MATRIX GIVEN ATTENTION WEIGHTS
+        M = torch.sum(A.unsqueeze(2).expand_as(out) * out, 1)
         # DECODING ATTENTION EMBEDDED MATRICES TO OUTPUT
         decoded = self.normalize(self.decoder(M))
 
