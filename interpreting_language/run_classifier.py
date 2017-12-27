@@ -2,6 +2,7 @@ import argparse
 import torch
 from classifier.attention_rnn.trainer import TrainClassifier
 import os
+#from visualize import plot_attn
 
 root_path = os.getcwd()
 print("ROOT_PATH: {}".format(root_path))
@@ -145,6 +146,24 @@ trainer = TrainClassifier(
 optimizer = trainer.start_train()
 trainer.train(optimizer)
 trainer.save_checkpoint('', optimizer, name = 'clf4attn.pt')
+
+trained = torch.load('clf4attn.pt')
+vocab = trained['vocab']
+train_attns = trained['train_attns']
+
+numrows = train_attns[0].size(0)
+datawords = numrows * ['']
+datavals = numrows * ['']
+
+for i in range(numrows):
+    words = [vocab.itos[i] for i in train_attns[0][i] if i!=0]
+    datawords[i] = words
+    vals = [i for i in train_attns[1][i] if i < len(words)]
+    datavals[i] = vals
+
+#plot_attn(datawords, datavals, savepath = 'test.png')
+
+
 if args.attention is not None:
     print(trainer.train_attns)
 
