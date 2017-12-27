@@ -99,7 +99,8 @@ class TrainLangModel:
                     rnn_dropout = DROPOUT,
                     few_batches = FEW_BATCHES,
                     anneal = ANNEAL,
-                    current_batch = 0
+                    current_batch = 0,
+                    charlevel = False
                 ):
 
         if torch.cuda.is_available() and use_cuda:
@@ -124,12 +125,22 @@ class TrainLangModel:
 
         self.clip = clip
 
-        #HYPERPARAMS
-        self.glove_dim = glove_dim
-        self.wordvec_source = wordvec_source
-        self.pretrained_vecs = self.wordvec_source in ['google', 'glove', 'charlevel', 'gigavec']
-        self.wordvec_dim = 0 if self.pretrained_vecs else wordvec_dim
 
+
+        #HYPERPARAMS
+        if charlevel:
+            print("BUILDING CHAR LEVEL RNN: GETTING RID OF WORDVEC ATTS")
+            self.tokenizer = lambda x: list(x)
+            self.glove_dim = None
+            self.wordvec_source = None
+            self.pretrained_vecs = None
+            self.wordvec_dim = wordvec_dim
+        else:
+            self.tokenizer = 'spacy'
+            self.glove_dim = glove_dim
+            self.wordvec_source = wordvec_source
+            self.pretrained_vecs = self.wordvec_source in ['google', 'glove', 'charlevel', 'gigavec']
+            self.wordvec_dim = 0 if self.pretrained_vecs else wordvec_dim
 
         self.hidden_size = hidden_size
 
@@ -615,6 +626,8 @@ if __name__ == '__main__':
     parser.add_argument('--clip', type=float, default = CLIP,
                         help='location of pretrained init')
     parser.add_argument('--savepath', type=str, default = MODEL_SAVE_PATH,
+                        help='location of pretrained init')
+    parser.add_argument('--charlevel', type=str, default = MODEL_SAVE_PATH,
                         help='location of pretrained init')
     args = parser.parse_args()
 
