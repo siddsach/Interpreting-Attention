@@ -1,0 +1,77 @@
+ROOT_PATH: /home-nfs/siddsach/ml/Interpreting-Attention/interpreting_language
+Building Bayesian Optimizer for 
+ data:MPQA 
+ choices:[{'type': 'continuous', 'name': 'lr', 'domain': [5e-05, 0.005]}, {'type': 'continuous', 'name': 'rnn_dropout', 'domain': [0, 1]}, {'type': 'continuous', 'name': 'dropout', 'domain': [0, 1]}, {'type': 'continuous', 'name': 'l2', 'domain': [0, 1]}]
+SETTINGS FOR THIS RUN
+{'lr': 0.0007707051543380995, 'tune_wordvecs': False, 'attn_type': None, 'wordvec_dim': 300, 'l2': 0.18216374733809948, 'batch_size': 32, 'num_layers': 2, 'dropout': 0.29337343740987576, 'data': 'MPQA', 'wordvec_source': 'google', 'rnn_dropout': 0.029147979513420852}
+Using CUDA!
+here
+None
+Building RNN Classifier...
+
+[93m    Warning: no model found for 'en'[0m
+
+    Only loading the 'en' tokenizer.
+
+Retrieving Data from file: /home-nfs/siddsach/ml/Interpreting-Attention/interpreting_language/data/mpqa/mpqa_subj_labels.pickle...
+Loading Vectors From Memory...
+Using these vectors: ['googlenews']
+Getting google news vectors
+Building Vocab...
+[<torchtext.vocab.Vectors object at 0x7f8ce74e6978>]
+Getting Batches...
+Created Iterator with 261 batches
+Getting Batches...
+Created Iterator with 87 batches
+Building model...
+Not Tuning Word Vectors!
+Using Vanilla RNN with following args:
+{'num_layers': 2, 'vocab_size': 15284, 'train_word_vecs': False, 'cuda': True, 'input_size': 300, 'batch_size': 32, 'vectors': 
+ 0.0000  0.0000  0.0000  ...   0.0000  0.0000  0.0000
+ 0.0000  0.0000  0.0000  ...   0.0000  0.0000  0.0000
+ 0.0000  0.0000  0.0000  ...   0.0000  0.0000  0.0000
+          ...             ⋱             ...          
+ 0.0000  0.0000  0.0000  ...   0.0000  0.0000  0.0000
+ 0.0000  0.0000  0.0000  ...   0.0000  0.0000  0.0000
+ 0.0000  0.0000  0.0000  ...   0.0000  0.0000  0.0000
+[torch.FloatTensor of size 15284x300]
+, 'hidden_size': 300, 'rnn_dropout': 0.029147979513420852, 'num_classes': 2, 'dropout': 0.29337343740987576}
+Traceback (most recent call last):
+  File "tune_models.py", line 186, in <module>
+    batch_size = args.batch_size, seq_len = args.seq_len)
+  File "tune_models.py", line 67, in __init__
+    exact_feval = True
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/GPyOpt/methods/bayesian_optimization.py", line 117, in __init__
+    self._init_design_chooser()
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/GPyOpt/methods/bayesian_optimization.py", line 192, in _init_design_chooser
+    self.Y, _ = self.objective.evaluate(self.X)
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/GPyOpt/core/task/objective.py", line 50, in evaluate
+    f_evals, cost_evals = self._eval_func(x)
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/GPyOpt/core/task/objective.py", line 74, in _eval_func
+    rlt = self.func(np.atleast_2d(x[i]))
+  File "tune_models.py", line 119, in getError
+    optimizer = trainer.start_train()
+  File "/home-nfs/siddsach/ml/Interpreting-Attention/interpreting_language/classifier/attention_rnn/trainer.py", line 589, in start_train
+    self.get_model(pretrained_weights, pretrained_args)
+  File "/home-nfs/siddsach/ml/Interpreting-Attention/interpreting_language/classifier/attention_rnn/trainer.py", line 409, in get_model
+    self.model.cuda()
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/torch/nn/modules/module.py", line 216, in cuda
+    return self._apply(lambda t: t.cuda(device))
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/torch/nn/modules/module.py", line 146, in _apply
+    module._apply(fn)
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/torch/nn/modules/rnn.py", line 123, in _apply
+    self.flatten_parameters()
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/torch/nn/modules/rnn.py", line 85, in flatten_parameters
+    handle = cudnn.get_handle()
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/torch/backends/cudnn/__init__.py", line 296, in get_handle
+    handle = CuDNNHandle()
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/torch/backends/cudnn/__init__.py", line 110, in __init__
+    check_error(lib.cudnnCreate(ctypes.byref(ptr)))
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/torch/backends/cudnn/__init__.py", line 283, in check_error
+    raise CuDNNError(status)
+torch.backends.cudnn.CuDNNError: 4: b'CUDNN_STATUS_INTERNAL_ERROR'
+Exception ignored in: <bound method CuDNNHandle.__del__ of <torch.backends.cudnn.CuDNNHandle object at 0x7f8ce2692f98>>
+Traceback (most recent call last):
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/torch/backends/cudnn/__init__.py", line 114, in __del__
+    check_error(lib.cudnnDestroy(self))
+ctypes.ArgumentError: argument 1: <class 'TypeError'>: Don't know how to convert parameter 1

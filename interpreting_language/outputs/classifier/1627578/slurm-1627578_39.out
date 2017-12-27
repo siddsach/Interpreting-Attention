@@ -1,0 +1,67 @@
+ROOT_PATH: /home-nfs/siddsach/ml/Interpreting-Attention/interpreting_language
+Building Bayesian Optimizer for 
+ data:IMDB 
+ choices:[{'type': 'continuous', 'name': 'lr', 'domain': [5e-05, 0.005]}, {'type': 'continuous', 'name': 'rnn_dropout', 'domain': [0, 1]}, {'type': 'continuous', 'name': 'dropout', 'domain': [0, 1]}, {'type': 'continuous', 'name': 'l2', 'domain': [0, 1]}]
+SETTINGS FOR THIS RUN
+{'rnn_dropout': 0.973141758368986, 'attn_type': 'similarity', 'batch_size': 32, 'lr': 0.0007439693373271065, 'num_layers': 1, 'tune_attn': True, 'data': 'IMDB', 'tune_wordvecs': True, 'dropout': 0.27813101363894743, 'l2': 0.1629317543062454, 'wordvec_dim': 300, 'wordvec_source': 'google'}
+Using CUDA!
+here
+similarity
+Building RNN Classifier...
+
+[93m    Warning: no model found for 'en'[0m
+
+    Only loading the 'en' tokenizer.
+
+Retrieving Data from file: /home-nfs/siddsach/ml/Interpreting-Attention/interpreting_language/data/imdb/aclImdb/train...
+Got 25000 examples in 62.371378898620605 seconds
+Retrieving Data from file: /home-nfs/siddsach/ml/Interpreting-Attention/interpreting_language/data/imdb/aclImdb/test...
+Got 25000 examples in 65.23340058326721 seconds
+Loading Vectors From Memory...
+Using these vectors: ['googlenews']
+Getting google news vectors
+Building Vocab...
+[<torchtext.vocab.Vectors object at 0x7f36adca42e8>]
+Getting Batches...
+Created Iterator with 782 batches
+Getting Batches...
+Created Iterator with 782 batches
+Building model...
+similarity
+Using Attention model with following args:
+{'vocab_size': 101925, 'input_size': 300, 'batch_size': 32, 'train_word_vecs': True, 'tune_attn': True, 'num_layers': 1, 'vectors': 
+ 0.0000  0.0000  0.0000  ...   0.0000  0.0000  0.0000
+ 0.0000  0.0000  0.0000  ...   0.0000  0.0000  0.0000
+ 0.0000  0.0000  0.0000  ...   0.0000  0.0000  0.0000
+          ...             ⋱             ...          
+ 0.0000  0.0000  0.0000  ...   0.0000  0.0000  0.0000
+ 0.0000  0.0000  0.0000  ...   0.0000  0.0000  0.0000
+ 0.0000  0.0000  0.0000  ...   0.0000  0.0000  0.0000
+[torch.FloatTensor of size 101925x100]
+, 'rnn_dropout': 0.973141758368986, 'dropout': 0.27813101363894743, 'attn_type': 'similarity', 'cuda': True, 'attention_dim': 350, 'hidden_size': 300, 'num_classes': 2}
+Traceback (most recent call last):
+  File "tune_models.py", line 186, in <module>
+    batch_size = args.batch_size, seq_len = args.seq_len)
+  File "tune_models.py", line 67, in __init__
+    exact_feval = True
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/GPyOpt/methods/bayesian_optimization.py", line 117, in __init__
+    self._init_design_chooser()
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/GPyOpt/methods/bayesian_optimization.py", line 192, in _init_design_chooser
+    self.Y, _ = self.objective.evaluate(self.X)
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/GPyOpt/core/task/objective.py", line 50, in evaluate
+    f_evals, cost_evals = self._eval_func(x)
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/GPyOpt/core/task/objective.py", line 74, in _eval_func
+    rlt = self.func(np.atleast_2d(x[i]))
+  File "tune_models.py", line 119, in getError
+    optimizer = trainer.start_train()
+  File "/home-nfs/siddsach/ml/Interpreting-Attention/interpreting_language/classifier/attention_rnn/trainer.py", line 588, in start_train
+    self.get_model(pretrained_weights, pretrained_args)
+  File "/home-nfs/siddsach/ml/Interpreting-Attention/interpreting_language/classifier/attention_rnn/trainer.py", line 402, in get_model
+    self.model = SelfAttentiveRNN(**args)
+  File "/home-nfs/siddsach/ml/Interpreting-Attention/interpreting_language/classifier/attention_rnn/model.py", line 160, in __init__
+    super(SelfAttentiveRNN, self).__init__(**kwargs)
+  File "/home-nfs/siddsach/ml/Interpreting-Attention/interpreting_language/classifier/attention_rnn/model.py", line 70, in __init__
+    self.init_embedding(vectors)
+  File "/home-nfs/siddsach/ml/Interpreting-Attention/interpreting_language/classifier/attention_rnn/model.py", line 73, in init_embedding
+    self.embed.weight.data.copy_(pretrained_embeddings)# this provides the values
+RuntimeError: inconsistent tensor size, expected tensor [101925 x 300] and src [101925 x 100] to have the same number of elements, but got 30577500 and 10192500 elements respectively at /opt/conda/conda-bld/pytorch_1513366702650/work/torch/lib/TH/generic/THTensorCopy.c:86

@@ -1,0 +1,53 @@
+ROOT_PATH: /home-nfs/siddsach/ml/Interpreting-Attention/interpreting_language
+Building Bayesian Optimizer for 
+ data:IMDB 
+ choices:[{'type': 'continuous', 'name': 'lr', 'domain': [5e-05, 0.005]}, {'type': 'continuous', 'name': 'rnn_dropout', 'domain': [0, 1]}, {'type': 'continuous', 'name': 'dropout', 'domain': [0, 1]}, {'type': 'continuous', 'name': 'l2', 'domain': [0, 1]}]
+SETTINGS FOR THIS RUN
+{'rnn_dropout': 0.3635634065048684, 'attn_type': None, 'wordvec_source': 'google', 'batch_size': 32, 'dropout': 0.6713919282515525, 'num_layers': 2, 'tune_wordvecs': True, 'wordvec_dim': 200, 'data': 'IMDB', 'lr': 0.0036878405436587334, 'l2': 0.2557188484932833}
+Using CUDA!
+here
+None
+Building RNN Classifier...
+
+[93m    Warning: no model found for 'en'[0m
+
+    Only loading the 'en' tokenizer.
+
+Retrieving Data from file: /home-nfs/siddsach/ml/Interpreting-Attention/interpreting_language/data/imdb/aclImdb/train...
+Got 25000 examples in 600.5267143249512 seconds
+Retrieving Data from file: /home-nfs/siddsach/ml/Interpreting-Attention/interpreting_language/data/imdb/aclImdb/test...
+Got 25000 examples in 729.1603035926819 seconds
+Loading Vectors From Memory...
+Using these vectors: ['googlenews']
+Getting google news vectors
+Building Vocab...
+[<torchtext.vocab.Vectors object at 0x7f64a77e4eb8>]
+Getting Batches...
+Created Iterator with 782 batches
+Getting Batches...
+Created Iterator with 782 batches
+Building model...
+Traceback (most recent call last):
+  File "tune_models.py", line 183, in <module>
+    batch_size = args.batch_size, seq_len = args.seq_len)
+  File "tune_models.py", line 67, in __init__
+    exact_feval = True
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/GPyOpt/methods/bayesian_optimization.py", line 117, in __init__
+    self._init_design_chooser()
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/GPyOpt/methods/bayesian_optimization.py", line 192, in _init_design_chooser
+    self.Y, _ = self.objective.evaluate(self.X)
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/GPyOpt/core/task/objective.py", line 50, in evaluate
+    f_evals, cost_evals = self._eval_func(x)
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/GPyOpt/core/task/objective.py", line 74, in _eval_func
+    rlt = self.func(np.atleast_2d(x[i]))
+  File "tune_models.py", line 118, in getError
+    optimizer = trainer.start_train()
+  File "/home-nfs/siddsach/ml/Interpreting-Attention/interpreting_language/classifier/attention_rnn/trainer.py", line 583, in start_train
+    self.get_model(pretrained_weights, pretrained_args)
+  File "/home-nfs/siddsach/ml/Interpreting-Attention/interpreting_language/classifier/attention_rnn/trainer.py", line 386, in get_model
+    self.model = VanillaRNN(**args)
+  File "/home-nfs/siddsach/ml/Interpreting-Attention/interpreting_language/classifier/attention_rnn/model.py", line 70, in __init__
+    self.init_embedding(vectors)
+  File "/home-nfs/siddsach/ml/Interpreting-Attention/interpreting_language/classifier/attention_rnn/model.py", line 73, in init_embedding
+    self.embed.weight.data.copy_(pretrained_embeddings)# this provides the values
+RuntimeError: inconsistent tensor size, expected tensor [101925 x 300] and src [101925 x 100] to have the same number of elements, but got 30577500 and 10192500 elements respectively at /opt/conda/conda-bld/pytorch_1513366702650/work/torch/lib/TH/generic/THTensorCopy.c:86
