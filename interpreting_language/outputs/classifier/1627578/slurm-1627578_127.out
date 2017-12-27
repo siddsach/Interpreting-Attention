@@ -1,0 +1,63 @@
+ROOT_PATH: /home-nfs/siddsach/ml/Interpreting-Attention/interpreting_language
+Building Bayesian Optimizer for 
+ data:MPQA 
+ choices:[{'name': 'lr', 'type': 'continuous', 'domain': [5e-05, 0.005]}, {'name': 'rnn_dropout', 'type': 'continuous', 'domain': [0, 1]}, {'name': 'dropout', 'type': 'continuous', 'domain': [0, 1]}, {'name': 'l2', 'type': 'continuous', 'domain': [0, 1]}]
+SETTINGS FOR THIS RUN
+{'l2': 0.13976860116861634, 'rnn_dropout': 0.04571048839822234, 'data': 'MPQA', 'lr': 0.0027309615724358553, 'batch_size': 32, 'wordvec_source': 'glove', 'wordvec_dim': 300, 'attn_type': 'similarity', 'tune_attn': True, 'num_layers': 2, 'dropout': 0.21232587468926045, 'tune_wordvecs': False}
+Using CUDA!
+here
+similarity
+Building RNN Classifier...
+
+[93m    Warning: no model found for 'en'[0m
+
+    Only loading the 'en' tokenizer.
+
+Retrieving Data from file: /home-nfs/siddsach/ml/Interpreting-Attention/interpreting_language/data/mpqa/mpqa_subj_labels.pickle...
+Loading Vectors From Memory...
+Using these vectors: ['GloVe']
+Getting GloVe Vectors with 300 dims
+Building Vocab...
+[<torchtext.vocab.Vectors object at 0x7fc3ae45fef0>]
+Getting Batches...
+Created Iterator with 261 batches
+Getting Batches...
+Created Iterator with 87 batches
+Building model...
+similarity
+Using Attention model with following args:
+{'vocab_size': 15284, 'rnn_dropout': 0.04571048839822234, 'attention_dim': 350, 'batch_size': 32, 'vectors': 
+ 0.0000  0.0000  0.0000  ...   0.0000  0.0000  0.0000
+ 0.0000  0.0000  0.0000  ...   0.0000  0.0000  0.0000
+ 0.0000  0.0000  0.0000  ...   0.0000  0.0000  0.0000
+          ...             ⋱             ...          
+-0.4786 -0.1089 -0.0076  ...   0.7458  0.7174  0.6185
+ 0.0000  0.0000  0.0000  ...   0.0000  0.0000  0.0000
+-0.0479  0.9828  0.9182  ...   0.0424  0.4554 -0.3210
+[torch.FloatTensor of size 15284x300]
+, 'hidden_size': 300, 'attn_type': 'similarity', 'input_size': 300, 'cuda': True, 'num_layers': 2, 'num_classes': 2, 'dropout': 0.21232587468926045, 'train_word_vecs': False, 'tune_attn': True}
+Not Tuning Word Vectors!
+Begin Training...
+Completing Train Step at 0th epoch...
+Traceback (most recent call last):
+  File "tune_models.py", line 186, in <module>
+    batch_size = args.batch_size, seq_len = args.seq_len)
+  File "tune_models.py", line 67, in __init__
+    exact_feval = True
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/GPyOpt/methods/bayesian_optimization.py", line 117, in __init__
+    self._init_design_chooser()
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/GPyOpt/methods/bayesian_optimization.py", line 192, in _init_design_chooser
+    self.Y, _ = self.objective.evaluate(self.X)
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/GPyOpt/core/task/objective.py", line 50, in evaluate
+    f_evals, cost_evals = self._eval_func(x)
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/GPyOpt/core/task/objective.py", line 74, in _eval_func
+    rlt = self.func(np.atleast_2d(x[i]))
+  File "tune_models.py", line 120, in getError
+    trainer.train(optimizer)
+  File "/home-nfs/siddsach/ml/Interpreting-Attention/interpreting_language/classifier/attention_rnn/trainer.py", line 613, in train
+    optimizer = self.train_step(optimizer, start_time)
+  File "/home-nfs/siddsach/ml/Interpreting-Attention/interpreting_language/classifier/attention_rnn/trainer.py", line 496, in train_step
+    self.save_attns(i, data, A, 'train')
+  File "/home-nfs/siddsach/ml/Interpreting-Attention/interpreting_language/classifier/attention_rnn/trainer.py", line 532, in save_attns
+    self.train_attns[1, index: index + self.batch_size, :attns.size(1)] = attns.data
+RuntimeError: invalid argument 2: sizes do not match at /opt/conda/conda-bld/pytorch_1513366702650/work/torch/lib/THC/generic/THCTensorCopy.c:101
