@@ -180,12 +180,10 @@ class SelfAttentiveRNN(VanillaRNN):
 
 
         elif self.attn_type == 'similarity':
-            if tune_attn:
-                self.W = nn.Parameter(torch.randn(self.input_hidden_size, self.input_hidden_size))
-            else:
-                self.W = Variable(torch.randn(self.input_hidden_size, self.input_hidden_size))
-                nn.init.eye(self.W)
+            self.W = nn.Parameter(torch.randn(self.input_hidden_size, self.input_hidden_size))
+            if not tune_attn:
                 self.W.requires_grad = False
+                nn.init.eye(self.W)
 
 
         # MLP AND DECODER TO OUTPUT

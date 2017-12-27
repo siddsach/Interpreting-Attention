@@ -491,9 +491,6 @@ class TrainClassifier:
                 predictions = output.view(-1, self.num_classes)
                 accuracies[i % self.log_interval] = get_accuracy(predictions, targets)
 
-                print("A")
-                print(A.size())
-
                 if A is not None:
                     pass
                     #SAVING ATTENTION WEIGHTS
