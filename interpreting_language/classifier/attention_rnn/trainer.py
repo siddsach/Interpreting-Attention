@@ -51,7 +51,7 @@ CLIP = 1
 NUM_LAYERS = 1
 HIDDEN_SIZE = 300
 
-MAX_DATA_LEN = 1000
+MAX_DATA_LEN = None
 if torch.cuda.is_available():
     MAX_DATA_LEN = None
 def sorter(example):
@@ -108,6 +108,8 @@ class TrainClassifier:
         elif self.datapath == 'IMDB':
             self.trainpath = IMDB_PATH + '/train'
             self.testpath = IMDB_PATH + '/test'
+        elif self.datapath == 'amazon':
+            self.filepath = 'data/reviews/review_data.csv'
 
         self.max_data_len = max_data_len
 
@@ -125,7 +127,6 @@ class TrainClassifier:
 
         #MODEL ARCHITECTURE SPECS
         self.model_type = model_type
-        print('here')
         print(attn_type)
         self.attn_type = attn_type
         self.attention_dim = None if self.attn_type is None else attention_dim
@@ -229,6 +230,10 @@ class TrainClassifier:
                 c += 1
 
             return data.Dataset(train_examples, fields),data.Dataset(test_examples,fields)
+        elif self.datapath == 'amazon':
+            print("Retrieving Data from file: {}...".format(path))
+            return data.TabularDataset(path, 'CSV', fields, skip_header = True), None
+
 
 
 
@@ -263,10 +268,14 @@ class TrainClassifier:
                 if self.max_data_len is not None:
                     self.max_data_len = self.max_data_len / 4
                 self.test_data = self.get_data(self.testpath, fields, max_len = self.max_data_len)
+            else:
+                self.test_data = None
+
         elif self.datapath == 'MPQA':
 
             self.train_data, self.test_data = self.get_data(self.filepath, fields, self.max_data_len)
-
+        elif self.datapath == 'amazon':
+            self.train_data, self.test_data = self.get_data(self.filepath, fields, self.max_data_len)
 
         else:
             self.sentences = data.TabularDataset(
@@ -369,7 +378,8 @@ class TrainClassifier:
                     print('WARNING: pretrained model has a different embed dim, so ignoring embedding from pretrained model')
                     self.wordvec_dim = pretrained_args['wordvec_dim']
 
-
+            print("VECTORS")
+            print(torch.nonzero(self.sentence_field.vocab.vectors).size(0))
             args = {'vocab_size' : self.ntokens,
                 'num_classes' : self.num_classes,
                 'batch_size' : self.batch_size,
@@ -402,8 +412,11 @@ class TrainClassifier:
                 self.model = SelfAttentiveRNN(**args)
 
                 #MAKING MATRIX TO SAVE ATTENTION WEIGHTS
-                self.train_attns = torch.zeros(2, len(self.train_data), self.max_length)
-                self.test_attns = torch.zeros(2, len(self.test_data), self.max_length)
+                self.train_attns = {key: torch.zeros(len(self.train_data), self.max_length) for key in ['text', 'attn']}
+                self.train_attns['preds'] = torch.zeros(len(self.train_data))
+                if self.test_data is not None:
+                    self.test_attns = {key: torch.zeros(len(self.train_data), self.max_length) for key in ['text', 'attn']}
+                    self.test_attns['preds'] = torch.zeros(len(self.test_data))
 
             if self.cuda:
                 self.model.cuda()
@@ -420,6 +433,7 @@ class TrainClassifier:
         '''Wraps hidden states in new Variables, to detach them from their history.'''
         if type(h) == Variable:
             if self.cuda:
+                #SAVE LABELS
                 return Variable(h.data.type(torch.FloatTensor).cuda())
             else:
                 return Variable(h.data.type(torch.FloatTensor))
@@ -450,7 +464,10 @@ class TrainClassifier:
                 output, h, A = self.model(data, lengths = lengths)
                 predictions = output.view(-1, self.num_classes)
 
-                accuracies[i] = get_accuracy(predictions, targets)
+                #GET ACCURACY
+                preds = torch.max(predictions, dim = 1)[1]
+                pct_correct = float(torch.sum(targets == preds)[0].data[0]/predictions.size(0))
+                accuracies[i] = pct_correct
 
                 if A is not None and False:
                     #SAVING ATTENTION WEIGHTS
@@ -489,12 +506,16 @@ class TrainClassifier:
                 #GETTING PREDICTIONS
                 output, h, A = self.model(data, lengths = lengths)
                 predictions = output.view(-1, self.num_classes)
-                accuracies[i % self.log_interval] = get_accuracy(predictions, targets)
+
+                #GET ACCURACY
+                preds = torch.max(predictions, dim = 1)[1]
+                pct_correct = float(torch.sum(targets == preds)[0].data[0]/predictions.size(0))
+                accuracies[i % self.log_interval] = pct_correct
 
                 if A is not None:
                     pass
                     #SAVING ATTENTION WEIGHTS
-                    #self.save_attns(i, data, A, 'train')
+                    self.save_attns(i, data, A, preds, 'train')
 
                 #CALCULATING AND PROPAGATING LOSS
                 loss = self.objective(predictions, targets)
@@ -523,14 +544,16 @@ class TrainClassifier:
 
         return optimizer
 
-    def save_attns(self, i, text, attns, fold = 'train'):
+    def save_attns(self, i, text, attns, preds, fold = 'train'):
         index = self.batch_size * i
 
         if fold == 'train':
             #SAVE TEXT
-            self.train_attns[0, index: index + self.batch_size, :attns.size(1)] = text.data[:, :attns.size(1)]
+            self.train_attns['text'][index: index + self.batch_size, :attns.size(1)] = text.data[:, :attns.size(1)]
             #SAVE ATTENTION WEIGHTS
-            self.train_attns[1, index: index + self.batch_size, :attns.size(1)] = attns.data
+            self.train_attns['attn'][index: index + self.batch_size, :attns.size(1)] = attns.data
+            #SAVE PREDICTIONS
+            self.train_attns['preds'][index: index + self.batch_size] = preds
 
         elif fold == 'test':
             #SAVE TEXT
@@ -643,10 +666,6 @@ class TrainClassifier:
 
             print('Finished Training.')
 
-def get_accuracy(predictions, targets):
-    preds = torch.max(predictions, dim = 1)[1]
-    pct_correct = float(torch.sum(targets == preds)[0].data[0]/predictions.size(0))
-    return pct_correct
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Tuning Hyperparameters')
