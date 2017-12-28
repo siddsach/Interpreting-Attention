@@ -512,9 +512,6 @@ class TrainClassifier:
                 pct_correct = float(torch.sum(targets == preds)[0].data[0]/predictions.size(0))
                 accuracies[i % self.log_interval] = pct_correct
 
-                print("A")
-                print(A.size())
-
                 if A is not None:
                     pass
                     #SAVING ATTENTION WEIGHTS

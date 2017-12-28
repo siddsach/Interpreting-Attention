@@ -15,7 +15,7 @@ import argparse
 current_path = os.getcwd()
 project_path = current_path#[:len(current_path)-len('/pretraining/langmodel')]
 
-TIME_LIMIT = 3 * 60 * 60
+TIME_LIMIT = None#3 * 60 * 60
 DATASET = 'gigaword'
 WIKI_PATH = project_path + '/data/wikitext-2/wikitext-2/'
 PTB_PATH = project_path + '/data/penn/'
@@ -155,6 +155,7 @@ class TrainLangModel:
 
         self.log_interval = log_interval
         self.current_batch = current_batch
+        self.epoch = 0
         self.time = time
 
 
@@ -224,9 +225,11 @@ class TrainLangModel:
                 self.test_sentences = datasets.LanguageModelingDataset(testpath,\
                         self.sentence_field, newline_eos = False)
         else:
+            print('Reading in data with {} chars...'.format(len(dataset)))
             fields = [('text', self.sentence_field)]
             examples = [data.Example.fromlist([dataset], fields)]
             self.train_sentences = data.Dataset(examples, fields)
+            print('Done.')
 
 
 
@@ -306,8 +309,11 @@ class TrainLangModel:
         model = None
 
         pretrained_vecs = None
-        if self.pretrained_vecs and checkpoint is None:
+        if self.pretrained_vecs is not None and checkpoint is None:
             pretrained_vecs = self.sentence_field.vocab.vectors
+
+        if checkpoint is not None:
+            self.wordvec_dim = checkpoint["embed.weight"].size(1)
 
 
         if self.objective_function == 'crossentropy':
