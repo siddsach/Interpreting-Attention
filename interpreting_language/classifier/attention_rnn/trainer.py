@@ -471,7 +471,7 @@ class TrainClassifier:
 
                 if A is not None and False:
                     #SAVING ATTENTION WEIGHTS
-                    self.save_attns(i, data, A, "test")
+                    self.save_attns(i, data, A, preds, "test")
 
                 #CALCULATING LOSS
                 loss = self.objective(predictions, targets)
@@ -554,12 +554,13 @@ class TrainClassifier:
             self.train_attns['attn'][index: index + self.batch_size, :attns.size(1)] = attns.data
             #SAVE PREDICTIONS
             self.train_attns['preds'][index: index + self.batch_size] = preds
-
         elif fold == 'test':
             #SAVE TEXT
-            self.test_attns[0, index: index + self.batch_size, :attns.size(1)] = text.data[:, :attns.size(1)]
+            self.train_attns['text'][index: index + self.batch_size, :attns.size(1)] = text.data[:, :attns.size(1)]
             #SAVE ATTENTION WEIGHTS
-            self.test_attns[1, index: index + self.batch_size, :attns.size(1)] = attns.data
+            self.train_attns['attn'][index: index + self.batch_size, :attns.size(1)] = attns.data
+            #SAVE PREDICTIONS
+            self.train_attns['preds'][index: index + self.batch_size] = preds
 
 
     def save_checkpoint(self, checkpointpath, optimizer = None, name = None):
