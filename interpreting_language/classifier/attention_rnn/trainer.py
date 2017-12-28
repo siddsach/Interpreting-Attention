@@ -378,8 +378,6 @@ class TrainClassifier:
                     print('WARNING: pretrained model has a different embed dim, so ignoring embedding from pretrained model')
                     self.wordvec_dim = pretrained_args['wordvec_dim']
 
-            print("VECTORS")
-            print(torch.nonzero(self.sentence_field.vocab.vectors).size(0))
             args = {'vocab_size' : self.ntokens,
                 'num_classes' : self.num_classes,
                 'batch_size' : self.batch_size,
