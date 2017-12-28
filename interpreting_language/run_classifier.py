@@ -2,7 +2,6 @@ import argparse
 import torch
 from classifier.attention_rnn.trainer import TrainClassifier
 import os
-#from visualize import plot_attn
 
 root_path = os.getcwd()
 print("ROOT_PATH: {}".format(root_path))
@@ -16,7 +15,7 @@ MPQA_PATH = root_path + '/data/mpqa/mpqa_subj_labels.pickle'
 VECTOR_CACHE = root_path + '/vectors'
 SAVED_VECTORS = True
 NUM_EPOCHS = 60
-LEARNING_RATE = 0.0005
+LEARNING_RATE = 0.001
 BATCH_SIZE = 32
 LOG_INTERVAL = 20
 WORDVEC_DIM = 300
@@ -31,18 +30,18 @@ PRETRAINED =  None#root_path + '/trained_models/langmodel/ptb/model.pt'
 MAX_LENGTH = 100
 SAVE_CHECKPOINT = None#root_path + '/trained_models/classifier/'
 MODEL_TYPE = 'LSTM'
-ATTN_TYPE = 'MLP'# ['keyval', 'mlp']
-ATTENTION_DIM = 350 if ATTN_TYPE is not None else None
-TUNE_ATTN = "True"
+ATTN_TYPE = 'similarity'# ['keyval', 'mlp']
+ATTENTION_DIM = 50 if ATTN_TYPE is not None else None
+TUNE_ATTN = "False"
 L2 = 0.001
 DROPOUT = 0.5
 RNN_DROPOUT = 0.0
 OPTIMIZER = 'adam'
 CLIP = 1
-NUM_LAYERS = 1
+NUM_LAYERS = 2
 HIDDEN_SIZE = 300
 
-MAX_DATA_LEN = 1000
+MAX_DATA_LEN = None
 if torch.cuda.is_available():
     MAX_DATA_LEN = None
 def sorter(example):
@@ -145,23 +144,11 @@ trainer = TrainClassifier(
                 )
 optimizer = trainer.start_train()
 trainer.train(optimizer)
-trainer.save_checkpoint('', optimizer, name = 'clf4attn.pt')
-
-trained = torch.load('clf4attn.pt')
-vocab = trained['vocab']
-train_attns = trained['train_attns']
-
-numrows = train_attns[0].size(0)
-datawords = numrows * ['']
-datavals = numrows * ['']
-
-for i in range(numrows):
-    words = [vocab.itos[i] for i in train_attns[0][i] if i!=0]
-    datawords[i] = words
-    vals = [i for i in train_attns[1][i] if i < len(words)]
-    datavals[i] = vals
-
-#plot_attn(datawords, datavals, savepath = 'test.png')
+path = 'best{}model.pt'.format(args.wordvec_source)
+if path in os.listdir():
+    current_best = torch.load(path)
+    if trainer.best_accuracy > current_best['best_valid_accuracy']:
+        trainer.save_checkpoint('', optimizer, name = path)
 
 
 if args.attention is not None:
