@@ -100,7 +100,8 @@ class TrainLangModel:
                     few_batches = FEW_BATCHES,
                     anneal = ANNEAL,
                     current_batch = 0,
-                    charlevel = False
+                    charlevel = False,
+                    time_limit = None
                 ):
 
         if torch.cuda.is_available() and use_cuda:
@@ -118,6 +119,8 @@ class TrainLangModel:
         self.dropout = dropout
         self.rnn_dropout = rnn_dropout
         self.few_batches = few_batches
+        self.time_limit = time_limit
+        print("AVAILABLE TIME:{}".format(self.time_limit))
 
         self.num_epochs = num_epochs
 
@@ -203,6 +206,9 @@ class TrainLangModel:
                 validpath = datapath + 'gigaword_small_val.txt'
                 testpath = datapath + 'gigaword_small_test.txt'
 
+            elif dataset == 'reviews':
+                trainpath = 'data/reviews/reviews.txt'
+
             print("Retrieving Train Data from file: {}...".format(trainpath))
             start = time()
             self.train_sentences = datasets.LanguageModelingDataset(trainpath,\
@@ -218,12 +224,16 @@ class TrainLangModel:
                 print("Retrieving Valid Data from file: {}...".format(validpath))
                 self.valid_sentences = datasets.LanguageModelingDataset(validpath,\
                         self.sentence_field, newline_eos = False)
+            else:
+                self.valid_sentences = None
 
             if testpath is not None:
 
                 print("Retrieving Test Data from file: {}...".format(testpath))
                 self.test_sentences = datasets.LanguageModelingDataset(testpath,\
                         self.sentence_field, newline_eos = False)
+            else:
+                self.test_sentences = None
         else:
             print('Reading in data with {} chars...'.format(len(dataset)))
             fields = [('text', self.sentence_field)]
@@ -377,10 +387,10 @@ class TrainLangModel:
                 elapsed = time() - start_time
                 self.current_batch = i
 
-                if TIME_LIMIT is not None:
-                    if elapsed > TIME_LIMIT:
+                if self.time_limit is not None:
+                    if elapsed > self.time_limit:
                         print('REACHED TIME LIMIT!')
-                        self.save_checkpoint('{}/training/{}.pt'.format(self.data, 'model'))
+                        self.save_checkpoint()
                         break
 
                 hidden = self.repackage_hidden(hidden)
@@ -505,8 +515,8 @@ class TrainLangModel:
         for epoch in range(self.num_epochs):
             print('finished {} epochs...'.format(epoch))
             elapsed = time() - start_time
-            if TIME_LIMIT is not None:
-                if elapsed > TIME_LIMIT:
+            if self.time_limit is not None:
+                if elapsed > self.time_limit:
                     break
             self.epoch += 1
             optimizer = self.train_step(optimizer, self.model, start_time)
@@ -552,10 +562,12 @@ class TrainLangModel:
                     'best_loss': self.best_loss,
                     'vocab': self.sentence_field.vocab
                 }
-        savepath = self.savepath + ''.join(str(datetime.now()).split())
+        savepath = None
         print(self.savepath)
         if name is not None:
             savepath = self.savepath + name
+        else:
+            savepath = self.savepath + 'model.pt'
 
         torch.save(state, savepath)
 
