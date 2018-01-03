@@ -1,0 +1,44 @@
+TRUE
+FALSE
+Building Bayesian Optimizer for 
+ data:wikitext 
+ choices:[{'type': 'continuous', 'name': 'dropout', 'domain': [0, 1]}, {'type': 'continuous', 'name': 'rnn_dropout', 'domain': [0, 1]}]
+SETTINGS FOR THIS RUN
+{'rnn_dropout': 0.5417304148232658, 'tie_weights': 'FALSE', 'seq_len': 35, 'wordvec_source': 'google', 'tune_wordvecs': 'TRUE', 'dropout': 0.47808456232119967, 'wordvec_dim': 300, 'batch_size': 32, 'data': 'wikitext', 'num_layers': 3}
+Preparing Data Loaders
+
+[93m    Warning: no model found for 'en'[0m
+
+    Only loading the 'en' tokenizer.
+
+Retrieving Train Data from file: /home-nfs/siddsach/ml/Interpreting-Attention/interpreting_language/data/wikitext-2/wikitext-2/wiki.train.tokens...
+Got Train Dataset with 2199934 words
+Retrieving Valid Data from file: /home-nfs/siddsach/ml/Interpreting-Attention/interpreting_language/data/wikitext-2/wikitext-2/wiki.valid.tokens...
+Retrieving Test Data from file: /home-nfs/siddsach/ml/Interpreting-Attention/interpreting_language/data/wikitext-2/wikitext-2/wiki.test.tokens...
+Building Vocab...
+Loading Vectors From Memory...
+Using these vectors: google
+Traceback (most recent call last):
+  File "tune_models.py", line 180, in <module>
+    seq_len = args.seq_len, tie_weights = args.tie_weights)
+  File "tune_models.py", line 83, in __init__
+    exact_feval = True
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/GPyOpt/methods/bayesian_optimization.py", line 117, in __init__
+    self._init_design_chooser()
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/GPyOpt/methods/bayesian_optimization.py", line 192, in _init_design_chooser
+    self.Y, _ = self.objective.evaluate(self.X)
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/GPyOpt/core/task/objective.py", line 50, in evaluate
+    f_evals, cost_evals = self._eval_func(x)
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/GPyOpt/core/task/objective.py", line 74, in _eval_func
+    rlt = self.func(np.atleast_2d(x[i]))
+  File "tune_models.py", line 123, in getError
+    optimizer, scheduler = trainer.start_train()
+  File "/home-nfs/siddsach/ml/Interpreting-Attention/interpreting_language/pretraining/langmodel/trainer.py", line 454, in start_train
+    self.get_vectors(vocab)
+  File "/home-nfs/siddsach/ml/Interpreting-Attention/interpreting_language/pretraining/langmodel/trainer.py", line 251, in get_vectors
+    cache = self.vector_cache)
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/torchtext/vocab.py", line 222, in __init__
+    self.cache(name, cache, url=url)
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/torchtext/vocab.py", line 252, in cache
+    raise RuntimeError('no vectors found at {}'.format(path))
+RuntimeError: no vectors found at /home-nfs/siddsach/ml/Interpreting-Attention/interpreting_language/vectors/googlenews.txt
