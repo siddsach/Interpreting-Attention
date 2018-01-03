@@ -335,14 +335,14 @@ class TrainClassifier:
     def build_batches(self, dataset):
         print('Getting Batches...')
         if self.cuda:
-            iterator_object = data.BucketIterator(dataset,
+            iterator_object = data.Iterator(dataset,
                                             sort_key = sorter,
                                             batch_size = self.batch_size,
                                             sort = True
                                         )
             iterator_object.repeat = False
         else:
-            iterator_object = data.BucketIterator(dataset,
+            iterator_object = data.Iterator(dataset,
                                             sort_key = sorter,
                                             sort = True,
                                             batch_size = self.batch_size,
@@ -494,6 +494,12 @@ class TrainClassifier:
             targets = targets - 1 #from zero to one
             data, lengths = data[0], data[1]
 
+            print("DATA")
+            print(data)
+            for j in range(self.batch_size):
+                #print([word for word in self.train_data.examples[(self.batch_size * i) + j].text])
+                print([self.sentence_field.vocab.itos[int(i)] for i in data[j]])
+
             #CONVERTING TO CUDA IF ON NEEDED
             if self.cuda:
                 data = data.cuda()
@@ -551,14 +557,14 @@ class TrainClassifier:
             #SAVE ATTENTION WEIGHTS
             self.train_attns['attn'][index: index + self.batch_size, :attns.size(1)] = attns.data
             #SAVE PREDICTIONS
-            self.train_attns['preds'][index: index + self.batch_size] = preds
+            self.train_attns['preds'][index: index + self.batch_size] = preds.data
         elif fold == 'test':
             #SAVE TEXT
             self.train_attns['text'][index: index + self.batch_size, :attns.size(1)] = text.data[:, :attns.size(1)]
             #SAVE ATTENTION WEIGHTS
             self.train_attns['attn'][index: index + self.batch_size, :attns.size(1)] = attns.data
             #SAVE PREDICTIONS
-            self.train_attns['preds'][index: index + self.batch_size] = preds
+            self.train_attns['preds'][index: index + self.batch_size] = preds.data
 
 
     def save_checkpoint(self, checkpointpath, optimizer = None, name = None):

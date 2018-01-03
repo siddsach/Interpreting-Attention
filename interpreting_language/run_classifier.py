@@ -20,7 +20,7 @@ BATCH_SIZE = 32
 LOG_INTERVAL = 20
 WORDVEC_DIM = 300
 GLOVE_DIM = WORDVEC_DIM
-WORDVEC_SOURCE = 'glove'
+WORDVEC_SOURCE = 'google'
 TUNE_WORDVECS = 'False'
 #['GloVe']# charLevel'
 MODEL_SAVEPATH = None#'saved_model.pt'
@@ -41,7 +41,7 @@ CLIP = 1
 NUM_LAYERS = 2
 HIDDEN_SIZE = 300
 
-MAX_DATA_LEN = None
+MAX_DATA_LEN = 1000
 if torch.cuda.is_available():
     MAX_DATA_LEN = None
 def sorter(example):
