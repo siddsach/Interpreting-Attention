@@ -11,9 +11,9 @@ What are we Transferring Anyway?: Using Attention Weights to Interpret domain ch
 * Language Model Pretraining
 * Bayesian Optimization 
 * Classification Tuning
+* Attention Classification Tuning
 
 ### To Do
-* Attention Classification Tuning
 * Model Comparison
 
 ## Data
