@@ -9,25 +9,18 @@ import math
 import torch
 import argparse
 
-parser = argparse.ArgumentParser(description='Tuning Hyperparameters')
-parser.add_argument('--data',  type=str, default = 'reviews',
-                    help='location of pretrained init')
-ARGS = parser.parse_args()
-
-path = "https://s3.amazonaws.com/gigaword/thread{}.txt"
-total_files = 16
-filenames= [path.format(i+1) for i in range(total_files)]
 
 class Sequence:
     def __init__(self,
                 timelimit = 3.75 * 60 * 60,
-                max_size = 100000,
+                max_size = 1000000,
                 dataset = 'gigaword',
-                thread_paths = filenames
+                vectors = 'glove'
             ):
         current_path = os.getcwd()
         self.timelimit = timelimit
         self.max_size = max_size
+        self.vectors = vectors
 
         if dataset == 'gigaword':
             self.data_dir = 'data/gigaword'
@@ -43,18 +36,22 @@ class Sequence:
         trained_path = 'trained_models/langmodel'
         progresspath = trained_path + '/{}/progress.json'.format(dataset)
         if os.path.exists(progresspath):
+            print("RESUMING TRAINING")
             self.progress = json.load(open(progresspath, 'r'))
         else:
-            self.progress = {"all_threads":{}, "current_thread":0, "iterations": 0}
+            print("STARTING TRAINING")
+            self.progress = {"all_threads":[], "current_thread":0, "iterations": 0, "started": False}
 
 
-        self.savepath = current_path + '/trained_models/langmodel/{}/training/'.format(self.data)
+        self.savepath = current_path + '/trained_models/langmodel/{}/training/'.format(self.dataset)
 
         self.run()
+        self.progress["started"] = True
         json.dump(self.progress, open(progresspath, 'w'))
 
     def run_fold(self, current_thread):
         current_fold = self.progress["all_threads"][current_thread]["current_fold"]
+        print("Running fold: {}".format(current_fold))
         foldpath = self.progress["all_threads"][current_thread]["folds"][current_fold]["path"]
         self.process(foldpath, self.progress)
         finished_folds = current_fold == len(self.progress["all_threads"][current_thread]["folds"]) - 1
@@ -69,10 +66,11 @@ class Sequence:
 
     def run(self):
         current_thread = self.progress["current_thread"]
-        already_downloaded = current_thread in self.progress["all_threads"].keys()
+
+        already_downloaded = current_thread < len(self.progress["all_threads"])
         if not already_downloaded:
-            docs = self.download_thread(current_thread)
-            self.make_folds(docs, current_thread)
+
+            self.download_thread(current_thread)
 
         self.run_fold(current_thread)
 
@@ -80,11 +78,12 @@ class Sequence:
             print("FINISHED ITERATION, REINITING CYCLE")
             self.progress["iterations"] += 1
             self.progress["current_thread"] = 0
-            for thread in self.progress["all_threads"].keys():
-                self.progress["all_threads"]["thread"]["current_fold"] = 0
+            for i in range(len(self.progress["all_threads"])):
+                self.progress["all_threads"][i]["current_fold"] = 0
 
     def download_thread(self, current_thread):
-        self.progress["all_threads"][current_thread] = {"folds":[], "current_fold": 0}
+        assert current_thread == len(self.progress["all_threads"])
+        self.progress["all_threads"].append({"folds":[], "current_fold": 0})
         path = self.thread_paths[current_thread]
 
         print('Downloading from {}...'.format(path))
@@ -93,7 +92,7 @@ class Sequence:
         output, error = process.communicate()
 
         print('Reading and splitting file')
-        threadpath = self.data_dir + path.split("/")[-1]
+        threadpath = self.data_dir + "/" + path.split("/")[-1]
         reader = open(threadpath, 'r')
         docs = None
         if self.dataset == 'gigaword':
@@ -102,9 +101,10 @@ class Sequence:
             docs = "".join(docs)
         else:
             docs = reader.read()
-        return docs
 
-    def make_folds(self, docs, current_thread, num_folds):
+        print("{} file has size of {}".format(threadpath, os.path.getsize(threadpath)))
+        num_folds = math.ceil(os.path.getsize(threadpath) / self.max_size)
+        print("Splitting into {} folds".format(num_folds))
         split_size = math.ceil(len(docs) / num_folds)
 
         self.progress["all_threads"][current_thread]["folds"] = []
@@ -114,20 +114,24 @@ class Sequence:
             foldfile = open(foldpath, 'w')
             foldfile.write(this_fold)
 
-            self.progress["all_threads"][current_thread]["folds"].append({"finished":False, "path":foldpath})
+            self.progress["all_threads"][current_thread]["folds"].append({"path":foldpath})
 
-            bashCommand = "rm " + self.data_dir + "/reviews.txt".format(current_thread + 1)
-            process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
-            output, error = process.communicate()
+        bashCommand = "rm " + threadpath
+        process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
+        output, error = process.communicate()
 
 
     def process(self, foldpath, progress):
-        trainer = TrainLangModel()
+        trainer = TrainLangModel(
+                    wordvec_source = self.vectors,
+                    time_limit = self.timelimit,
+                    savepath = self.savepath
+                )
         vocab = None
         params = None
         train_loss = None
         if progress["started"]:
-            current = torch.load(self.savepath + '/model.pt')
+            current = torch.load(self.savepath + 'model.pt')
             vocab = current["vocab"]
             params = current["state_dict"]
             train_loss = current["train_loss"]
@@ -140,6 +144,17 @@ class Sequence:
 
         trainer.save_checkpoint(name = 'model.pt')
 
-
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Tuning Hyperparameters')
+    parser.add_argument('--data',  type=str, default = 'reviews',
+                        help='location of pretrained init')
+    parser.add_argument('--timelimit',  type=int, default = 3.75*60*60,
+                        help='location of pretrained init')
+    parser.add_argument('--max_size',  type=int, default = 100000000,
+                        help='location of pretrained init')
+    parser.add_argument('--vectors',  type=str, default = 'glove',
+                        help='location of pretrained init')
+    ARGS = parser.parse_args()
+    Sequence(dataset = ARGS.data, vectors = ARGS.vectors, timelimit = ARGS.timelimit, max_size = ARGS.max_size)
 
 

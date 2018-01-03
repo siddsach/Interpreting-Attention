@@ -9,13 +9,13 @@ DATA_DIR = "data/gigaword"
 
 class Download:
     def __init__(self,
-                glove = False,
+                glove = True,
                 googlenews = False,
                 charngram = False,
                 wiki = False,
                 gigaword = False,
-                gigawordsmall = True,
-                imdb = False,
+                gigawordsmall = False,
+                imdb = True,
                 mpqa_subj = False
             ):
         self.glove = glove
@@ -103,9 +103,7 @@ class Download:
             train_data, test_data = datasets.IMDB.splits(
                                             text_field = sentence_field,
                                             label_field = target_field,
-                                            root = 'data',
-                                            train = None,
-                                            test = None
+                                            root = 'data'
                                         )
             print("Done.")
         if self.mpqa_subj:

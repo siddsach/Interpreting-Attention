@@ -144,13 +144,15 @@ trainer = TrainClassifier(
                 )
 optimizer = trainer.start_train()
 trainer.train(optimizer)
+folder = 'trained_models/classifier/{}/viz/'.format(args.data)
 path = 'best{}model.pt'.format(args.wordvec_source)
-if path in os.listdir():
-    current_best = torch.load(path)
+if path in os.listdir(folder):
+    current_best = torch.load(folder + path)
     if trainer.best_accuracy > current_best['best_valid_accuracy']:
-        trainer.save_checkpoint('', optimizer, name = path)
+        trainer.save_checkpoint(folder, optimizer, name = path)
+else:
+    trainer.save_checkpoint(folder, optimizer, name = path)
 
 
-if args.attention is not None:
-    print(trainer.train_attns)
+
 

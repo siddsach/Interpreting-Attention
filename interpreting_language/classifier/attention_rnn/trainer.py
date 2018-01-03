@@ -412,9 +412,21 @@ class TrainClassifier:
                 #MAKING MATRIX TO SAVE ATTENTION WEIGHTS
                 self.train_attns = {key: torch.zeros(len(self.train_data), self.max_length) for key in ['text', 'attn']}
                 self.train_attns['preds'] = torch.zeros(len(self.train_data))
+                self.train_attns['targets'] = torch.zeros(len(self.train_data))
                 if self.test_data is not None:
                     self.test_attns = {key: torch.zeros(len(self.train_data), self.max_length) for key in ['text', 'attn']}
+                    self.test_attns['targets'] = torch.zeros(len(self.test_data))
                     self.test_attns['preds'] = torch.zeros(len(self.test_data))
+
+
+                #MAKING MATRIX TO SAVE ATTENTION WEIGHTS
+                self.best_train_attns = {key: torch.zeros(len(self.train_data), self.max_length) for key in ['text', 'attn']}
+                self.best_train_attns['preds'] = torch.zeros(len(self.train_data))
+                self.best_train_attns['targets'] = torch.zeros(len(self.train_data))
+                if self.test_data is not None:
+                    self.best_test_attns = {key: torch.zeros(len(self.train_data), self.max_length) for key in ['text', 'attn']}
+                    self.best_test_attns['targets'] = torch.zeros(len(self.test_data))
+                    self.best_test_attns['preds'] = torch.zeros(len(self.test_data))
 
             if self.cuda:
                 self.model.cuda()
@@ -467,9 +479,9 @@ class TrainClassifier:
                 pct_correct = float(torch.sum(targets == preds)[0].data[0]/predictions.size(0))
                 accuracies[i] = pct_correct
 
-                if A is not None and False:
+                if A is not None:
                     #SAVING ATTENTION WEIGHTS
-                    self.save_attns(i, data, A, preds, "test")
+                    self.save_attns(i, data, A, preds, targets, "test")
 
                 #CALCULATING LOSS
                 loss = self.objective(predictions, targets)
@@ -511,9 +523,8 @@ class TrainClassifier:
                 accuracies[i % self.log_interval] = pct_correct
 
                 if A is not None:
-                    pass
                     #SAVING ATTENTION WEIGHTS
-                    self.save_attns(i, data, A, preds, 'train')
+                    self.save_attns(i, data, A, preds, targets, 'train')
 
                 #CALCULATING AND PROPAGATING LOSS
                 loss = self.objective(predictions, targets)
@@ -541,64 +552,6 @@ class TrainClassifier:
                             .format(elapsed=elapsed, current_accuracy = current_accuracy, loss = current_loss))
 
         return optimizer
-
-    def save_attns(self, i, text, attns, preds, fold = 'train'):
-        index = self.batch_size * i
-
-        if fold == 'train':
-            #SAVE TEXT
-            self.train_attns['text'][index: index + self.batch_size, :attns.size(1)] = text.data[:, :attns.size(1)]
-            #SAVE ATTENTION WEIGHTS
-            self.train_attns['attn'][index: index + self.batch_size, :attns.size(1)] = attns.data
-            #SAVE PREDICTIONS
-            self.train_attns['preds'][index: index + self.batch_size] = preds
-        elif fold == 'test':
-            #SAVE TEXT
-            self.train_attns['text'][index: index + self.batch_size, :attns.size(1)] = text.data[:, :attns.size(1)]
-            #SAVE ATTENTION WEIGHTS
-            self.train_attns['attn'][index: index + self.batch_size, :attns.size(1)] = attns.data
-            #SAVE PREDICTIONS
-            self.train_attns['preds'][index: index + self.batch_size] = preds
-
-
-    def save_checkpoint(self, checkpointpath, optimizer = None, name = None):
-        state = {
-                    'epoch': self.epoch + 1,
-                    'state_dict': self.model.state_dict(),
-                    'best_valid_accuracy': self.eval_accuracy,
-                    'optimizer': None if optimizer is None else optimizer.state_dict(),
-                    'accuracies': self.accuracies,
-                    'vocab': self.sentence_field.vocab,
-                    'train_attns':self.train_attns,
-                    'test_attns': self.test_attns
-                }
-        savepath = checkpointpath + ''.join(str(datetime.now()).split())
-        if name is not None:
-            savepath = checkpointpath + name
-
-        torch.save(state, savepath)
-
-    #def start_from_checkpoint(self, checkpoint):
-        #current = torch.load(checkpoint)
-        #self.model.load_
-
-
-    def dump_attns(self, attn_path):
-        if self.test_attns is not None:
-            torch.save(self.test_attns, attn_path)
-
-    def get_pretrained(self):
-
-        if self.pretrained is not None:
-            print('Using Pretrained RNN from path: {}'.format(self.pretrained))
-            pretrained = torch.load(self.pretrained)
-            pretrained_vocab = pretrained['vocab']
-            pretrained_args = pretrained['args']
-            pretrained_weights = pretrained['best_model']
-            return pretrained_vocab, pretrained_args, pretrained_weights
-        else:
-            return None, None, None
-
 
     def start_train(self):
         print("Building RNN Classifier...")
@@ -654,6 +607,8 @@ class TrainClassifier:
                 print('Achieved new best!')
                 self.best_accuracy = self.eval_accuracy
                 self.best_model = self.model
+                self.best_train_attns = self.train_attns
+                self.best_test_attns = self.test_attns
                 not_better = 0
 
         print('Done Training. Achieved Best Accuracy of {}'.format(self.best_accuracy))
@@ -664,6 +619,69 @@ class TrainClassifier:
             self.save_checkpoint(self.savepath, optimizer)
 
             print('Finished Training.')
+
+    def save_attns(self, i, text, attns, preds, targets, fold = 'train'):
+        index = self.batch_size * i
+
+        if fold == 'train':
+            #SAVE TEXT
+            self.train_attns['text'][index: index + self.batch_size, :attns.size(1)] = text.data[:, :attns.size(1)]
+            #SAVE ATTENTION WEIGHTS
+            self.train_attns['attn'][index: index + self.batch_size, :attns.size(1)] = attns.data
+            #SAVE PREDICTIONS
+            self.train_attns['preds'][index: index + self.batch_size] = preds.data
+            #SAVE CORRECT ANSWERS
+            self.train_attns['targets'][index: index + self.batch_size] = targets.data
+        elif fold == 'test':
+            #SAVE TEXT
+            self.test_attns['text'][index: index + self.batch_size, :attns.size(1)] = text.data[:, :attns.size(1)]
+            #SAVE ATTENTION WEIGHTS
+            self.test_attns['attn'][index: index + self.batch_size, :attns.size(1)] = attns.data
+            #SAVE PREDICTIONS
+            self.test_attns['preds'][index: index + self.batch_size] = preds.data
+            #SAVE CORRECT
+            self.test_attns['targets'][index: index + self.batch_size] = targets.data
+
+
+    def save_checkpoint(self, checkpointpath, optimizer = None, name = None):
+        state = {
+                    'epoch': self.epoch + 1,
+                    'state_dict': self.best_model.state_dict(),
+                    'best_valid_accuracy': self.eval_accuracy,
+                    'optimizer': None if optimizer is None else optimizer.state_dict(),
+                    'accuracies': self.accuracies,
+                    'vocab': self.sentence_field.vocab,
+                    'labels': self.target_field.vocab,
+                    'train_attns':self.best_train_attns,
+                    'test_attns': self.best_test_attns
+                }
+        savepath = checkpointpath + ''.join(str(datetime.now()).split())
+        if name is not None:
+            savepath = checkpointpath + name
+
+        torch.save(state, savepath)
+
+    #def start_from_checkpoint(self, checkpoint):
+        #current = torch.load(checkpoint)
+        #self.model.load_
+
+
+    def dump_attns(self, attn_path):
+        if self.test_attns is not None:
+            torch.save(self.test_attns, attn_path)
+
+    def get_pretrained(self):
+
+        if self.pretrained is not None:
+            print('Using Pretrained RNN from path: {}'.format(self.pretrained))
+            pretrained = torch.load(self.pretrained)
+            pretrained_vocab = pretrained['vocab']
+            pretrained_args = pretrained['args']
+            pretrained_weights = pretrained['best_model']
+            return pretrained_vocab, pretrained_args, pretrained_weights
+        else:
+            return None, None, None
+
 
 
 if __name__ == '__main__':
