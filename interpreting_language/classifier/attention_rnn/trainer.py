@@ -335,14 +335,14 @@ class TrainClassifier:
     def build_batches(self, dataset):
         print('Getting Batches...')
         if self.cuda:
-            iterator_object = data.BucketIterator(dataset,
+            iterator_object = data.Iterator(dataset,
                                             sort_key = sorter,
                                             batch_size = self.batch_size,
                                             sort = True
                                         )
             iterator_object.repeat = False
         else:
-            iterator_object = data.BucketIterator(dataset,
+            iterator_object = data.Iterator(dataset,
                                             sort_key = sorter,
                                             sort = True,
                                             batch_size = self.batch_size,
@@ -505,6 +505,12 @@ class TrainClassifier:
             data, targets = batch.text, batch.label.view(-1)
             targets = targets - 1 #from zero to one
             data, lengths = data[0], data[1]
+
+            print("DATA")
+            print(data)
+            for j in range(self.batch_size):
+                #print([word for word in self.train_data.examples[(self.batch_size * i) + j].text])
+                print([self.sentence_field.vocab.itos[int(i)] for i in data[j]])
 
             #CONVERTING TO CUDA IF ON NEEDED
             if self.cuda:
