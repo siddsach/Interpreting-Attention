@@ -1,0 +1,58 @@
+THCudaCheck FAIL file=/opt/conda/conda-bld/pytorch_1513366702650/work/torch/lib/THC/generic/THCStorage.cu line=58 error=30 : unknown error
+Building Bayesian Optimizer for 
+ data:wikitext 
+ choices:[{'type': 'continuous', 'domain': [0, 40], 'name': 'lr'}, {'type': 'continuous', 'domain': [0, 1], 'name': 'dropout'}, {'type': 'continuous', 'domain': [4, 5], 'name': 'anneal'}, {'type': 'continuous', 'domain': [0, 1], 'name': 'rnn_dropout'}, {'type': 'continuous', 'domain': [0, 0.5], 'name': 'clip'}]
+SETTINGS FOR THIS RUN
+{'anneal': 4.44366320536584, 'rnn_dropout': 0.9004847216047622, 'batch_size': 32, 'hidden_size': 300, 'lr': 15.360185301055967, 'clip': 0.4049902796738329, 'wordvec_source': 'None', 'seq_len': 35, 'dropout': 0.6612770957836214, 'wordvec_dim': 300, 'tune_wordvecs': True, 'num_layers': 3}
+AVAILABLE TIME:None
+Preparing Data Loaders
+
+[93m    Warning: no model found for 'en'[0m
+
+    Only loading the 'en' tokenizer.
+
+Retrieving Train Data from file: /home-nfs/siddsach/ml/Interpreting-Attention/data/wikitext-2/wikitext-2/wiki.train.tokens...
+Downloaded in 0.3593145569165548 minutes
+Got Train Dataset with 2199934 words
+Retrieving Valid Data from file: /home-nfs/siddsach/ml/Interpreting-Attention/data/wikitext-2/wikitext-2/wiki.valid.tokens...
+Retrieving Test Data from file: /home-nfs/siddsach/ml/Interpreting-Attention/data/wikitext-2/wikitext-2/wiki.test.tokens...
+Building Vocab...
+Loading Vectors From Memory...
+Found 20471 tokens
+Getting Batches...
+Created Iterator with 1965 batches
+Initializing Model parameters...
+Constructing LSTM with 3 layers and 300 hidden size...
+Using Cross Entropy Loss ...
+Traceback (most recent call last):
+  File "bayesian_optimization.py", line 226, in <module>
+    fix_pretrained = args.fix_pretrained, savepath = args.savepath)
+  File "bayesian_optimization.py", line 73, in __init__
+    exact_feval = True
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/GPyOpt/methods/bayesian_optimization.py", line 117, in __init__
+    self._init_design_chooser()
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/GPyOpt/methods/bayesian_optimization.py", line 192, in _init_design_chooser
+    self.Y, _ = self.objective.evaluate(self.X)
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/GPyOpt/core/task/objective.py", line 50, in evaluate
+    f_evals, cost_evals = self._eval_func(x)
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/GPyOpt/core/task/objective.py", line 74, in _eval_func
+    rlt = self.func(np.atleast_2d(x[i]))
+  File "bayesian_optimization.py", line 147, in getError
+    optimizer, scheduler = trainer.init_model()
+  File "/home-nfs/siddsach/ml/Interpreting-Attention/pretraining/langmodel/trainer.py", line 510, in init_model
+    self.model = self.get_model(checkpoint_params)
+  File "/home-nfs/siddsach/ml/Interpreting-Attention/pretraining/langmodel/trainer.py", line 386, in get_model
+    model = model.cuda()
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/torch/nn/modules/module.py", line 216, in cuda
+    return self._apply(lambda t: t.cuda(device))
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/torch/nn/modules/module.py", line 146, in _apply
+    module._apply(fn)
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/torch/nn/modules/module.py", line 152, in _apply
+    param.data = fn(param.data)
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/torch/nn/modules/module.py", line 216, in <lambda>
+    return self._apply(lambda t: t.cuda(device))
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/torch/_utils.py", line 69, in _cuda
+    return new_type(self.size()).copy_(self, async)
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/torch/cuda/__init__.py", line 361, in _lazy_new
+    return super(_CudaBase, cls).__new__(cls, *args, **kwargs)
+RuntimeError: cuda runtime error (30) : unknown error at /opt/conda/conda-bld/pytorch_1513366702650/work/torch/lib/THC/generic/THCStorage.cu:58
