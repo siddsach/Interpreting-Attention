@@ -122,8 +122,8 @@ class Sequence:
         for i in range(0, num_folds):
             this_fold = docs[split_size * i: split_size * (i+1)]
             foldpath = self.data_dir + "/fold{}.txt".format(i)
-            foldfile = open(foldpath, 'w')
-            foldfile.write(this_fold)
+            with open(foldpath, 'w') as f:
+                f.write(this_fold)
 
             self.progress["all_threads"][current_thread]["folds"].append({"path":foldpath})
 
@@ -163,14 +163,17 @@ class Sequence:
         train_loss = None
         if progress["started"]:
             current = torch.load(self.savepath + 'model.pt')
-            vocab = torch.load(self.savepath + 'vocab.pt')
+            vocab = current["vocab"]
             params = current["state_dict"]
             train_loss = current["train_loss"]
 
-        text = open(foldpath, 'r').read()
         if train_loss is not None:
             trainer.current_loss = train_loss
-        trainer.prepare_data(text, already_read = True, vocab = vocab)
+
+        with open(foldpath, 'r') as socket:
+            text = socket.read()
+            trainer.prepare_data(text, already_read = True, vocab = vocab)
+
         trainer.init_model(checkpoint_params = params)
         trainer.train_step(None, trainer.model, START)
 
