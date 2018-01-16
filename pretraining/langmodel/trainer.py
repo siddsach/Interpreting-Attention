@@ -1,5 +1,5 @@
 from torchtext import data, datasets
-from torchtext.vocab import Vectors
+from torchtext.vocab import Vectors, CharNGram
 import torch
 from torch.nn import CrossEntropyLoss
 from torch.autograd import Variable
@@ -11,6 +11,7 @@ import os
 import math
 from datetime import datetime
 import argparse
+import sys
 
 current_path = os.getcwd()
 project_path = current_path#[:len(current_path)-len('/pretraining/langmodel')]
@@ -23,7 +24,7 @@ GIGA_PATH = project_path + '/data/gigaword/'
 MODEL_SAVE_PATH = project_path + '/trained_models/langmodel/'
 VECTOR_CACHE = project_path + '/vectors'
 
-NUM_EPOCHS = 1 if not torch.cuda.is_available() else 5
+NUM_EPOCHS = 1 if not torch.cuda.is_available() else 100
 LEARNING_RATE = 5
 LOG_INTERVAL = 50
 BPTT_SEQUENCE_LENGTH = 35
@@ -36,7 +37,7 @@ TUNE_WORDVECS = False
 PRETRAINED_WORDVEC = False
 CLIP = 0.25
 NUM_LAYERS = 3
-TIE_WEIGHTS = False
+TIE_WEIGHTS = True
 MODEL_TYPE = 'LSTM'
 OPTIMIZER = 'vanilla_grad'
 DROPOUT = 0.4
@@ -137,7 +138,7 @@ class TrainLangModel:
             self.tokenizer = lambda x: list(x)
             self.glove_dim = None
             self.wordvec_source = None
-            self.pretrained_vecs = None
+            self.pretrained_vecs = False
             self.wordvec_dim = wordvec_dim
         else:
             self.tokenizer = 'spacy'
@@ -159,6 +160,7 @@ class TrainLangModel:
 
         self.log_interval = log_interval
         self.current_batch = current_batch
+        self.current_loss = []
         self.epoch = 0
         self.time = time
 
@@ -236,14 +238,32 @@ class TrainLangModel:
             else:
                 self.test_sentences = None
         else:
-            print('Reading in data with {} chars...'.format(len(dataset)))
             fields = [('text', self.sentence_field)]
-            examples = [data.Example.fromlist([dataset], fields)]
+
+            num_char = len(dataset)
+            print('Reading in data with {} chars...'.format(num_char))
+            num_folds = num_char // 2**28 + 1
+            print("{} folds".format(num_folds))
+            start = time()
+            examples = []
+            if num_folds == 0:
+
+                examples = [data.Example.fromlist([dataset], fields)]
+            else:
+                fold_size = math.ceil(num_char/num_folds)
+                print("fold size:{}".format(fold_size))
+                for i in range(num_folds):
+                    print('Reading fold:{}'.format(i))
+                    fold = dataset[fold_size*i:fold_size*(i+1)]
+                    examples.append(data.Example.fromlist([fold], fields))
+            one = time()
+            print("READ EXAMPLES IN {}".format(one - start))
+            print("EXAMPLES")
+            print(examples[0].text)
             self.train_sentences = data.Dataset(examples, fields)
+            print("LOADED DATASET IN {}".format(one - time()))
+            print("Parsed dataset with size of :{}".format(sys.getsizeof(self.train_sentences)))
             print('Done.')
-
-
-
 
     def get_vectors(self, vocab):
         sources = None
@@ -273,9 +293,7 @@ class TrainLangModel:
                         vecs.append(glove)
                         self.wordvec_dim += self.glove_dim
                     if source == 'charLevel':
-                        charVec = Vectors(name = 'charNgram.txt',
-                                cache = self.vector_cache)
-                        vecs.append(charVec)
+                        charVec = CharNGram()
                         self.wordvec_dim += 100
                     if source == 'googlenews':
                         googlenews = Vectors(name = 'googlenews.txt',\
@@ -320,8 +338,10 @@ class TrainLangModel:
         model = None
 
         pretrained_vecs = None
-        if self.pretrained_vecs is not None and checkpoint is None:
+        if self.pretrained_vecs and checkpoint is None:
             pretrained_vecs = self.sentence_field.vocab.vectors
+            print("PRETRAINED VECS")
+            print(pretrained_vecs.shape)
 
         if checkpoint is not None:
             self.wordvec_dim = checkpoint["embed.weight"].size(1)
@@ -381,7 +401,6 @@ class TrainLangModel:
         print('Completing Train Step...')
         hidden = self.model.init_hidden(self.batch_size)
         total_loss = 0
-        self.current_loss = []
         for i, batch in enumerate(self.train_iterator):
 
             if i >= self.current_batch:
@@ -521,7 +540,7 @@ class TrainLangModel:
                     break
             self.epoch += 1
             optimizer = self.train_step(optimizer, self.model, start_time)
-            this_perplexity = self.current_loss[-1] #self.evaluate()
+            this_perplexity = self.evaluate()
             self.epoch = epoch
 
             if this_perplexity > self.best_loss:
