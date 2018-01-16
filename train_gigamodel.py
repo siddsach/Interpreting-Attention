@@ -147,7 +147,7 @@ class Sequence:
         trainer.get_vectors(vocab = None)
         trainer.init_model()
         print('here')
-        trainer.save_checkpoint('vocab.pt')
+        trainer.save_checkpoint('model.pt')
         print('should be saved')
 
     def process(self, foldpath, progress):
