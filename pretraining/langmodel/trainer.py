@@ -245,8 +245,9 @@ class TrainLangModel:
             print("{} folds".format(num_folds))
             start = time()
             examples = []
-            if num_folds == 0:
+            print('DATA LENGTH: {}'.format(len(dataset)))
 
+            if num_folds == 0:
                 examples = [data.Example.fromlist([dataset], fields)]
             else:
                 fold_size = math.ceil(num_char/num_folds)
@@ -257,8 +258,6 @@ class TrainLangModel:
                     examples.append(data.Example.fromlist([fold], fields))
             one = time()
             print("READ EXAMPLES IN {}".format(one - start))
-            print("EXAMPLES")
-            print(examples[0].text)
             self.train_sentences = data.Dataset(examples, fields)
             print("LOADED DATASET IN {}".format(one - time()))
             print("Parsed dataset with size of :{}".format(sys.getsizeof(self.train_sentences)))

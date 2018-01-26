@@ -17,11 +17,11 @@ root_path = os.getcwd()
 print("ROOT_PATH: {}".format(root_path))
 
 #### DEFAULTS ####
-SPLIT = 0.75
+SPLIT = 0.9
 DATASET = 'IMDB'
 # 'sentence_subjectivity.csv' #DATA MUST BE IN CSV FORMAT WITH ONE FIELD TITLED SENTENCES CONTANING ONE LINE PER SENTENCE
 IMDB_PATH = root_path + '/data/imdb/aclImdb'
-MPQA_PATH = root_path + '/data/mpqa/mpqa_subj_labels.pickle'
+MPQA_PATH = root_path + '/data/mpqa/subj_clf_labels.pickle'
 VECTOR_CACHE = root_path + '/vectors'
 SAVED_VECTORS = True
 NUM_EPOCHS = 60
@@ -56,6 +56,8 @@ if torch.cuda.is_available():
     MAX_DATA_LEN = None
 def sorter(example):
     return len(example.text)
+
+torch.manual_seed(10)
 
 class TrainClassifier:
     def __init__(
@@ -378,6 +380,12 @@ class TrainClassifier:
                     print('WARNING: pretrained model has a different embed dim, so ignoring embedding from pretrained model')
                     self.wordvec_dim = pretrained_args['wordvec_dim']
 
+                '''
+                if pretrained_args['num_layers'] != self.num_layers:
+                    print('WARNING: pretrained model has more layers than specified, so setting number of layers to that of pretrained')
+                    self.num_layers = pretrained_weights['num_layers']
+                '''
+
             args = {'vocab_size' : self.ntokens,
                 'num_classes' : self.num_classes,
                 'batch_size' : self.batch_size,
@@ -395,6 +403,8 @@ class TrainClassifier:
                 self.model = VanillaRNN(**args)
                 print('Using Vanilla RNN with following args:\n{}'
                         .format(args))
+                self.train_attns = None
+                self.test_attns = None
 
             else:
                 print(self.attn_type)
@@ -506,12 +516,6 @@ class TrainClassifier:
             targets = targets - 1 #from zero to one
             data, lengths = data[0], data[1]
 
-            print("DATA")
-            print(data)
-            for j in range(self.batch_size):
-                #print([word for word in self.train_data.examples[(self.batch_size * i) + j].text])
-                print([self.sentence_field.vocab.itos[int(i)] for i in data[j]])
-
             #CONVERTING TO CUDA IF ON NEEDED
             if self.cuda:
                 data = data.cuda()
@@ -621,7 +625,6 @@ class TrainClassifier:
 
         if self.savepath is not None:
 
-            print("Saving Model Parameters and Results...")
             self.save_checkpoint(self.savepath, optimizer)
 
             print('Finished Training.')
@@ -650,10 +653,11 @@ class TrainClassifier:
 
 
     def save_checkpoint(self, checkpointpath, optimizer = None, name = None):
+        print("Saving Model Parameters and Results...")
         state = {
                     'epoch': self.epoch + 1,
                     'state_dict': self.best_model.state_dict(),
-                    'best_valid_accuracy': self.eval_accuracy,
+                    'best_valid_accuracy': self.best_accuracy,
                     'optimizer': None if optimizer is None else optimizer.state_dict(),
                     'accuracies': self.accuracies,
                     'vocab': self.sentence_field.vocab,
@@ -664,6 +668,7 @@ class TrainClassifier:
         savepath = checkpointpath + ''.join(str(datetime.now()).split())
         if name is not None:
             savepath = checkpointpath + name
+        print("Path:{}".format(savepath))
 
         torch.save(state, savepath)
 

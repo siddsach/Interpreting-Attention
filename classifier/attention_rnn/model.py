@@ -86,13 +86,13 @@ class VanillaRNN(nn.Module):
         #LOAD PARAMS FROM PRETRAINED MODEL, IGNORING IRRELEVANT ONES
         self.load_state_dict(pretrained, strict = False)
 
-        #check
         for key in pretrained.keys():
-            try:
-                assert self.state_dict()[key].equal(pretrained[key]), 'key not the same:{}'.format(key)
-            except:
-                print('THIS:{}'.format(self.state_dict()[key]))
-                print('PRETRAINED:{}'.format(pretrained[key]))
+            if key in self.state_dict().keys():
+                try:
+                    assert self.state_dict()[key].equal(pretrained[key]), 'key not the same:{}'.format(key)
+                except:
+                    print('THIS:{}'.format(self.state_dict()[key]))
+                    print('PRETRAINED:{}'.format(pretrained[key]))
 
         #OPTION TO FIX PRETRAINED PARAMETERS
         if fix_pretrained is not None:
@@ -215,7 +215,7 @@ class SelfAttentiveRNN(VanillaRNN):
             weighted_seq = torch.bmm(out, attn_params)
             batched_last_hiddens = last_hiddens.unsqueeze(2)
             A = torch.bmm(weighted_seq, batched_last_hiddens).squeeze(2)
-
+            A = nn.functional.softmax(A, dim = 1)
 
         #GET EMBEDDING MATRIX GIVEN ATTENTION WEIGHTS
         M = torch.sum(A.unsqueeze(2).expand_as(out) * out, 1)
