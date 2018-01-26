@@ -121,7 +121,8 @@ class TrainLangModel:
         self.rnn_dropout = rnn_dropout
         self.few_batches = few_batches
         self.time_limit = time_limit
-        print("AVAILABLE TIME:{}".format(self.time_limit))
+        if self.tine_limit is not None:
+            print("AVAILABLE TIME:{}".format(self.time_limit))
 
         self.num_epochs = num_epochs
 
