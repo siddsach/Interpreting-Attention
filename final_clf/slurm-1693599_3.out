@@ -1,0 +1,1624 @@
+ROOT_PATH: /home-nfs/siddsach/ml/Interpreting-Attention
+Building Bayesian Optimizer for 
+ data:MPQA 
+ choices:[{'name': 'lr', 'type': 'continuous', 'domain': [5e-05, 0.005]}, {'name': 'rnn_dropout', 'type': 'continuous', 'domain': [0, 1]}, {'name': 'dropout', 'type': 'continuous', 'domain': [0, 1]}, {'name': 'l2', 'type': 'continuous', 'domain': [0, 1]}, {'name': 'attention_dim', 'type': 'continuous', 'domain': [5, 100]}]
+SETTINGS FOR THIS RUN
+{'wordvec_source': 'glove', 'wordvec_dim': 300, 'attention_dim': 19, 'attn_type': 'MLP', 'rnn_dropout': 0.3145499966711144, 'fix_pretrained': None, 'lr': 0.0005402331285362506, 'tune_wordvecs': False, 'num_layers': 1, 'l2': 0.946904232820719, 'hidden_size': 300, 'batch_size': 32, 'pretrained': None, 'dropout': 0.0663168323006238}
+Using CUDA!
+MLP
+Building RNN Classifier...
+
+[93m    Warning: no model found for 'en'[0m
+
+    Only loading the 'en' tokenizer.
+
+Retrieving Data from file: /home-nfs/siddsach/ml/Interpreting-Attention/data/mpqa/subj_clf_labels.pickle...
+Loading Vectors From Memory...
+Using these vectors: ['GloVe']
+Getting GloVe Vectors with 300 dims
+Building Vocab...
+[<torchtext.vocab.Vectors object at 0x7f540af6d9e8>]
+Getting Batches...
+Created Iterator with 258 batches
+Getting Batches...
+Created Iterator with 29 batches
+Building model...
+MLP
+Using Attention model with following args:
+{'vectors': 
+ 0.0000  0.0000  0.0000  ...   0.0000  0.0000  0.0000
+ 0.0000  0.0000  0.0000  ...   0.0000  0.0000  0.0000
+ 0.0000  0.0000  0.0000  ...   0.0000  0.0000  0.0000
+          ...             ⋱             ...          
+ 0.0514  0.6392 -0.5063  ...   0.0817  0.3416 -0.0271
+ 0.0000  0.0000  0.0000  ...   0.0000  0.0000  0.0000
+-0.0479  0.9828  0.9182  ...   0.0424  0.4554 -0.3210
+[torch.FloatTensor of size 15944x300]
+, 'cuda': True, 'attention_dim': 19, 'attn_type': 'MLP', 'rnn_dropout': 0.3145499966711144, 'train_word_vecs': False, 'num_classes': 2, 'num_layers': 1, 'input_size': 300, 'vocab_size': 15944, 'tune_attn': 'True', 'hidden_size': 300, 'batch_size': 32, 'dropout': 0.0663168323006238}
+Not Tuning Word Vectors!
+Begin Training...
+Completing Train Step at 0th epoch...
+At time: 0.41207051277160645 accuracy is 0.5203125 and loss is 0.724748945236206
+At time: 0.5486218929290771 accuracy is 0.665625 and loss is 0.6136972904205322
+At time: 0.6909406185150146 accuracy is 0.753125 and loss is 0.5312587261199951
+At time: 0.8333008289337158 accuracy is 0.7859375 and loss is 0.49704608917236326
+At time: 0.9812901020050049 accuracy is 0.79375 and loss is 0.46074738502502444
+At time: 1.1387443542480469 accuracy is 0.828125 and loss is 0.4220108509063721
+At time: 1.3000164031982422 accuracy is 0.8 and loss is 0.4379774570465088
+At time: 1.466449499130249 accuracy is 0.85625 and loss is 0.34688029289245603
+At time: 1.6443798542022705 accuracy is 0.8546875 and loss is 0.34262614250183104
+At time: 1.8364648818969727 accuracy is 0.878125 and loss is 0.30660574436187743
+At time: 2.037013530731201 accuracy is 0.8828125 and loss is 0.2771944761276245
+At time: 2.2545084953308105 accuracy is 0.9015625 and loss is 0.25456795692443845
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8203125
+Achieved new best!
+Completing Train Step at 1th epoch...
+At time: 2.751329183578491 accuracy is 0.6546875 and loss is 0.6516533851623535
+At time: 2.8841066360473633 accuracy is 0.7046875 and loss is 0.5618850708007812
+At time: 3.020437002182007 accuracy is 0.85625 and loss is 0.41239562034606936
+At time: 3.1611640453338623 accuracy is 0.8390625 and loss is 0.38680553436279297
+At time: 3.307716131210327 accuracy is 0.8328125 and loss is 0.38667893409729004
+At time: 3.4611504077911377 accuracy is 0.853125 and loss is 0.32215931415557864
+At time: 3.621886968612671 accuracy is 0.8578125 and loss is 0.36230542659759524
+At time: 3.7893593311309814 accuracy is 0.84375 and loss is 0.3248239755630493
+At time: 3.9619131088256836 accuracy is 0.8796875 and loss is 0.3056755542755127
+At time: 4.144817113876343 accuracy is 0.871875 and loss is 0.28653113842010497
+At time: 4.340133428573608 accuracy is 0.9078125 and loss is 0.2398604393005371
+At time: 4.548198938369751 accuracy is 0.9078125 and loss is 0.21510848999023438
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8839285714285714
+Achieved new best!
+Completing Train Step at 2th epoch...
+At time: 5.015796184539795 accuracy is 0.7625 and loss is 0.5394514560699463
+At time: 5.147658824920654 accuracy is 0.8015625 and loss is 0.4550351619720459
+At time: 5.284419298171997 accuracy is 0.8671875 and loss is 0.3404407024383545
+At time: 5.425979852676392 accuracy is 0.84375 and loss is 0.34887726306915284
+At time: 5.5752341747283936 accuracy is 0.853125 and loss is 0.35746350288391116
+At time: 5.729428291320801 accuracy is 0.859375 and loss is 0.28856773376464845
+At time: 5.892288446426392 accuracy is 0.83125 and loss is 0.36522023677825927
+At time: 6.058743000030518 accuracy is 0.884375 and loss is 0.268459677696228
+At time: 6.233418703079224 accuracy is 0.890625 and loss is 0.24781970977783202
+At time: 6.4164252281188965 accuracy is 0.890625 and loss is 0.25004258155822756
+At time: 6.609813928604126 accuracy is 0.91875 and loss is 0.2027115821838379
+At time: 6.817892789840698 accuracy is 0.921875 and loss is 0.17553460597991943
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8604910714285714
+Not better for 1
+Completing Train Step at 3th epoch...
+At time: 7.28988790512085 accuracy is 0.8015625 and loss is 0.48796448707580564
+At time: 7.418697118759155 accuracy is 0.803125 and loss is 0.4516918182373047
+At time: 7.555061340332031 accuracy is 0.8875 and loss is 0.29483177661895754
+At time: 7.697451829910278 accuracy is 0.875 and loss is 0.29541964530944825
+At time: 7.845752239227295 accuracy is 0.8578125 and loss is 0.33701932430267334
+At time: 7.998262166976929 accuracy is 0.871875 and loss is 0.27791025638580324
+At time: 8.15927004814148 accuracy is 0.871875 and loss is 0.2913583517074585
+At time: 8.325999021530151 accuracy is 0.9078125 and loss is 0.22480061054229736
+At time: 8.500629663467407 accuracy is 0.91875 and loss is 0.19810136556625366
+At time: 8.683372974395752 accuracy is 0.9078125 and loss is 0.24461717605590821
+At time: 8.877897500991821 accuracy is 0.934375 and loss is 0.1659402370452881
+At time: 9.08633542060852 accuracy is 0.9375 and loss is 0.13959888219833375
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8616071428571429
+Not better for 2
+Completing Train Step at 4th epoch...
+At time: 9.555660963058472 accuracy is 0.8171875 and loss is 0.4411860466003418
+At time: 9.686248779296875 accuracy is 0.8390625 and loss is 0.3550940275192261
+At time: 9.823469877243042 accuracy is 0.89375 and loss is 0.25667600631713866
+At time: 9.963969230651855 accuracy is 0.903125 and loss is 0.24989621639251708
+At time: 10.110559701919556 accuracy is 0.8984375 and loss is 0.25467517375946047
+At time: 10.265108823776245 accuracy is 0.9234375 and loss is 0.19103192090988158
+At time: 10.425396919250488 accuracy is 0.90625 and loss is 0.19744924306869507
+At time: 10.592031478881836 accuracy is 0.9453125 and loss is 0.14695812463760377
+At time: 10.765752792358398 accuracy is 0.915625 and loss is 0.18674104213714598
+At time: 10.950077772140503 accuracy is 0.93125 and loss is 0.18503800630569459
+At time: 11.143125057220459 accuracy is 0.928125 and loss is 0.15812597274780274
+At time: 11.351459741592407 accuracy is 0.9359375 and loss is 0.12693917751312256
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8928571428571429
+Achieved new best!
+Completing Train Step at 5th epoch...
+At time: 11.825355291366577 accuracy is 0.828125 and loss is 0.3984421730041504
+At time: 11.955458641052246 accuracy is 0.865625 and loss is 0.3015741348266602
+At time: 12.093327522277832 accuracy is 0.896875 and loss is 0.23530399799346924
+At time: 12.235023260116577 accuracy is 0.903125 and loss is 0.2305361270904541
+At time: 12.390581846237183 accuracy is 0.93125 and loss is 0.19918304681777954
+At time: 12.554764747619629 accuracy is 0.9234375 and loss is 0.1888588547706604
+At time: 12.726031064987183 accuracy is 0.9359375 and loss is 0.1323938250541687
+At time: 12.894925832748413 accuracy is 0.95625 and loss is 0.11279711723327637
+At time: 13.07099175453186 accuracy is 0.940625 and loss is 0.14490596055984498
+At time: 13.25435757637024 accuracy is 0.9484375 and loss is 0.12031059265136719
+At time: 13.448442697525024 accuracy is 0.9484375 and loss is 0.10643507242202759
+At time: 13.657538414001465 accuracy is 0.9671875 and loss is 0.08477503061294556
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8861607142857143
+Not better for 1
+Completing Train Step at 6th epoch...
+At time: 14.131118774414062 accuracy is 0.8875 and loss is 0.2957831144332886
+At time: 14.263249158859253 accuracy is 0.8984375 and loss is 0.21963675022125245
+At time: 14.399974822998047 accuracy is 0.9328125 and loss is 0.14862115383148194
+At time: 14.541640043258667 accuracy is 0.9453125 and loss is 0.1872243642807007
+At time: 14.690078258514404 accuracy is 0.9484375 and loss is 0.14770634174346925
+At time: 14.845038890838623 accuracy is 0.93125 and loss is 0.18354172706604005
+At time: 15.004818677902222 accuracy is 0.93125 and loss is 0.16021728515625
+At time: 15.174003839492798 accuracy is 0.971875 and loss is 0.07637860774993896
+At time: 15.349010944366455 accuracy is 0.965625 and loss is 0.08860471844673157
+At time: 15.532256841659546 accuracy is 0.95 and loss is 0.1135934829711914
+At time: 15.725834846496582 accuracy is 0.9625 and loss is 0.10768532752990723
+At time: 15.935987710952759 accuracy is 0.975 and loss is 0.06623188853263855
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8705357142857143
+Not better for 2
+Completing Train Step at 7th epoch...
+At time: 16.408082008361816 accuracy is 0.9234375 and loss is 0.2441990613937378
+At time: 16.54193949699402 accuracy is 0.91875 and loss is 0.19780819416046141
+At time: 16.67896342277527 accuracy is 0.96875 and loss is 0.09623056054115295
+At time: 16.824629068374634 accuracy is 0.946875 and loss is 0.11587017774581909
+At time: 16.971601009368896 accuracy is 0.959375 and loss is 0.09504479169845581
+At time: 17.12711262702942 accuracy is 0.95 and loss is 0.12729181051254274
+At time: 17.288976907730103 accuracy is 0.9765625 and loss is 0.07120063900947571
+At time: 17.45656681060791 accuracy is 0.9828125 and loss is 0.04175558984279633
+At time: 17.634359121322632 accuracy is 0.9703125 and loss is 0.07726858258247375
+At time: 17.818040132522583 accuracy is 0.978125 and loss is 0.05039515495300293
+At time: 18.011615753173828 accuracy is 0.975 and loss is 0.05878329277038574
+At time: 18.22275137901306 accuracy is 0.990625 and loss is 0.04822128117084503
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8962053571428571
+Achieved new best!
+Completing Train Step at 8th epoch...
+At time: 18.694626569747925 accuracy is 0.9421875 and loss is 0.1965327024459839
+At time: 18.82853889465332 accuracy is 0.9359375 and loss is 0.1684787631034851
+At time: 18.96630072593689 accuracy is 0.990625 and loss is 0.055463045835494995
+At time: 19.106938123703003 accuracy is 0.95625 and loss is 0.09855853915214538
+At time: 19.255444526672363 accuracy is 0.9796875 and loss is 0.07323254346847534
+At time: 19.412520170211792 accuracy is 0.9578125 and loss is 0.10824770927429199
+At time: 19.574223279953003 accuracy is 0.98125 and loss is 0.061382776498794554
+At time: 19.742175579071045 accuracy is 0.9890625 and loss is 0.037025701999664304
+At time: 19.91715931892395 accuracy is 0.9625 and loss is 0.09146773219108581
+At time: 20.101222038269043 accuracy is 0.9671875 and loss is 0.08191170692443847
+At time: 20.29732370376587 accuracy is 0.9859375 and loss is 0.041657555103302005
+At time: 20.50550675392151 accuracy is 0.9859375 and loss is 0.0469197005033493
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8883928571428571
+Not better for 1
+Completing Train Step at 9th epoch...
+At time: 20.976532697677612 accuracy is 0.9390625 and loss is 0.1744616746902466
+At time: 21.109508991241455 accuracy is 0.9609375 and loss is 0.10208687782287598
+At time: 21.249058485031128 accuracy is 0.9734375 and loss is 0.05867329239845276
+At time: 21.393996000289917 accuracy is 0.95 and loss is 0.09137314558029175
+At time: 21.541937828063965 accuracy is 0.975 and loss is 0.07132006287574769
+At time: 21.696393489837646 accuracy is 0.978125 and loss is 0.06372378468513488
+At time: 21.85736870765686 accuracy is 0.9859375 and loss is 0.040618342161178586
+At time: 22.025463342666626 accuracy is 0.953125 and loss is 0.1318960428237915
+At time: 22.200955152511597 accuracy is 0.996875 and loss is 0.022102640569210054
+At time: 22.38380479812622 accuracy is 0.959375 and loss is 0.10042316913604736
+At time: 22.57774305343628 accuracy is 0.9859375 and loss is 0.029057997465133666
+At time: 22.787192344665527 accuracy is 0.9921875 and loss is 0.03498570322990417
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8917410714285714
+Not better for 2
+Completing Train Step at 10th epoch...
+At time: 23.255919694900513 accuracy is 0.9640625 and loss is 0.13049134016036987
+At time: 23.388689517974854 accuracy is 0.965625 and loss is 0.11056663990020751
+At time: 23.525797367095947 accuracy is 0.9953125 and loss is 0.03139882981777191
+At time: 23.666494607925415 accuracy is 0.975 and loss is 0.060201191902160646
+At time: 23.816241025924683 accuracy is 0.9859375 and loss is 0.0304967999458313
+At time: 23.970439195632935 accuracy is 0.984375 and loss is 0.0456210047006607
+At time: 24.130923986434937 accuracy is 0.996875 and loss is 0.024915920197963716
+At time: 24.298067331314087 accuracy is 0.978125 and loss is 0.053900569677352905
+At time: 24.472395658493042 accuracy is 0.996875 and loss is 0.010362225770950317
+At time: 24.659265518188477 accuracy is 0.9875 and loss is 0.02655321955680847
+At time: 24.854335069656372 accuracy is 0.9953125 and loss is 0.01959981322288513
+At time: 25.065284490585327 accuracy is 0.996875 and loss is 0.013054946064949035
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8973214285714286
+Achieved new best!
+Completing Train Step at 11th epoch...
+At time: 25.540838718414307 accuracy is 0.971875 and loss is 0.11236100196838379
+At time: 25.672513961791992 accuracy is 0.9796875 and loss is 0.07498904466629028
+At time: 25.810317993164062 accuracy is 0.99375 and loss is 0.0452382504940033
+At time: 25.954471588134766 accuracy is 0.9859375 and loss is 0.03684629499912262
+At time: 26.102750301361084 accuracy is 0.9921875 and loss is 0.019948330521583558
+At time: 26.263275146484375 accuracy is 0.98125 and loss is 0.06340034604072571
+At time: 26.428391695022583 accuracy is 0.9859375 and loss is 0.045370671153068545
+At time: 26.596585273742676 accuracy is 0.990625 and loss is 0.02139476090669632
+At time: 26.77271819114685 accuracy is 0.996875 and loss is 0.013322626054286957
+At time: 26.95667576789856 accuracy is 0.99375 and loss is 0.01804707795381546
+At time: 27.1522536277771 accuracy is 0.990625 and loss is 0.023636749386787413
+At time: 27.36125111579895 accuracy is 0.9984375 and loss is 0.0057569704949855804
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8627232142857143
+Not better for 1
+Completing Train Step at 12th epoch...
+At time: 27.8311288356781 accuracy is 0.9640625 and loss is 0.09678309559822082
+At time: 27.96205472946167 accuracy is 0.984375 and loss is 0.06217988729476929
+At time: 28.098042249679565 accuracy is 0.9984375 and loss is 0.02236468344926834
+At time: 28.242236137390137 accuracy is 0.9921875 and loss is 0.02579905092716217
+At time: 28.38877010345459 accuracy is 0.9828125 and loss is 0.03604930639266968
+At time: 28.54386329650879 accuracy is 0.990625 and loss is 0.03320823311805725
+At time: 28.705347299575806 accuracy is 0.990625 and loss is 0.02385464161634445
+At time: 28.874536514282227 accuracy is 0.9859375 and loss is 0.02682132422924042
+At time: 29.052022695541382 accuracy is 0.9953125 and loss is 0.01779133826494217
+At time: 29.235896825790405 accuracy is 0.9953125 and loss is 0.01152646541595459
+At time: 29.43047785758972 accuracy is 0.9890625 and loss is 0.048180374503135684
+At time: 29.63877844810486 accuracy is 0.99375 and loss is 0.009014765173196793
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8582589285714286
+Not better for 2
+Completing Train Step at 13th epoch...
+At time: 30.111735582351685 accuracy is 0.975 and loss is 0.08165024518966675
+At time: 30.242935180664062 accuracy is 0.9796875 and loss is 0.057943987846374514
+At time: 30.3799045085907 accuracy is 0.9890625 and loss is 0.039643749594688416
+At time: 30.52362871170044 accuracy is 0.9984375 and loss is 0.013385027647018433
+At time: 30.671422958374023 accuracy is 0.959375 and loss is 0.09673705101013183
+At time: 30.82480788230896 accuracy is 0.95625 and loss is 0.10623538494110107
+At time: 30.98497772216797 accuracy is 0.9890625 and loss is 0.03858647346496582
+At time: 31.153488874435425 accuracy is 0.98125 and loss is 0.03849607110023499
+At time: 31.328140020370483 accuracy is 0.99375 and loss is 0.01671522855758667
+At time: 31.51195454597473 accuracy is 0.98125 and loss is 0.05851721167564392
+At time: 31.704087734222412 accuracy is 0.9984375 and loss is 0.003649669885635376
+At time: 31.9141047000885 accuracy is 0.9859375 and loss is 0.032071301341056825
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8805803571428571
+Not better for 3
+Completing Train Step at 14th epoch...
+At time: 32.38348054885864 accuracy is 0.9734375 and loss is 0.0745912492275238
+At time: 32.51357841491699 accuracy is 0.984375 and loss is 0.0443792849779129
+At time: 32.64953017234802 accuracy is 0.99375 and loss is 0.02208664417266846
+At time: 32.791351318359375 accuracy is 0.9671875 and loss is 0.10240039825439454
+At time: 32.93810772895813 accuracy is 0.984375 and loss is 0.04172634482383728
+At time: 33.09298133850098 accuracy is 0.99375 and loss is 0.015996848046779633
+At time: 33.25435280799866 accuracy is 0.9953125 and loss is 0.017901763319969177
+At time: 33.42162799835205 accuracy is 0.9984375 and loss is 0.009908756613731385
+At time: 33.5966010093689 accuracy is 0.9671875 and loss is 0.07033231258392333
+At time: 33.785642862319946 accuracy is 0.996875 and loss is 0.025638824701309203
+At time: 33.98088979721069 accuracy is 0.978125 and loss is 0.06140736937522888
+At time: 34.19053363800049 accuracy is 1.0 and loss is 0.002248571068048477
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8872767857142857
+Not better for 4
+Completing Train Step at 15th epoch...
+At time: 34.672852754592896 accuracy is 0.9828125 and loss is 0.07286515235900878
+At time: 34.81235909461975 accuracy is 0.9921875 and loss is 0.03950333595275879
+At time: 34.957967042922974 accuracy is 0.9984375 and loss is 0.01732764095067978
+At time: 35.10966658592224 accuracy is 0.9953125 and loss is 0.017120099067687987
+At time: 35.263550996780396 accuracy is 0.996875 and loss is 0.014564581215381622
+At time: 35.420615673065186 accuracy is 0.9921875 and loss is 0.019748814404010773
+At time: 35.585440158843994 accuracy is 0.9953125 and loss is 0.022314265370368958
+At time: 35.75816631317139 accuracy is 1.0 and loss is 0.002291669696569443
+At time: 35.93806338310242 accuracy is 0.9953125 and loss is 0.01276353895664215
+At time: 36.12705039978027 accuracy is 0.99375 and loss is 0.014753992855548858
+At time: 36.33255934715271 accuracy is 0.996875 and loss is 0.010708725452423096
+At time: 36.54620027542114 accuracy is 0.996875 and loss is 0.007585318386554718
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8872767857142857
+Not better for 5
+Completing Train Step at 16th epoch...
+At time: 37.01408362388611 accuracy is 0.9828125 and loss is 0.05916936993598938
+At time: 37.14650058746338 accuracy is 0.9921875 and loss is 0.03237495422363281
+At time: 37.282883167266846 accuracy is 0.9953125 and loss is 0.02563595473766327
+At time: 37.42302846908569 accuracy is 0.9921875 and loss is 0.02393534332513809
+At time: 37.57088828086853 accuracy is 0.9921875 and loss is 0.019159778952598572
+At time: 37.72399115562439 accuracy is 0.990625 and loss is 0.020595602691173553
+At time: 37.88616633415222 accuracy is 0.9984375 and loss is 0.010568754374980926
+At time: 38.05375957489014 accuracy is 0.996875 and loss is 0.01659214645624161
+At time: 38.22824835777283 accuracy is 0.990625 and loss is 0.024968235194683074
+At time: 38.41087889671326 accuracy is 1.0 and loss is 0.0029155440628528596
+At time: 38.60315179824829 accuracy is 0.990625 and loss is 0.017334625124931335
+At time: 38.81188941001892 accuracy is 0.996875 and loss is 0.006356291472911835
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8482142857142857
+Not better for 6
+Completing Train Step at 17th epoch...
+At time: 39.28532028198242 accuracy is 0.96875 and loss is 0.08300674557685853
+At time: 39.41897225379944 accuracy is 0.9875 and loss is 0.02955487370491028
+At time: 39.55882954597473 accuracy is 0.9890625 and loss is 0.030463641881942748
+At time: 39.70272731781006 accuracy is 0.9796875 and loss is 0.05256321430206299
+At time: 39.855015993118286 accuracy is 0.99375 and loss is 0.017656859755516053
+At time: 40.01363468170166 accuracy is 0.990625 and loss is 0.03293575644493103
+At time: 40.17569303512573 accuracy is 0.996875 and loss is 0.011719033867120743
+At time: 40.34494614601135 accuracy is 0.996875 and loss is 0.006011059135198593
+At time: 40.521355628967285 accuracy is 0.990625 and loss is 0.022431834042072295
+At time: 40.70608901977539 accuracy is 0.9984375 and loss is 0.010459447652101517
+At time: 40.90221667289734 accuracy is 0.990625 and loss is 0.03342937231063843
+At time: 41.11172604560852 accuracy is 0.9984375 and loss is 0.0038603633642196656
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8783482142857143
+Not better for 7
+Completing Train Step at 18th epoch...
+At time: 41.58281707763672 accuracy is 0.9921875 and loss is 0.03306717574596405
+At time: 41.71222710609436 accuracy is 0.9953125 and loss is 0.016076615452766417
+At time: 41.850406885147095 accuracy is 1.0 and loss is 0.009085574001073838
+At time: 41.99301815032959 accuracy is 0.99375 and loss is 0.016487017273902893
+At time: 42.140058279037476 accuracy is 0.9765625 and loss is 0.07241519689559936
+At time: 42.293707609176636 accuracy is 0.99375 and loss is 0.01367141306400299
+At time: 42.45471453666687 accuracy is 0.9890625 and loss is 0.03439035713672638
+At time: 42.62190914154053 accuracy is 0.9921875 and loss is 0.019336429238319398
+At time: 42.79640483856201 accuracy is 0.9984375 and loss is 0.018094465136528015
+At time: 42.97919034957886 accuracy is 0.9890625 and loss is 0.016420377790927886
+At time: 43.17405462265015 accuracy is 0.9984375 and loss is 0.0032343868166208266
+At time: 43.38118100166321 accuracy is 1.0 and loss is 0.0023055654019117355
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8671875
+Not better for 8
+Completing Train Step at 19th epoch...
+At time: 43.85019588470459 accuracy is 0.9890625 and loss is 0.03765550553798676
+At time: 43.98220419883728 accuracy is 0.996875 and loss is 0.013681627810001373
+At time: 44.12090516090393 accuracy is 0.9984375 and loss is 0.008685621619224548
+At time: 44.26339340209961 accuracy is 0.9859375 and loss is 0.02815006673336029
+At time: 44.41005516052246 accuracy is 0.9953125 and loss is 0.008333131670951843
+At time: 44.56362700462341 accuracy is 0.996875 and loss is 0.013902509212493896
+At time: 44.72464108467102 accuracy is 0.996875 and loss is 0.023077863454818725
+At time: 44.899611473083496 accuracy is 0.9921875 and loss is 0.02023312747478485
+At time: 45.074846506118774 accuracy is 0.9984375 and loss is 0.0031916726380586623
+At time: 45.25768065452576 accuracy is 0.990625 and loss is 0.019740742444992066
+At time: 45.45197653770447 accuracy is 0.9859375 and loss is 0.05662443041801453
+At time: 45.65997314453125 accuracy is 1.0 and loss is 0.00038057882338762285
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8515625
+Not better for 9
+Completing Train Step at 20th epoch...
+At time: 46.13503694534302 accuracy is 0.9875 and loss is 0.030427464842796327
+At time: 46.2669153213501 accuracy is 0.9984375 and loss is 0.013062386214733124
+At time: 46.404553174972534 accuracy is 0.996875 and loss is 0.01620558649301529
+At time: 46.54678130149841 accuracy is 0.996875 and loss is 0.014791473746299744
+At time: 46.69414496421814 accuracy is 0.9984375 and loss is 0.006610111147165298
+At time: 46.84840488433838 accuracy is 0.996875 and loss is 0.010517077893018723
+At time: 47.00904130935669 accuracy is 0.996875 and loss is 0.008013240247964858
+At time: 47.174914598464966 accuracy is 0.9890625 and loss is 0.03477188348770142
+At time: 47.34849548339844 accuracy is 0.996875 and loss is 0.011578989773988723
+At time: 47.532931089401245 accuracy is 0.99375 and loss is 0.017033368349075317
+At time: 47.72788953781128 accuracy is 1.0 and loss is 0.001998608559370041
+At time: 47.93570017814636 accuracy is 0.9890625 and loss is 0.022683510184288026
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8828125
+Not better for 10
+Model not improving. Stopping earlyat 0.8973214285714286 epochs.
+Done Training. Achieved Best Accuracy of 0.8973214285714286
+Improved accuracyfrom -10000000 to 0.8973214285714286
+mlpattn
+SETTINGS FOR THIS RUN
+{'wordvec_source': 'glove', 'wordvec_dim': 300, 'attention_dim': 21, 'attn_type': 'MLP', 'rnn_dropout': 0.4559471214793347, 'fix_pretrained': None, 'lr': 0.002989555508635944, 'tune_wordvecs': False, 'num_layers': 1, 'l2': 0.16603945030493106, 'hidden_size': 300, 'batch_size': 32, 'pretrained': None, 'dropout': 0.38617301056157805}
+Using CUDA!
+MLP
+Building RNN Classifier...
+
+[93m    Warning: no model found for 'en'[0m
+
+    Only loading the 'en' tokenizer.
+
+Retrieving Data from file: /home-nfs/siddsach/ml/Interpreting-Attention/data/mpqa/subj_clf_labels.pickle...
+Loading Vectors From Memory...
+Using these vectors: ['GloVe']
+Getting GloVe Vectors with 300 dims
+Building Vocab...
+[<torchtext.vocab.Vectors object at 0x7f540a572630>]
+Getting Batches...
+Created Iterator with 258 batches
+Getting Batches...
+Created Iterator with 29 batches
+Building model...
+MLP
+Using Attention model with following args:
+{'vectors': 
+ 0.0000  0.0000  0.0000  ...   0.0000  0.0000  0.0000
+ 0.0000  0.0000  0.0000  ...   0.0000  0.0000  0.0000
+ 0.0000  0.0000  0.0000  ...   0.0000  0.0000  0.0000
+          ...             ⋱             ...          
+ 0.0514  0.6392 -0.5063  ...   0.0817  0.3416 -0.0271
+ 0.0000  0.0000  0.0000  ...   0.0000  0.0000  0.0000
+-0.0479  0.9828  0.9182  ...   0.0424  0.4554 -0.3210
+[torch.FloatTensor of size 15944x300]
+, 'cuda': True, 'attention_dim': 21, 'attn_type': 'MLP', 'rnn_dropout': 0.4559471214793347, 'train_word_vecs': False, 'num_classes': 2, 'num_layers': 1, 'input_size': 300, 'vocab_size': 15944, 'tune_attn': 'True', 'hidden_size': 300, 'batch_size': 32, 'dropout': 0.38617301056157805}
+Not Tuning Word Vectors!
+Begin Training...
+Completing Train Step at 0th epoch...
+At time: 0.1448206901550293 accuracy is 0.5625 and loss is 0.7096510887145996
+At time: 0.2785816192626953 accuracy is 0.65 and loss is 0.6161843776702881
+At time: 0.41602659225463867 accuracy is 0.7671875 and loss is 0.5114711284637451
+At time: 0.5592789649963379 accuracy is 0.778125 and loss is 0.4881089210510254
+At time: 0.7070217132568359 accuracy is 0.828125 and loss is 0.42104511260986327
+At time: 0.8622798919677734 accuracy is 0.8296875 and loss is 0.4281605243682861
+At time: 1.0234653949737549 accuracy is 0.803125 and loss is 0.4340693950653076
+At time: 1.1930458545684814 accuracy is 0.8890625 and loss is 0.3255727529525757
+At time: 1.3682994842529297 accuracy is 0.846875 and loss is 0.3778160810470581
+At time: 1.5516352653503418 accuracy is 0.8796875 and loss is 0.2980677127838135
+At time: 1.7469699382781982 accuracy is 0.9015625 and loss is 0.2688164710998535
+At time: 1.9568281173706055 accuracy is 0.8828125 and loss is 0.26699373722076414
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.875
+Achieved new best!
+Completing Train Step at 1th epoch...
+At time: 2.4330849647521973 accuracy is 0.7234375 and loss is 0.5987616062164307
+At time: 2.568237781524658 accuracy is 0.76875 and loss is 0.5058061599731445
+At time: 2.706075668334961 accuracy is 0.834375 and loss is 0.36923904418945314
+At time: 2.850576400756836 accuracy is 0.85 and loss is 0.43501911163330076
+At time: 3.0032970905303955 accuracy is 0.80625 and loss is 0.422440767288208
+At time: 3.159174680709839 accuracy is 0.8546875 and loss is 0.31377103328704836
+At time: 3.3207650184631348 accuracy is 0.8546875 and loss is 0.37128310203552245
+At time: 3.4905312061309814 accuracy is 0.8703125 and loss is 0.3165774345397949
+At time: 3.6669514179229736 accuracy is 0.840625 and loss is 0.34188435077667234
+At time: 3.8533878326416016 accuracy is 0.8921875 and loss is 0.27528891563415525
+At time: 4.046976089477539 accuracy is 0.9 and loss is 0.23940534591674806
+At time: 4.257338762283325 accuracy is 0.90625 and loss is 0.22368454933166504
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8370535714285714
+Not better for 1
+Completing Train Step at 2th epoch...
+At time: 4.7324206829071045 accuracy is 0.78125 and loss is 0.5086960315704345
+At time: 4.86446738243103 accuracy is 0.8015625 and loss is 0.4587976932525635
+At time: 5.0035786628723145 accuracy is 0.88125 and loss is 0.29049859046936033
+At time: 5.1452202796936035 accuracy is 0.8578125 and loss is 0.33324131965637205
+At time: 5.2942845821380615 accuracy is 0.8671875 and loss is 0.3220194339752197
+At time: 5.449051141738892 accuracy is 0.878125 and loss is 0.26107561588287354
+At time: 5.609584808349609 accuracy is 0.8828125 and loss is 0.2957924365997314
+At time: 5.776716470718384 accuracy is 0.9125 and loss is 0.23409383296966552
+At time: 5.952837228775024 accuracy is 0.8921875 and loss is 0.25420117378234863
+At time: 6.138072967529297 accuracy is 0.8828125 and loss is 0.30442793369293214
+At time: 6.331982135772705 accuracy is 0.9 and loss is 0.22234711647033692
+At time: 6.540254831314087 accuracy is 0.9203125 and loss is 0.17620090246200562
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8738839285714286
+Not better for 2
+Completing Train Step at 3th epoch...
+At time: 7.011736869812012 accuracy is 0.76875 and loss is 0.4995316505432129
+At time: 7.142629861831665 accuracy is 0.8265625 and loss is 0.37960076332092285
+At time: 7.277891397476196 accuracy is 0.9078125 and loss is 0.2307809352874756
+At time: 7.4203410148620605 accuracy is 0.878125 and loss is 0.2863609790802002
+At time: 7.567690849304199 accuracy is 0.871875 and loss is 0.2771834135055542
+At time: 7.7218945026397705 accuracy is 0.9046875 and loss is 0.24379043579101561
+At time: 7.884538412094116 accuracy is 0.89375 and loss is 0.2571763277053833
+At time: 8.053101539611816 accuracy is 0.90625 and loss is 0.2154836654663086
+At time: 8.229496717453003 accuracy is 0.9 and loss is 0.24185221195220946
+At time: 8.41400933265686 accuracy is 0.8921875 and loss is 0.30556046962738037
+At time: 8.608322620391846 accuracy is 0.8796875 and loss is 0.276754355430603
+At time: 8.818185567855835 accuracy is 0.9125 and loss is 0.2213512659072876
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8671875
+Not better for 3
+Completing Train Step at 4th epoch...
+At time: 9.292794227600098 accuracy is 0.7921875 and loss is 0.4668015956878662
+At time: 9.424507856369019 accuracy is 0.878125 and loss is 0.29536895751953124
+At time: 9.562750816345215 accuracy is 0.9171875 and loss is 0.20120415687561036
+At time: 9.707125902175903 accuracy is 0.8984375 and loss is 0.2535606145858765
+At time: 9.855408668518066 accuracy is 0.8875 and loss is 0.26024866104125977
+At time: 10.009654998779297 accuracy is 0.8984375 and loss is 0.24047749042510985
+At time: 10.173373222351074 accuracy is 0.8875 and loss is 0.2935795307159424
+At time: 10.34147596359253 accuracy is 0.9125 and loss is 0.2124019145965576
+At time: 10.51762580871582 accuracy is 0.9140625 and loss is 0.24566588401794434
+At time: 10.701236248016357 accuracy is 0.9296875 and loss is 0.2344961166381836
+At time: 10.896837711334229 accuracy is 0.9140625 and loss is 0.19863929748535156
+At time: 11.10771894454956 accuracy is 0.928125 and loss is 0.16505584716796876
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8738839285714286
+Not better for 4
+Completing Train Step at 5th epoch...
+At time: 11.596115827560425 accuracy is 0.8171875 and loss is 0.4077925682067871
+At time: 11.726665735244751 accuracy is 0.903125 and loss is 0.22224981784820558
+At time: 11.865620136260986 accuracy is 0.9328125 and loss is 0.1403208613395691
+At time: 12.009900093078613 accuracy is 0.9203125 and loss is 0.22293760776519775
+At time: 12.158226490020752 accuracy is 0.9109375 and loss is 0.2174230098724365
+At time: 12.313122749328613 accuracy is 0.9171875 and loss is 0.18190187215805054
+At time: 12.475175142288208 accuracy is 0.9171875 and loss is 0.19864487648010254
+At time: 12.644627094268799 accuracy is 0.9453125 and loss is 0.1566965937614441
+At time: 12.821622371673584 accuracy is 0.925 and loss is 0.1843134880065918
+At time: 13.007324695587158 accuracy is 0.921875 and loss is 0.19753719568252565
+At time: 13.201684713363647 accuracy is 0.9328125 and loss is 0.16587235927581787
+At time: 13.411298036575317 accuracy is 0.9140625 and loss is 0.20776054859161378
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8348214285714286
+Not better for 5
+Completing Train Step at 6th epoch...
+At time: 13.897826194763184 accuracy is 0.825 and loss is 0.44880051612854005
+At time: 14.031556606292725 accuracy is 0.8765625 and loss is 0.29831748008728026
+At time: 14.167701959609985 accuracy is 0.946875 and loss is 0.15812604427337645
+At time: 14.311021089553833 accuracy is 0.9125 and loss is 0.20371973514556885
+At time: 14.462315797805786 accuracy is 0.9375 and loss is 0.14771758317947387
+At time: 14.616508722305298 accuracy is 0.9375 and loss is 0.1385912537574768
+At time: 14.777359962463379 accuracy is 0.9484375 and loss is 0.1286352515220642
+At time: 14.945622205734253 accuracy is 0.9546875 and loss is 0.1116677165031433
+At time: 15.119834661483765 accuracy is 0.9265625 and loss is 0.1772873044013977
+At time: 15.304754972457886 accuracy is 0.93125 and loss is 0.1836659550666809
+At time: 15.500688076019287 accuracy is 0.9453125 and loss is 0.14728362560272218
+At time: 15.709756135940552 accuracy is 0.9515625 and loss is 0.10625100135803223
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8448660714285714
+Not better for 6
+Completing Train Step at 7th epoch...
+At time: 16.18606185913086 accuracy is 0.840625 and loss is 0.357206916809082
+At time: 16.31744384765625 accuracy is 0.9171875 and loss is 0.2355487585067749
+At time: 16.456814765930176 accuracy is 0.953125 and loss is 0.1387664794921875
+At time: 16.600006103515625 accuracy is 0.9453125 and loss is 0.1525181531906128
+At time: 16.750108003616333 accuracy is 0.953125 and loss is 0.12639613151550294
+At time: 16.909606456756592 accuracy is 0.9390625 and loss is 0.14468815326690673
+At time: 17.080154180526733 accuracy is 0.95 and loss is 0.13398439884185792
+At time: 17.250375747680664 accuracy is 0.9390625 and loss is 0.14685889482498168
+At time: 17.431345462799072 accuracy is 0.9453125 and loss is 0.16239428520202637
+At time: 17.62155318260193 accuracy is 0.95 and loss is 0.15686918497085572
+At time: 17.82459545135498 accuracy is 0.953125 and loss is 0.11764484643936157
+At time: 18.04237675666809 accuracy is 0.975 and loss is 0.07633376717567444
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8816964285714286
+Achieved new best!
+Completing Train Step at 8th epoch...
+At time: 18.52841591835022 accuracy is 0.896875 and loss is 0.2771188497543335
+At time: 18.666544914245605 accuracy is 0.95625 and loss is 0.1477779746055603
+At time: 18.806284427642822 accuracy is 0.9640625 and loss is 0.09683780074119568
+At time: 18.949041604995728 accuracy is 0.9515625 and loss is 0.1436015248298645
+At time: 19.09833788871765 accuracy is 0.959375 and loss is 0.1223541259765625
+At time: 19.25300645828247 accuracy is 0.946875 and loss is 0.12337672710418701
+At time: 19.415369033813477 accuracy is 0.95 and loss is 0.11405563354492188
+At time: 19.582154512405396 accuracy is 0.965625 and loss is 0.09142523407936096
+At time: 19.758562088012695 accuracy is 0.934375 and loss is 0.14837850332260133
+At time: 19.946086883544922 accuracy is 0.94375 and loss is 0.13469470739364625
+At time: 20.142952919006348 accuracy is 0.975 and loss is 0.07156282663345337
+At time: 20.357038259506226 accuracy is 0.9734375 and loss is 0.07462114691734315
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8794642857142857
+Not better for 1
+Completing Train Step at 9th epoch...
+At time: 20.85676074028015 accuracy is 0.9046875 and loss is 0.2563676595687866
+At time: 20.988545417785645 accuracy is 0.940625 and loss is 0.14442102909088134
+At time: 21.128893613815308 accuracy is 0.95 and loss is 0.11077725887298584
+At time: 21.272754192352295 accuracy is 0.95 and loss is 0.13077558279037477
+At time: 21.4206326007843 accuracy is 0.953125 and loss is 0.11848325729370117
+At time: 21.578094959259033 accuracy is 0.959375 and loss is 0.09285174012184143
+At time: 21.741370916366577 accuracy is 0.965625 and loss is 0.10056053400039673
+At time: 21.910706043243408 accuracy is 0.9515625 and loss is 0.11805431842803955
+At time: 22.086360454559326 accuracy is 0.9609375 and loss is 0.09571071863174438
+At time: 22.271169424057007 accuracy is 0.9640625 and loss is 0.08275111317634583
+At time: 22.467324018478394 accuracy is 0.9734375 and loss is 0.0699805498123169
+At time: 22.678489685058594 accuracy is 0.96875 and loss is 0.06581894755363464
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8805803571428571
+Not better for 2
+Completing Train Step at 10th epoch...
+At time: 23.150833129882812 accuracy is 0.9390625 and loss is 0.1945862054824829
+At time: 23.281814575195312 accuracy is 0.9515625 and loss is 0.13570243120193481
+At time: 23.418885946273804 accuracy is 0.96875 and loss is 0.09018914103507995
+At time: 23.56211519241333 accuracy is 0.953125 and loss is 0.1272342562675476
+At time: 23.711009740829468 accuracy is 0.9578125 and loss is 0.09451201558113098
+At time: 23.86436629295349 accuracy is 0.9609375 and loss is 0.1103050947189331
+At time: 24.025851726531982 accuracy is 0.9625 and loss is 0.101078462600708
+At time: 24.195272207260132 accuracy is 0.9640625 and loss is 0.08780966997146607
+At time: 24.37061095237732 accuracy is 0.975 and loss is 0.07451128959655762
+At time: 24.55556321144104 accuracy is 0.96875 and loss is 0.0882006287574768
+At time: 24.750003337860107 accuracy is 0.9671875 and loss is 0.09612689614295959
+At time: 24.95960283279419 accuracy is 0.9765625 and loss is 0.0579314649105072
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.859375
+Not better for 3
+Completing Train Step at 11th epoch...
+At time: 25.433239459991455 accuracy is 0.9171875 and loss is 0.18924857378005983
+At time: 25.566518545150757 accuracy is 0.9578125 and loss is 0.11155304908752442
+At time: 25.704704761505127 accuracy is 0.971875 and loss is 0.06958307027816772
+At time: 25.849098920822144 accuracy is 0.9453125 and loss is 0.1391357421875
+At time: 25.99737811088562 accuracy is 0.953125 and loss is 0.10403509140014648
+At time: 26.15214705467224 accuracy is 0.9671875 and loss is 0.0775519609451294
+At time: 26.3137264251709 accuracy is 0.959375 and loss is 0.12137080430984497
+At time: 26.481186151504517 accuracy is 0.971875 and loss is 0.09102959632873535
+At time: 26.655477285385132 accuracy is 0.9734375 and loss is 0.0684207558631897
+At time: 26.842605352401733 accuracy is 0.965625 and loss is 0.08137848377227783
+At time: 27.03721046447754 accuracy is 0.971875 and loss is 0.06049809455871582
+At time: 27.24767231941223 accuracy is 0.9796875 and loss is 0.05384899377822876
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8582589285714286
+Not better for 4
+Completing Train Step at 12th epoch...
+At time: 27.731228828430176 accuracy is 0.9546875 and loss is 0.13134385347366334
+At time: 27.864067792892456 accuracy is 0.9734375 and loss is 0.09225732684135438
+At time: 28.00132942199707 accuracy is 0.971875 and loss is 0.06064217686653137
+At time: 28.144659996032715 accuracy is 0.9453125 and loss is 0.12750179767608644
+At time: 28.292174577713013 accuracy is 0.9546875 and loss is 0.09410037398338318
+At time: 28.448084115982056 accuracy is 0.971875 and loss is 0.06568946838378906
+At time: 28.60895299911499 accuracy is 0.9640625 and loss is 0.10799937248229981
+At time: 28.776885509490967 accuracy is 0.9796875 and loss is 0.052836692333221434
+At time: 28.951141834259033 accuracy is 0.9703125 and loss is 0.061483347415924074
+At time: 29.136183500289917 accuracy is 0.978125 and loss is 0.0562516450881958
+At time: 29.331709623336792 accuracy is 0.9625 and loss is 0.06976972818374634
+At time: 29.54108953475952 accuracy is 0.9703125 and loss is 0.06321525573730469
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8560267857142857
+Not better for 5
+Completing Train Step at 13th epoch...
+At time: 30.017486572265625 accuracy is 0.953125 and loss is 0.1221050500869751
+At time: 30.16457200050354 accuracy is 0.9703125 and loss is 0.08225809335708618
+At time: 30.314866542816162 accuracy is 0.984375 and loss is 0.05931862592697144
+At time: 30.4792640209198 accuracy is 0.9640625 and loss is 0.09527782797813415
+At time: 30.64137625694275 accuracy is 0.965625 and loss is 0.08260826468467712
+At time: 30.802906036376953 accuracy is 0.9765625 and loss is 0.06100929975509643
+At time: 30.96628713607788 accuracy is 0.9703125 and loss is 0.08365429043769837
+At time: 31.13553214073181 accuracy is 0.9828125 and loss is 0.04570366442203522
+At time: 31.313560962677002 accuracy is 0.9875 and loss is 0.042241132259368895
+At time: 31.500640869140625 accuracy is 0.971875 and loss is 0.05277308225631714
+At time: 31.696977615356445 accuracy is 0.9703125 and loss is 0.09040929675102234
+At time: 31.908273458480835 accuracy is 0.978125 and loss is 0.05331467986106873
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8627232142857143
+Not better for 6
+Completing Train Step at 14th epoch...
+At time: 32.402636766433716 accuracy is 0.959375 and loss is 0.11531131267547608
+At time: 32.539732217788696 accuracy is 0.9765625 and loss is 0.06984849572181702
+At time: 32.67759966850281 accuracy is 0.978125 and loss is 0.0600772500038147
+At time: 32.82020139694214 accuracy is 0.965625 and loss is 0.10574936866760254
+At time: 32.971620082855225 accuracy is 0.965625 and loss is 0.07906410694122315
+At time: 33.127222299575806 accuracy is 0.9828125 and loss is 0.0494886577129364
+At time: 33.289978981018066 accuracy is 0.9671875 and loss is 0.08548979759216309
+At time: 33.45846247673035 accuracy is 0.9734375 and loss is 0.060973340272903444
+At time: 33.632665157318115 accuracy is 0.98125 and loss is 0.048398572206497195
+At time: 33.81728649139404 accuracy is 0.984375 and loss is 0.04607359170913696
+At time: 34.01220965385437 accuracy is 0.965625 and loss is 0.08056586980819702
+At time: 34.22156858444214 accuracy is 0.975 and loss is 0.06986926794052124
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8727678571428571
+Not better for 7
+Completing Train Step at 15th epoch...
+At time: 34.69560885429382 accuracy is 0.9671875 and loss is 0.11039978265762329
+At time: 34.8266966342926 accuracy is 0.9765625 and loss is 0.0658559799194336
+At time: 34.9635055065155 accuracy is 0.990625 and loss is 0.030530932545661926
+At time: 35.106659173965454 accuracy is 0.98125 and loss is 0.05877900719642639
+At time: 35.254892110824585 accuracy is 0.975 and loss is 0.06831036806106568
+At time: 35.41111993789673 accuracy is 0.9703125 and loss is 0.07740707993507386
+At time: 35.57305669784546 accuracy is 0.9734375 and loss is 0.08014063239097595
+At time: 35.74195051193237 accuracy is 0.971875 and loss is 0.07631148099899292
+At time: 35.917420864105225 accuracy is 0.9671875 and loss is 0.07396521568298339
+At time: 36.10238027572632 accuracy is 0.971875 and loss is 0.07545520067214966
+At time: 36.29659724235535 accuracy is 0.9765625 and loss is 0.07273668050765991
+At time: 36.50541710853577 accuracy is 0.9796875 and loss is 0.05008158683776855
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8660714285714286
+Not better for 8
+Completing Train Step at 16th epoch...
+At time: 36.978153228759766 accuracy is 0.971875 and loss is 0.0904863178730011
+At time: 37.1114764213562 accuracy is 0.9875 and loss is 0.05163126587867737
+At time: 37.24929094314575 accuracy is 0.9921875 and loss is 0.029172417521476746
+At time: 37.392462968826294 accuracy is 0.965625 and loss is 0.07179940938949585
+At time: 37.54270648956299 accuracy is 0.9765625 and loss is 0.06875319480895996
+At time: 37.69845199584961 accuracy is 0.96875 and loss is 0.0739129364490509
+At time: 37.86276721954346 accuracy is 0.9609375 and loss is 0.08686618804931641
+At time: 38.0318877696991 accuracy is 0.971875 and loss is 0.06252295374870301
+At time: 38.207759857177734 accuracy is 0.9796875 and loss is 0.05566794276237488
+At time: 38.392104625701904 accuracy is 0.9703125 and loss is 0.08277882933616638
+At time: 38.58783745765686 accuracy is 0.965625 and loss is 0.10383166074752807
+At time: 38.79799461364746 accuracy is 0.975 and loss is 0.08521986603736878
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8671875
+Not better for 9
+Completing Train Step at 17th epoch...
+At time: 39.271647453308105 accuracy is 0.9671875 and loss is 0.10168582201004028
+At time: 39.402342081069946 accuracy is 0.984375 and loss is 0.05502268075942993
+At time: 39.539419651031494 accuracy is 0.9875 and loss is 0.04106074869632721
+At time: 39.68196487426758 accuracy is 0.9765625 and loss is 0.06218979954719543
+At time: 39.831929206848145 accuracy is 0.9828125 and loss is 0.05339711308479309
+At time: 39.98644995689392 accuracy is 0.98125 and loss is 0.051750749349594116
+At time: 40.149388551712036 accuracy is 0.9859375 and loss is 0.04260288178920746
+At time: 40.31719493865967 accuracy is 0.978125 and loss is 0.07170490622520446
+At time: 40.492257833480835 accuracy is 0.971875 and loss is 0.10341017246246338
+At time: 40.67518091201782 accuracy is 0.9671875 and loss is 0.0816295862197876
+At time: 40.8684139251709 accuracy is 0.971875 and loss is 0.08471237421035767
+At time: 41.07958388328552 accuracy is 0.975 and loss is 0.07349309921264649
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8671875
+Not better for 10
+Model not improving. Stopping earlyat 0.8816964285714286 epochs.
+Done Training. Achieved Best Accuracy of 0.8816964285714286
+mlpattn
+SETTINGS FOR THIS RUN
+{'wordvec_source': 'glove', 'wordvec_dim': 300, 'attention_dim': 35, 'attn_type': 'MLP', 'rnn_dropout': 0.06334582436889347, 'fix_pretrained': None, 'lr': 0.0015159694280139388, 'tune_wordvecs': False, 'num_layers': 1, 'l2': 0.704903175964118, 'hidden_size': 300, 'batch_size': 32, 'pretrained': None, 'dropout': 0.6273677663595013}
+Using CUDA!
+MLP
+Building RNN Classifier...
+
+[93m    Warning: no model found for 'en'[0m
+
+    Only loading the 'en' tokenizer.
+
+Retrieving Data from file: /home-nfs/siddsach/ml/Interpreting-Attention/data/mpqa/subj_clf_labels.pickle...
+Loading Vectors From Memory...
+Using these vectors: ['GloVe']
+Getting GloVe Vectors with 300 dims
+Building Vocab...
+[<torchtext.vocab.Vectors object at 0x7f5405b8c3c8>]
+Getting Batches...
+Created Iterator with 258 batches
+Getting Batches...
+Created Iterator with 29 batches
+Building model...
+MLP
+Using Attention model with following args:
+{'vectors': 
+ 0.0000  0.0000  0.0000  ...   0.0000  0.0000  0.0000
+ 0.0000  0.0000  0.0000  ...   0.0000  0.0000  0.0000
+ 0.0000  0.0000  0.0000  ...   0.0000  0.0000  0.0000
+          ...             ⋱             ...          
+ 0.0514  0.6392 -0.5063  ...   0.0817  0.3416 -0.0271
+ 0.0000  0.0000  0.0000  ...   0.0000  0.0000  0.0000
+-0.0479  0.9828  0.9182  ...   0.0424  0.4554 -0.3210
+[torch.FloatTensor of size 15944x300]
+, 'cuda': True, 'attention_dim': 35, 'attn_type': 'MLP', 'rnn_dropout': 0.06334582436889347, 'train_word_vecs': False, 'num_classes': 2, 'num_layers': 1, 'input_size': 300, 'vocab_size': 15944, 'tune_attn': 'True', 'hidden_size': 300, 'batch_size': 32, 'dropout': 0.6273677663595013}
+Not Tuning Word Vectors!
+Begin Training...
+Completing Train Step at 0th epoch...
+At time: 0.14507603645324707 accuracy is 0.55625 and loss is 0.7151675701141358
+At time: 0.2782313823699951 accuracy is 0.628125 and loss is 0.654296875
+At time: 0.4150824546813965 accuracy is 0.7921875 and loss is 0.49091281890869143
+At time: 0.557309627532959 accuracy is 0.7484375 and loss is 0.5103804588317871
+At time: 0.7047667503356934 accuracy is 0.803125 and loss is 0.4530282497406006
+At time: 0.8582665920257568 accuracy is 0.840625 and loss is 0.37345209121704104
+At time: 1.0199742317199707 accuracy is 0.796875 and loss is 0.44670877456665037
+At time: 1.1870918273925781 accuracy is 0.84375 and loss is 0.33994982242584226
+At time: 1.3623852729797363 accuracy is 0.8625 and loss is 0.3279065370559692
+At time: 1.5466687679290771 accuracy is 0.865625 and loss is 0.3007926940917969
+At time: 1.7430732250213623 accuracy is 0.8984375 and loss is 0.25303058624267577
+At time: 1.9539737701416016 accuracy is 0.878125 and loss is 0.27102484703063967
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8515625
+Achieved new best!
+Completing Train Step at 1th epoch...
+At time: 2.434020757675171 accuracy is 0.75625 and loss is 0.5608677864074707
+At time: 2.5659897327423096 accuracy is 0.809375 and loss is 0.413835334777832
+At time: 2.704782009124756 accuracy is 0.8453125 and loss is 0.37134292125701907
+At time: 2.8454296588897705 accuracy is 0.81875 and loss is 0.4100550651550293
+At time: 2.992774486541748 accuracy is 0.846875 and loss is 0.3357349634170532
+At time: 3.1471269130706787 accuracy is 0.8703125 and loss is 0.2966055393218994
+At time: 3.3093881607055664 accuracy is 0.853125 and loss is 0.37419490814208983
+At time: 3.4764509201049805 accuracy is 0.8828125 and loss is 0.2997609853744507
+At time: 3.6529502868652344 accuracy is 0.878125 and loss is 0.2712264060974121
+At time: 3.835111618041992 accuracy is 0.9015625 and loss is 0.24910058975219726
+At time: 4.02916145324707 accuracy is 0.9078125 and loss is 0.2042451858520508
+At time: 4.238133907318115 accuracy is 0.90625 and loss is 0.20938463211059571
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8805803571428571
+Achieved new best!
+Completing Train Step at 2th epoch...
+At time: 4.737820625305176 accuracy is 0.80625 and loss is 0.48760185241699217
+At time: 4.879269599914551 accuracy is 0.8640625 and loss is 0.32019994258880613
+At time: 5.027892827987671 accuracy is 0.85625 and loss is 0.36753501892089846
+At time: 5.1802544593811035 accuracy is 0.8703125 and loss is 0.33145101070404054
+At time: 5.3382484912872314 accuracy is 0.8765625 and loss is 0.31329777240753176
+At time: 5.5092668533325195 accuracy is 0.890625 and loss is 0.23790266513824462
+At time: 5.683031320571899 accuracy is 0.8890625 and loss is 0.2795661687850952
+At time: 5.860368967056274 accuracy is 0.909375 and loss is 0.24265618324279786
+At time: 6.0516197681427 accuracy is 0.9125 and loss is 0.2300799608230591
+At time: 6.255248785018921 accuracy is 0.909375 and loss is 0.20170750617980956
+At time: 6.460930347442627 accuracy is 0.921875 and loss is 0.18425917625427246
+At time: 6.680191993713379 accuracy is 0.9265625 and loss is 0.18128820657730102
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8616071428571429
+Not better for 1
+Completing Train Step at 3th epoch...
+At time: 7.192420482635498 accuracy is 0.81875 and loss is 0.46436405181884766
+At time: 7.332844018936157 accuracy is 0.8671875 and loss is 0.3098962068557739
+At time: 7.474613666534424 accuracy is 0.871875 and loss is 0.271103048324585
+At time: 7.620854139328003 accuracy is 0.8984375 and loss is 0.2702423095703125
+At time: 7.778610706329346 accuracy is 0.8953125 and loss is 0.25595850944519044
+At time: 7.944248199462891 accuracy is 0.9421875 and loss is 0.15076597929000854
+At time: 8.109337091445923 accuracy is 0.9125 and loss is 0.2259143590927124
+At time: 8.277740955352783 accuracy is 0.90625 and loss is 0.2560549020767212
+At time: 8.45227837562561 accuracy is 0.9265625 and loss is 0.17976361513137817
+At time: 8.638728618621826 accuracy is 0.946875 and loss is 0.13573460578918456
+At time: 8.833382844924927 accuracy is 0.940625 and loss is 0.1288769006729126
+At time: 9.044374942779541 accuracy is 0.9390625 and loss is 0.12576764822006226
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8392857142857143
+Not better for 2
+Completing Train Step at 4th epoch...
+At time: 9.557018280029297 accuracy is 0.8421875 and loss is 0.36516244411468507
+At time: 9.702776908874512 accuracy is 0.88125 and loss is 0.2607146978378296
+At time: 9.848162651062012 accuracy is 0.9015625 and loss is 0.22109246253967285
+At time: 9.997795581817627 accuracy is 0.9125 and loss is 0.232924485206604
+At time: 10.152165174484253 accuracy is 0.8953125 and loss is 0.25681300163269044
+At time: 10.31912088394165 accuracy is 0.93125 and loss is 0.1647302508354187
+At time: 10.492820978164673 accuracy is 0.903125 and loss is 0.23017470836639403
+At time: 10.675744533538818 accuracy is 0.9125 and loss is 0.17908332347869874
+At time: 10.865200757980347 accuracy is 0.9328125 and loss is 0.1571937084197998
+At time: 11.06502890586853 accuracy is 0.9296875 and loss is 0.16385427713394166
+At time: 11.269942998886108 accuracy is 0.95 and loss is 0.11516834497451782
+At time: 11.49154543876648 accuracy is 0.975 and loss is 0.07094358801841735
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.859375
+Not better for 3
+Completing Train Step at 5th epoch...
+At time: 11.97267484664917 accuracy is 0.871875 and loss is 0.30757317543029783
+At time: 12.1019766330719 accuracy is 0.896875 and loss is 0.24470012187957763
+At time: 12.236515045166016 accuracy is 0.9265625 and loss is 0.1813045024871826
+At time: 12.387521505355835 accuracy is 0.921875 and loss is 0.1882115364074707
+At time: 12.550158977508545 accuracy is 0.925 and loss is 0.1966391921043396
+At time: 12.728618621826172 accuracy is 0.9078125 and loss is 0.23109827041625977
+At time: 12.891310214996338 accuracy is 0.9421875 and loss is 0.15405547618865967
+At time: 13.060302257537842 accuracy is 0.9625 and loss is 0.10494983196258545
+At time: 13.237392902374268 accuracy is 0.9453125 and loss is 0.1314067244529724
+At time: 13.424602746963501 accuracy is 0.946875 and loss is 0.10950051546096802
+At time: 13.61930537223816 accuracy is 0.975 and loss is 0.06330830454826356
+At time: 13.830113410949707 accuracy is 0.95 and loss is 0.11757732629776001
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8794642857142857
+Not better for 4
+Completing Train Step at 6th epoch...
+At time: 14.316320180892944 accuracy is 0.890625 and loss is 0.3069308280944824
+At time: 14.451921701431274 accuracy is 0.9234375 and loss is 0.19478285312652588
+At time: 14.599415063858032 accuracy is 0.93125 and loss is 0.1640499472618103
+At time: 14.743004083633423 accuracy is 0.9359375 and loss is 0.1551838517189026
+At time: 14.894607067108154 accuracy is 0.9546875 and loss is 0.1313515305519104
+At time: 15.056423902511597 accuracy is 0.953125 and loss is 0.12152667045593261
+At time: 15.233036518096924 accuracy is 0.940625 and loss is 0.1267428755760193
+At time: 15.404934167861938 accuracy is 0.9625 and loss is 0.0846458613872528
+At time: 15.581288814544678 accuracy is 0.946875 and loss is 0.14216654300689696
+At time: 15.766976833343506 accuracy is 0.9515625 and loss is 0.13586597442626952
+At time: 15.963488101959229 accuracy is 0.9671875 and loss is 0.09173193573951721
+At time: 16.186999559402466 accuracy is 0.9671875 and loss is 0.0788024127483368
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8616071428571429
+Not better for 5
+Completing Train Step at 7th epoch...
+At time: 16.679018020629883 accuracy is 0.871875 and loss is 0.2760956287384033
+At time: 16.81132674217224 accuracy is 0.93125 and loss is 0.15510638952255248
+At time: 16.950093030929565 accuracy is 0.95 and loss is 0.11591451168060303
+At time: 17.091590404510498 accuracy is 0.9671875 and loss is 0.09077438116073608
+At time: 17.239070415496826 accuracy is 0.965625 and loss is 0.10228664875030517
+At time: 17.393221616744995 accuracy is 0.9703125 and loss is 0.07572166323661804
+At time: 17.554216384887695 accuracy is 0.9453125 and loss is 0.13214244842529296
+At time: 17.722115993499756 accuracy is 0.9484375 and loss is 0.16161754131317138
+At time: 17.898290634155273 accuracy is 0.9796875 and loss is 0.07763711214065552
+At time: 18.087063789367676 accuracy is 0.9625 and loss is 0.08769530653953553
+At time: 18.282596349716187 accuracy is 0.9875 and loss is 0.046782377362251285
+At time: 18.491719007492065 accuracy is 0.9734375 and loss is 0.06546691060066223
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8839285714285714
+Achieved new best!
+Completing Train Step at 8th epoch...
+At time: 18.967034339904785 accuracy is 0.9125 and loss is 0.23908658027648927
+At time: 19.09835124015808 accuracy is 0.9375 and loss is 0.14873484373092652
+At time: 19.234615325927734 accuracy is 0.96875 and loss is 0.08971792459487915
+At time: 19.377336502075195 accuracy is 0.959375 and loss is 0.09151085019111634
+At time: 19.525883197784424 accuracy is 0.971875 and loss is 0.07051602005958557
+At time: 19.683035373687744 accuracy is 0.9640625 and loss is 0.09443553686141967
+At time: 19.84465003013611 accuracy is 0.978125 and loss is 0.06883701682090759
+At time: 20.013017416000366 accuracy is 0.9796875 and loss is 0.04548406004905701
+At time: 20.189677953720093 accuracy is 0.9953125 and loss is 0.0221530482172966
+At time: 20.376171588897705 accuracy is 0.975 and loss is 0.054779165983200075
+At time: 20.572062969207764 accuracy is 0.990625 and loss is 0.02346709817647934
+At time: 20.786559104919434 accuracy is 0.9828125 and loss is 0.056638801097869874
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8638392857142857
+Not better for 1
+Completing Train Step at 9th epoch...
+At time: 21.27891230583191 accuracy is 0.925 and loss is 0.20328099727630616
+At time: 21.455114364624023 accuracy is 0.9578125 and loss is 0.1407334804534912
+At time: 21.592313528060913 accuracy is 0.9734375 and loss is 0.07731599807739258
+At time: 21.739076614379883 accuracy is 0.9625 and loss is 0.0869841754436493
+At time: 21.88789939880371 accuracy is 0.965625 and loss is 0.10842351913452149
+At time: 22.044017553329468 accuracy is 0.975 and loss is 0.09277437925338745
+At time: 22.206745624542236 accuracy is 0.978125 and loss is 0.058238488435745236
+At time: 22.380675077438354 accuracy is 0.984375 and loss is 0.031832638382911685
+At time: 22.560535430908203 accuracy is 0.9796875 and loss is 0.05907106399536133
+At time: 22.74679732322693 accuracy is 0.978125 and loss is 0.039925262331962585
+At time: 22.94291853904724 accuracy is 0.984375 and loss is 0.0463204950094223
+At time: 23.15238308906555 accuracy is 0.9859375 and loss is 0.0283880740404129
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8526785714285714
+Not better for 2
+Completing Train Step at 10th epoch...
+At time: 23.62909197807312 accuracy is 0.91875 and loss is 0.2051853656768799
+At time: 23.76241946220398 accuracy is 0.971875 and loss is 0.10257679224014282
+At time: 23.904037714004517 accuracy is 0.975 and loss is 0.06309371590614318
+At time: 24.050204277038574 accuracy is 0.96875 and loss is 0.10470646619796753
+At time: 24.203614234924316 accuracy is 0.971875 and loss is 0.0717755138874054
+At time: 24.36464786529541 accuracy is 0.975 and loss is 0.07047753930091857
+At time: 24.530879497528076 accuracy is 0.9828125 and loss is 0.052525824308395384
+At time: 24.703503608703613 accuracy is 0.9875 and loss is 0.033588367700576785
+At time: 24.881775617599487 accuracy is 0.9859375 and loss is 0.03548860847949982
+At time: 25.067119598388672 accuracy is 0.9890625 and loss is 0.02397417426109314
+At time: 25.267016172409058 accuracy is 0.9875 and loss is 0.03370460867881775
+At time: 25.480274438858032 accuracy is 0.9953125 and loss is 0.013684931397438049
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8549107142857143
+Not better for 3
+Completing Train Step at 11th epoch...
+At time: 25.950814723968506 accuracy is 0.946875 and loss is 0.15206360816955566
+At time: 26.080018281936646 accuracy is 0.9734375 and loss is 0.0960548996925354
+At time: 26.2148859500885 accuracy is 0.9859375 and loss is 0.04970460534095764
+At time: 26.35854697227478 accuracy is 0.984375 and loss is 0.05614888072013855
+At time: 26.506353855133057 accuracy is 0.9859375 and loss is 0.04597724676132202
+At time: 26.664126873016357 accuracy is 0.9890625 and loss is 0.04774960279464722
+At time: 26.827999114990234 accuracy is 0.990625 and loss is 0.03128222823143005
+At time: 26.997400522232056 accuracy is 0.9828125 and loss is 0.05754960775375366
+At time: 27.172885179519653 accuracy is 0.9796875 and loss is 0.08278710246086121
+At time: 27.358785390853882 accuracy is 0.9859375 and loss is 0.02816765904426575
+At time: 27.55268669128418 accuracy is 0.9828125 and loss is 0.04065350294113159
+At time: 27.760794401168823 accuracy is 0.99375 and loss is 0.021327307820320128
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8258928571428571
+Not better for 4
+Completing Train Step at 12th epoch...
+At time: 28.2356276512146 accuracy is 0.9546875 and loss is 0.131696617603302
+At time: 28.368197441101074 accuracy is 0.971875 and loss is 0.07381849884986877
+At time: 28.50919222831726 accuracy is 0.98125 and loss is 0.0564631998538971
+At time: 28.653342485427856 accuracy is 0.95625 and loss is 0.14338058233261108
+At time: 28.802088975906372 accuracy is 0.9765625 and loss is 0.0718514859676361
+At time: 28.959625244140625 accuracy is 0.978125 and loss is 0.06145784258842468
+At time: 29.124927520751953 accuracy is 0.98125 and loss is 0.038964655995368955
+At time: 29.29946279525757 accuracy is 0.9859375 and loss is 0.04157887399196625
+At time: 29.48391032218933 accuracy is 0.9875 and loss is 0.05338311791419983
+At time: 29.68412971496582 accuracy is 0.9796875 and loss is 0.059402233362197875
+At time: 29.884098529815674 accuracy is 0.9765625 and loss is 0.05129514336585998
+At time: 30.10445213317871 accuracy is 0.990625 and loss is 0.02110135704278946
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8939732142857143
+Achieved new best!
+Completing Train Step at 13th epoch...
+At time: 30.599844932556152 accuracy is 0.9640625 and loss is 0.10852100849151611
+At time: 30.777012586593628 accuracy is 0.990625 and loss is 0.05403032898902893
+At time: 30.91714882850647 accuracy is 0.984375 and loss is 0.050860780477523806
+At time: 31.068074941635132 accuracy is 0.9828125 and loss is 0.05922091007232666
+At time: 31.22171425819397 accuracy is 0.98125 and loss is 0.058126586675643924
+At time: 31.382386922836304 accuracy is 0.990625 and loss is 0.02903313934803009
+At time: 31.54765224456787 accuracy is 0.984375 and loss is 0.05460155010223389
+At time: 31.717169284820557 accuracy is 0.98125 and loss is 0.04350942671298981
+At time: 31.901285409927368 accuracy is 0.9890625 and loss is 0.0312897264957428
+At time: 32.09072947502136 accuracy is 0.9953125 and loss is 0.017654338479042055
+At time: 32.29030919075012 accuracy is 0.9984375 and loss is 0.009149004518985749
+At time: 32.5066134929657 accuracy is 0.98125 and loss is 0.07079101800918579
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8660714285714286
+Not better for 1
+Completing Train Step at 14th epoch...
+At time: 33.00388169288635 accuracy is 0.9609375 and loss is 0.11006332635879516
+At time: 33.13830280303955 accuracy is 0.96875 and loss is 0.07569900155067444
+At time: 33.28104376792908 accuracy is 0.9859375 and loss is 0.04737802147865296
+At time: 33.42753291130066 accuracy is 0.9703125 and loss is 0.06857718229293823
+At time: 33.576441049575806 accuracy is 0.9734375 and loss is 0.08112184405326843
+At time: 33.736772775650024 accuracy is 0.984375 and loss is 0.06679854393005372
+At time: 33.9035587310791 accuracy is 0.984375 and loss is 0.04954268038272858
+At time: 34.07764220237732 accuracy is 0.984375 and loss is 0.035595092177391055
+At time: 34.25768065452576 accuracy is 0.9890625 and loss is 0.04905605018138885
+At time: 34.442816734313965 accuracy is 0.9921875 and loss is 0.018897220492362976
+At time: 34.638301610946655 accuracy is 0.990625 and loss is 0.020456966757774354
+At time: 34.84894108772278 accuracy is 0.9921875 and loss is 0.016753223538398743
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8738839285714286
+Not better for 2
+Completing Train Step at 15th epoch...
+At time: 35.31816053390503 accuracy is 0.95625 and loss is 0.1134256362915039
+At time: 35.45091724395752 accuracy is 0.98125 and loss is 0.06075355410575867
+At time: 35.58963179588318 accuracy is 0.9875 and loss is 0.04132533967494965
+At time: 35.73428654670715 accuracy is 0.98125 and loss is 0.06033907532691955
+At time: 35.88470435142517 accuracy is 0.984375 and loss is 0.055094337463378905
+At time: 36.039926052093506 accuracy is 0.984375 and loss is 0.0444376528263092
+At time: 36.20201110839844 accuracy is 0.975 and loss is 0.06813492774963378
+At time: 36.37033462524414 accuracy is 0.9828125 and loss is 0.045961391925811765
+At time: 36.54703426361084 accuracy is 0.984375 and loss is 0.03137732744216919
+At time: 36.731653451919556 accuracy is 0.990625 and loss is 0.026314380764961242
+At time: 36.92808508872986 accuracy is 0.99375 and loss is 0.01884368062019348
+At time: 37.13961410522461 accuracy is 0.9953125 and loss is 0.01624743789434433
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8805803571428571
+Not better for 3
+Completing Train Step at 16th epoch...
+At time: 37.61578130722046 accuracy is 0.978125 and loss is 0.0725436806678772
+At time: 37.74616026878357 accuracy is 0.9875 and loss is 0.05149216055870056
+At time: 37.883549451828 accuracy is 0.990625 and loss is 0.03821088075637817
+At time: 38.026875734329224 accuracy is 0.9828125 and loss is 0.04653709232807159
+At time: 38.17486214637756 accuracy is 0.9875 and loss is 0.03880152106285095
+At time: 38.3320894241333 accuracy is 0.984375 and loss is 0.039146870374679565
+At time: 38.49630904197693 accuracy is 0.99375 and loss is 0.022337090969085694
+At time: 38.66705298423767 accuracy is 0.9828125 and loss is 0.048192697763442996
+At time: 38.841190338134766 accuracy is 0.99375 and loss is 0.02339087277650833
+At time: 39.025683879852295 accuracy is 0.9890625 and loss is 0.03453056812286377
+At time: 39.22109818458557 accuracy is 0.990625 and loss is 0.0257356196641922
+At time: 39.43358898162842 accuracy is 0.99375 and loss is 0.02476123571395874
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8883928571428571
+Not better for 4
+Completing Train Step at 17th epoch...
+At time: 39.91411900520325 accuracy is 0.98125 and loss is 0.08133862614631653
+At time: 40.04927587509155 accuracy is 0.9875 and loss is 0.040805545449256894
+At time: 40.18638586997986 accuracy is 0.9984375 and loss is 0.016435228288173676
+At time: 40.33106470108032 accuracy is 0.984375 and loss is 0.047011774778366086
+At time: 40.481242656707764 accuracy is 0.9875 and loss is 0.04048393666744232
+At time: 40.63718581199646 accuracy is 0.975 and loss is 0.07037071585655212
+At time: 40.79923439025879 accuracy is 0.9890625 and loss is 0.028324151039123537
+At time: 40.96798896789551 accuracy is 0.9890625 and loss is 0.027700123190879822
+At time: 41.14494585990906 accuracy is 0.996875 and loss is 0.00860792100429535
+At time: 41.329752683639526 accuracy is 0.990625 and loss is 0.038768577575683597
+At time: 41.52590298652649 accuracy is 0.9921875 and loss is 0.01777900755405426
+At time: 41.736069202423096 accuracy is 0.9890625 and loss is 0.025307312607765198
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8805803571428571
+Not better for 5
+Completing Train Step at 18th epoch...
+At time: 42.21351337432861 accuracy is 0.984375 and loss is 0.061588209867477414
+At time: 42.344189405441284 accuracy is 0.990625 and loss is 0.0360820084810257
+At time: 42.48322796821594 accuracy is 0.990625 and loss is 0.030041372776031493
+At time: 42.62600111961365 accuracy is 0.978125 and loss is 0.0510235607624054
+At time: 42.773887157440186 accuracy is 0.975 and loss is 0.05880166888237
+At time: 42.92942667007446 accuracy is 0.98125 and loss is 0.04663529098033905
+At time: 43.09108567237854 accuracy is 0.990625 and loss is 0.04008370935916901
+At time: 43.25997185707092 accuracy is 0.9921875 and loss is 0.01936841309070587
+At time: 43.435792446136475 accuracy is 0.990625 and loss is 0.022730785608291625
+At time: 43.6199426651001 accuracy is 0.9921875 and loss is 0.016901737451553343
+At time: 43.8135507106781 accuracy is 0.9953125 and loss is 0.021635425090789796
+At time: 44.02237319946289 accuracy is 0.9953125 and loss is 0.014256888628005981
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8783482142857143
+Not better for 6
+Completing Train Step at 19th epoch...
+At time: 44.502076625823975 accuracy is 0.978125 and loss is 0.05719500780105591
+At time: 44.63409781455994 accuracy is 0.9875 and loss is 0.041350018978118894
+At time: 44.77108716964722 accuracy is 0.9953125 and loss is 0.028232476115226744
+At time: 44.912559270858765 accuracy is 0.9921875 and loss is 0.032997870445251466
+At time: 45.05992531776428 accuracy is 0.9828125 and loss is 0.06128044724464417
+At time: 45.216684341430664 accuracy is 0.996875 and loss is 0.02341812551021576
+At time: 45.3779616355896 accuracy is 0.9859375 and loss is 0.0445233941078186
+At time: 45.54780459403992 accuracy is 0.990625 and loss is 0.027338629961013793
+At time: 45.72557830810547 accuracy is 0.9953125 and loss is 0.01986622214317322
+At time: 45.91224431991577 accuracy is 0.9890625 and loss is 0.023137860000133514
+At time: 46.108412981033325 accuracy is 0.9953125 and loss is 0.010776100307703018
+At time: 46.31747579574585 accuracy is 0.9875 and loss is 0.02116820514202118
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8705357142857143
+Not better for 7
+Completing Train Step at 20th epoch...
+At time: 46.79840159416199 accuracy is 0.978125 and loss is 0.06552590131759643
+At time: 46.92888784408569 accuracy is 0.9875 and loss is 0.03768884539604187
+At time: 47.06920647621155 accuracy is 0.9984375 and loss is 0.015838317573070526
+At time: 47.21478509902954 accuracy is 0.990625 and loss is 0.02542644441127777
+At time: 47.36382269859314 accuracy is 0.9859375 and loss is 0.05642076134681702
+At time: 47.520137310028076 accuracy is 0.9859375 and loss is 0.02606324851512909
+At time: 47.68405795097351 accuracy is 0.9875 and loss is 0.034327384829521176
+At time: 47.85273575782776 accuracy is 0.9859375 and loss is 0.036658215522766116
+At time: 48.0271360874176 accuracy is 0.9984375 and loss is 0.00461498498916626
+At time: 48.210915327072144 accuracy is 0.996875 and loss is 0.008311165124177932
+At time: 48.40587782859802 accuracy is 0.990625 and loss is 0.020006991922855377
+At time: 48.61946105957031 accuracy is 0.9921875 and loss is 0.02071128338575363
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8828125
+Not better for 8
+Completing Train Step at 21th epoch...
+At time: 49.09401226043701 accuracy is 0.9828125 and loss is 0.058885061740875246
+At time: 49.22428870201111 accuracy is 0.99375 and loss is 0.023840999603271483
+At time: 49.3600709438324 accuracy is 0.9890625 and loss is 0.026654353737831114
+At time: 49.50134897232056 accuracy is 0.9890625 and loss is 0.03853937387466431
+At time: 49.64826488494873 accuracy is 0.9828125 and loss is 0.06520540714263916
+At time: 49.80341577529907 accuracy is 0.9890625 and loss is 0.034494337439537046
+At time: 49.96641302108765 accuracy is 0.9796875 and loss is 0.051741570234298706
+At time: 50.13711452484131 accuracy is 0.9921875 and loss is 0.031847357749938965
+At time: 50.31463027000427 accuracy is 0.99375 and loss is 0.015695996582508087
+At time: 50.49980711936951 accuracy is 0.99375 and loss is 0.02837246358394623
+At time: 50.69525194168091 accuracy is 0.9875 and loss is 0.03012249767780304
+At time: 50.904752254486084 accuracy is 0.9875 and loss is 0.024466465413570403
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8716517857142857
+Not better for 9
+Completing Train Step at 22th epoch...
+At time: 51.37663769721985 accuracy is 0.990625 and loss is 0.04163336455821991
+At time: 51.51000165939331 accuracy is 0.9921875 and loss is 0.025136101245880126
+At time: 51.64896845817566 accuracy is 0.9890625 and loss is 0.03245869576931
+At time: 51.791074991226196 accuracy is 0.9859375 and loss is 0.03207873106002808
+At time: 51.93836498260498 accuracy is 0.9796875 and loss is 0.06340892314910888
+At time: 52.09968280792236 accuracy is 0.99375 and loss is 0.019805319607257843
+At time: 52.26131796836853 accuracy is 0.98125 and loss is 0.05397871732711792
+At time: 52.4287211894989 accuracy is 0.99375 and loss is 0.02480645775794983
+At time: 52.60352039337158 accuracy is 0.99375 and loss is 0.014851681888103485
+At time: 52.787890672683716 accuracy is 0.9890625 and loss is 0.03290022313594818
+At time: 52.987958908081055 accuracy is 0.9859375 and loss is 0.030500301718711854
+At time: 53.19962525367737 accuracy is 0.9875 and loss is 0.04783869087696076
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8660714285714286
+Not better for 10
+Model not improving. Stopping earlyat 0.8939732142857143 epochs.
+Done Training. Achieved Best Accuracy of 0.8939732142857143
+mlpattn
+SETTINGS FOR THIS RUN
+{'wordvec_source': 'glove', 'wordvec_dim': 300, 'attention_dim': 18, 'attn_type': 'MLP', 'rnn_dropout': 0.9319104824198501, 'fix_pretrained': None, 'lr': 0.0006344065267868885, 'tune_wordvecs': False, 'num_layers': 1, 'l2': 0.053434364869829, 'hidden_size': 300, 'batch_size': 32, 'pretrained': None, 'dropout': 0.505297284325885}
+Using CUDA!
+MLP
+Building RNN Classifier...
+
+[93m    Warning: no model found for 'en'[0m
+
+    Only loading the 'en' tokenizer.
+
+Retrieving Data from file: /home-nfs/siddsach/ml/Interpreting-Attention/data/mpqa/subj_clf_labels.pickle...
+Loading Vectors From Memory...
+Using these vectors: ['GloVe']
+Getting GloVe Vectors with 300 dims
+Building Vocab...
+[<torchtext.vocab.Vectors object at 0x7f54059d01d0>]
+Getting Batches...
+Created Iterator with 258 batches
+Getting Batches...
+Created Iterator with 29 batches
+Building model...
+MLP
+Using Attention model with following args:
+{'vectors': 
+ 0.0000  0.0000  0.0000  ...   0.0000  0.0000  0.0000
+ 0.0000  0.0000  0.0000  ...   0.0000  0.0000  0.0000
+ 0.0000  0.0000  0.0000  ...   0.0000  0.0000  0.0000
+          ...             ⋱             ...          
+ 0.0514  0.6392 -0.5063  ...   0.0817  0.3416 -0.0271
+ 0.0000  0.0000  0.0000  ...   0.0000  0.0000  0.0000
+-0.0479  0.9828  0.9182  ...   0.0424  0.4554 -0.3210
+[torch.FloatTensor of size 15944x300]
+, 'cuda': True, 'attention_dim': 18, 'attn_type': 'MLP', 'rnn_dropout': 0.9319104824198501, 'train_word_vecs': False, 'num_classes': 2, 'num_layers': 1, 'input_size': 300, 'vocab_size': 15944, 'tune_attn': 'True', 'hidden_size': 300, 'batch_size': 32, 'dropout': 0.505297284325885}
+Not Tuning Word Vectors!
+Begin Training...
+Completing Train Step at 0th epoch...
+At time: 0.14426183700561523 accuracy is 0.5375 and loss is 0.7211960315704345
+At time: 0.280489444732666 accuracy is 0.6546875 and loss is 0.6242915153503418
+At time: 0.4234192371368408 accuracy is 0.715625 and loss is 0.5513796806335449
+At time: 0.5654103755950928 accuracy is 0.784375 and loss is 0.5180885314941406
+At time: 0.7131342887878418 accuracy is 0.790625 and loss is 0.48165283203125
+At time: 0.8694484233856201 accuracy is 0.8328125 and loss is 0.4147809982299805
+At time: 1.034365177154541 accuracy is 0.83125 and loss is 0.4053041934967041
+At time: 1.205235242843628 accuracy is 0.83125 and loss is 0.36400439739227297
+At time: 1.3811180591583252 accuracy is 0.8546875 and loss is 0.32691934108734133
+At time: 1.5724332332611084 accuracy is 0.871875 and loss is 0.2957086324691772
+At time: 1.7785189151763916 accuracy is 0.878125 and loss is 0.2676089286804199
+At time: 2.001404285430908 accuracy is 0.8859375 and loss is 0.25833663940429685
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8861607142857143
+Achieved new best!
+Completing Train Step at 1th epoch...
+At time: 2.5195860862731934 accuracy is 0.759375 and loss is 0.5629635810852051
+At time: 2.6646852493286133 accuracy is 0.8109375 and loss is 0.43216094970703123
+At time: 2.8112359046936035 accuracy is 0.840625 and loss is 0.3556148767471313
+At time: 2.9638164043426514 accuracy is 0.84375 and loss is 0.3930476427078247
+At time: 3.121772289276123 accuracy is 0.8390625 and loss is 0.37738306522369386
+At time: 3.2854955196380615 accuracy is 0.84375 and loss is 0.31825809478759765
+At time: 3.4561767578125 accuracy is 0.8453125 and loss is 0.375387978553772
+At time: 3.6339919567108154 accuracy is 0.8546875 and loss is 0.2941004514694214
+At time: 3.8220443725585938 accuracy is 0.8796875 and loss is 0.28321821689605714
+At time: 4.019108057022095 accuracy is 0.8703125 and loss is 0.28776984214782714
+At time: 4.219490051269531 accuracy is 0.90625 and loss is 0.239233660697937
+At time: 4.43058705329895 accuracy is 0.909375 and loss is 0.2161565065383911
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8839285714285714
+Not better for 1
+Completing Train Step at 2th epoch...
+At time: 4.910145044326782 accuracy is 0.7953125 and loss is 0.5053473949432373
+At time: 5.041236639022827 accuracy is 0.8109375 and loss is 0.4272896766662598
+At time: 5.178694486618042 accuracy is 0.8703125 and loss is 0.31225295066833497
+At time: 5.321389436721802 accuracy is 0.8484375 and loss is 0.36747379302978517
+At time: 5.472505807876587 accuracy is 0.8515625 and loss is 0.3565747499465942
+At time: 5.6306421756744385 accuracy is 0.8640625 and loss is 0.2908845663070679
+At time: 5.791481018066406 accuracy is 0.859375 and loss is 0.3383582353591919
+At time: 5.959425926208496 accuracy is 0.878125 and loss is 0.2517701625823975
+At time: 6.134624004364014 accuracy is 0.8953125 and loss is 0.23559491634368895
+At time: 6.318345546722412 accuracy is 0.8875 and loss is 0.2600837707519531
+At time: 6.5130534172058105 accuracy is 0.928125 and loss is 0.19870193004608155
+At time: 6.72382926940918 accuracy is 0.9171875 and loss is 0.1735418677330017
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8660714285714286
+Not better for 2
+Completing Train Step at 3th epoch...
+At time: 7.202622652053833 accuracy is 0.815625 and loss is 0.4517529010772705
+At time: 7.332922458648682 accuracy is 0.8234375 and loss is 0.3940452814102173
+At time: 7.468798875808716 accuracy is 0.8875 and loss is 0.27327733039855956
+At time: 7.611374139785767 accuracy is 0.8796875 and loss is 0.29735872745513914
+At time: 7.761289596557617 accuracy is 0.8546875 and loss is 0.3347846508026123
+At time: 7.917177677154541 accuracy is 0.8859375 and loss is 0.24723074436187745
+At time: 8.079120635986328 accuracy is 0.8765625 and loss is 0.28233296871185304
+At time: 8.249712228775024 accuracy is 0.903125 and loss is 0.22720909118652344
+At time: 8.429243803024292 accuracy is 0.9234375 and loss is 0.1944052219390869
+At time: 8.613773107528687 accuracy is 0.909375 and loss is 0.22791590690612792
+At time: 8.807790756225586 accuracy is 0.93125 and loss is 0.16306113004684447
+At time: 9.01566195487976 accuracy is 0.9421875 and loss is 0.1300010561943054
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8325892857142857
+Not better for 3
+Completing Train Step at 4th epoch...
+At time: 9.486891746520996 accuracy is 0.8421875 and loss is 0.3947126865386963
+At time: 9.620147943496704 accuracy is 0.8484375 and loss is 0.3360840559005737
+At time: 9.760128259658813 accuracy is 0.909375 and loss is 0.22225165367126465
+At time: 9.906064748764038 accuracy is 0.909375 and loss is 0.23117661476135254
+At time: 10.053101539611816 accuracy is 0.8875 and loss is 0.2628650188446045
+At time: 10.209731340408325 accuracy is 0.9046875 and loss is 0.22566256523132325
+At time: 10.369783401489258 accuracy is 0.9046875 and loss is 0.22935612201690675
+At time: 10.536610841751099 accuracy is 0.9265625 and loss is 0.18568018674850464
+At time: 10.710862874984741 accuracy is 0.9359375 and loss is 0.16001415252685547
+At time: 10.896522998809814 accuracy is 0.921875 and loss is 0.19602121114730836
+At time: 11.091243267059326 accuracy is 0.94375 and loss is 0.1312915325164795
+At time: 11.305308103561401 accuracy is 0.953125 and loss is 0.1251110315322876
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8839285714285714
+Not better for 4
+Completing Train Step at 5th epoch...
+At time: 11.779442548751831 accuracy is 0.8796875 and loss is 0.32993268966674805
+At time: 11.912129163742065 accuracy is 0.90625 and loss is 0.23441674709320068
+At time: 12.04888916015625 accuracy is 0.9140625 and loss is 0.21526820659637452
+At time: 12.190815210342407 accuracy is 0.90625 and loss is 0.22077610492706298
+At time: 12.34268045425415 accuracy is 0.94375 and loss is 0.17282047271728515
+At time: 12.500764608383179 accuracy is 0.93125 and loss is 0.1649322509765625
+At time: 12.66651725769043 accuracy is 0.928125 and loss is 0.14704824686050416
+At time: 12.838082313537598 accuracy is 0.95625 and loss is 0.11542952060699463
+At time: 13.014334917068481 accuracy is 0.9640625 and loss is 0.11340516805648804
+At time: 13.198461294174194 accuracy is 0.94375 and loss is 0.1398962378501892
+At time: 13.392170906066895 accuracy is 0.9578125 and loss is 0.08875498771667481
+At time: 13.6099693775177 accuracy is 0.9625 and loss is 0.09607444405555725
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.875
+Not better for 5
+Completing Train Step at 6th epoch...
+At time: 14.124891519546509 accuracy is 0.921875 and loss is 0.22607452869415284
+At time: 14.274094581604004 accuracy is 0.928125 and loss is 0.15861837863922118
+At time: 14.420459270477295 accuracy is 0.95 and loss is 0.12707141637802125
+At time: 14.569212198257446 accuracy is 0.9453125 and loss is 0.1391526460647583
+At time: 14.730544090270996 accuracy is 0.95625 and loss is 0.11806864738464355
+At time: 14.889319896697998 accuracy is 0.9484375 and loss is 0.136381995677948
+At time: 15.05134105682373 accuracy is 0.9515625 and loss is 0.13110207319259642
+At time: 15.220264911651611 accuracy is 0.9625 and loss is 0.09043552875518798
+At time: 15.398114204406738 accuracy is 0.9671875 and loss is 0.09121589660644532
+At time: 15.587728500366211 accuracy is 0.9640625 and loss is 0.09178447127342224
+At time: 15.784419536590576 accuracy is 0.965625 and loss is 0.09883825778961182
+At time: 15.997047901153564 accuracy is 0.9828125 and loss is 0.05782590508460998
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8638392857142857
+Not better for 6
+Completing Train Step at 7th epoch...
+At time: 16.46991276741028 accuracy is 0.9421875 and loss is 0.21690027713775634
+At time: 16.60127878189087 accuracy is 0.9265625 and loss is 0.2028360366821289
+At time: 16.74028968811035 accuracy is 0.971875 and loss is 0.08413144946098328
+At time: 16.885254859924316 accuracy is 0.9625 and loss is 0.09586396813392639
+At time: 17.035462617874146 accuracy is 0.9765625 and loss is 0.07559924721717834
+At time: 17.19490146636963 accuracy is 0.965625 and loss is 0.07953370213508607
+At time: 17.357389450073242 accuracy is 0.9625 and loss is 0.07705369591712952
+At time: 17.526618003845215 accuracy is 0.9703125 and loss is 0.06634891033172607
+At time: 17.703969955444336 accuracy is 0.965625 and loss is 0.08150306940078736
+At time: 17.889402866363525 accuracy is 0.978125 and loss is 0.06932235956192016
+At time: 18.084270477294922 accuracy is 0.975 and loss is 0.07990692257881164
+At time: 18.296350717544556 accuracy is 0.984375 and loss is 0.04275083839893341
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8392857142857143
+Not better for 7
+Completing Train Step at 8th epoch...
+At time: 18.774380922317505 accuracy is 0.9375 and loss is 0.18265125751495362
+At time: 18.906597137451172 accuracy is 0.9515625 and loss is 0.14434962272644042
+At time: 19.045661211013794 accuracy is 0.9765625 and loss is 0.07242075204849244
+At time: 19.18821430206299 accuracy is 0.984375 and loss is 0.041486653685569766
+At time: 19.336886405944824 accuracy is 0.9875 and loss is 0.03142865002155304
+At time: 19.49439764022827 accuracy is 0.953125 and loss is 0.13599207401275634
+At time: 19.655694007873535 accuracy is 0.9765625 and loss is 0.06520360112190246
+At time: 19.825879335403442 accuracy is 0.96875 and loss is 0.07225079536437988
+At time: 20.00476574897766 accuracy is 0.9796875 and loss is 0.055880337953567505
+At time: 20.191571712493896 accuracy is 0.984375 and loss is 0.04368628859519959
+At time: 20.387346506118774 accuracy is 0.9703125 and loss is 0.07514111995697022
+At time: 20.598557233810425 accuracy is 0.9890625 and loss is 0.03942491114139557
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8783482142857143
+Not better for 8
+Completing Train Step at 9th epoch...
+At time: 21.07210898399353 accuracy is 0.9546875 and loss is 0.13264201879501342
+At time: 21.2071213722229 accuracy is 0.9734375 and loss is 0.08115116953849792
+At time: 21.34735417366028 accuracy is 0.984375 and loss is 0.0544283926486969
+At time: 21.490492582321167 accuracy is 0.971875 and loss is 0.06317687630653382
+At time: 21.63919234275818 accuracy is 0.9640625 and loss is 0.11551918983459472
+At time: 21.794973611831665 accuracy is 0.975 and loss is 0.06813620328903199
+At time: 21.95502233505249 accuracy is 0.95625 and loss is 0.14093793630599977
+At time: 22.123497009277344 accuracy is 0.9921875 and loss is 0.03350732326507568
+At time: 22.299556970596313 accuracy is 0.9671875 and loss is 0.07573723793029785
+At time: 22.48317003250122 accuracy is 0.9921875 and loss is 0.017009802162647247
+At time: 22.677375316619873 accuracy is 0.9828125 and loss is 0.03845923840999603
+At time: 22.885380506515503 accuracy is 0.990625 and loss is 0.03017303943634033
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8694196428571429
+Not better for 9
+Completing Train Step at 10th epoch...
+At time: 23.346585988998413 accuracy is 0.9625 and loss is 0.10847159624099731
+At time: 23.478585243225098 accuracy is 0.971875 and loss is 0.08262046575546264
+At time: 23.614258766174316 accuracy is 0.99375 and loss is 0.03169303834438324
+At time: 23.75785207748413 accuracy is 0.9921875 and loss is 0.024569983780384063
+At time: 23.905237436294556 accuracy is 0.9875 and loss is 0.04862678050994873
+At time: 24.061283349990845 accuracy is 0.9765625 and loss is 0.05985981225967407
+At time: 24.218997955322266 accuracy is 0.98125 and loss is 0.034584438800811766
+At time: 24.38486886024475 accuracy is 0.9875 and loss is 0.02632552683353424
+At time: 24.557011127471924 accuracy is 0.984375 and loss is 0.034006154537200926
+At time: 24.741018772125244 accuracy is 0.990625 and loss is 0.021131531894207002
+At time: 24.935291290283203 accuracy is 0.9890625 and loss is 0.019955787062644958
+At time: 25.143510103225708 accuracy is 0.9859375 and loss is 0.053590381145477296
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.84375
+Not better for 10
+Model not improving. Stopping earlyat 0.8861607142857143 epochs.
+Done Training. Achieved Best Accuracy of 0.8861607142857143
+mlpattn
+SETTINGS FOR THIS RUN
+{'wordvec_source': 'glove', 'wordvec_dim': 300, 'attention_dim': 21, 'attn_type': 'MLP', 'rnn_dropout': 0.5879142447505336, 'fix_pretrained': None, 'lr': 0.00020965094410141226, 'tune_wordvecs': False, 'num_layers': 1, 'l2': 0.8110214061160541, 'hidden_size': 300, 'batch_size': 32, 'pretrained': None, 'dropout': 0.39028966045767177}
+Using CUDA!
+MLP
+Building RNN Classifier...
+
+[93m    Warning: no model found for 'en'[0m
+
+    Only loading the 'en' tokenizer.
+
+Retrieving Data from file: /home-nfs/siddsach/ml/Interpreting-Attention/data/mpqa/subj_clf_labels.pickle...
+Loading Vectors From Memory...
+Using these vectors: ['GloVe']
+Getting GloVe Vectors with 300 dims
+Building Vocab...
+[<torchtext.vocab.Vectors object at 0x7f5407cee240>]
+Getting Batches...
+Created Iterator with 258 batches
+Getting Batches...
+Created Iterator with 29 batches
+Building model...
+MLP
+Using Attention model with following args:
+{'vectors': 
+ 0.0000  0.0000  0.0000  ...   0.0000  0.0000  0.0000
+ 0.0000  0.0000  0.0000  ...   0.0000  0.0000  0.0000
+ 0.0000  0.0000  0.0000  ...   0.0000  0.0000  0.0000
+          ...             ⋱             ...          
+ 0.0514  0.6392 -0.5063  ...   0.0817  0.3416 -0.0271
+ 0.0000  0.0000  0.0000  ...   0.0000  0.0000  0.0000
+-0.0479  0.9828  0.9182  ...   0.0424  0.4554 -0.3210
+[torch.FloatTensor of size 15944x300]
+, 'cuda': True, 'attention_dim': 21, 'attn_type': 'MLP', 'rnn_dropout': 0.5879142447505336, 'train_word_vecs': False, 'num_classes': 2, 'num_layers': 1, 'input_size': 300, 'vocab_size': 15944, 'tune_attn': 'True', 'hidden_size': 300, 'batch_size': 32, 'dropout': 0.39028966045767177}
+Not Tuning Word Vectors!
+Begin Training...
+Completing Train Step at 0th epoch...
+At time: 0.1394362449645996 accuracy is 0.4796875 and loss is 0.728002405166626
+At time: 0.27149319648742676 accuracy is 0.634375 and loss is 0.6668380737304688
+At time: 0.4091155529022217 accuracy is 0.71875 and loss is 0.5598212242126465
+At time: 0.550849437713623 accuracy is 0.778125 and loss is 0.5112442016601563
+At time: 0.6983211040496826 accuracy is 0.7765625 and loss is 0.4862827301025391
+At time: 0.851320743560791 accuracy is 0.85 and loss is 0.3834787130355835
+At time: 1.0126924514770508 accuracy is 0.8015625 and loss is 0.48226170539855956
+At time: 1.1788794994354248 accuracy is 0.8640625 and loss is 0.3046941518783569
+At time: 1.3534915447235107 accuracy is 0.859375 and loss is 0.3159209966659546
+At time: 1.535658836364746 accuracy is 0.8625 and loss is 0.3139078617095947
+At time: 1.729449987411499 accuracy is 0.86875 and loss is 0.2940545558929443
+At time: 1.9377381801605225 accuracy is 0.875 and loss is 0.28752565383911133
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8526785714285714
+Achieved new best!
+Completing Train Step at 1th epoch...
+At time: 2.4168341159820557 accuracy is 0.753125 and loss is 0.5921347141265869
+At time: 2.5458784103393555 accuracy is 0.796875 and loss is 0.46854748725891116
+At time: 2.6840784549713135 accuracy is 0.8421875 and loss is 0.38221604824066163
+At time: 2.824446678161621 accuracy is 0.85 and loss is 0.3951148748397827
+At time: 2.972452402114868 accuracy is 0.840625 and loss is 0.37652149200439455
+At time: 3.125819683074951 accuracy is 0.853125 and loss is 0.3158087253570557
+At time: 3.281567335128784 accuracy is 0.8359375 and loss is 0.3758565664291382
+At time: 3.45573091506958 accuracy is 0.8828125 and loss is 0.272476863861084
+At time: 3.6298701763153076 accuracy is 0.9 and loss is 0.2680259943008423
+At time: 3.8125200271606445 accuracy is 0.8828125 and loss is 0.2812607526779175
+At time: 4.013691186904907 accuracy is 0.9046875 and loss is 0.253446102142334
+At time: 4.221449851989746 accuracy is 0.884375 and loss is 0.2539970397949219
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8616071428571429
+Achieved new best!
+Completing Train Step at 2th epoch...
+At time: 4.702482461929321 accuracy is 0.7890625 and loss is 0.5358493328094482
+At time: 4.836660861968994 accuracy is 0.809375 and loss is 0.4259075164794922
+At time: 4.974332571029663 accuracy is 0.85 and loss is 0.3433098554611206
+At time: 5.1196043491363525 accuracy is 0.8390625 and loss is 0.38143205642700195
+At time: 5.268317222595215 accuracy is 0.8484375 and loss is 0.3293105363845825
+At time: 5.4217259883880615 accuracy is 0.859375 and loss is 0.30242836475372314
+At time: 5.584916114807129 accuracy is 0.84375 and loss is 0.33437204360961914
+At time: 5.7532958984375 accuracy is 0.90625 and loss is 0.2478714942932129
+At time: 5.93024468421936 accuracy is 0.9015625 and loss is 0.24389426708221434
+At time: 6.117419004440308 accuracy is 0.8796875 and loss is 0.25157985687255857
+At time: 6.315401792526245 accuracy is 0.9234375 and loss is 0.20162479877471923
+At time: 6.527240514755249 accuracy is 0.8921875 and loss is 0.2376159429550171
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8816964285714286
+Achieved new best!
+Completing Train Step at 3th epoch...
+At time: 6.998518228530884 accuracy is 0.796875 and loss is 0.5078762531280517
+At time: 7.1309895515441895 accuracy is 0.8234375 and loss is 0.4017521381378174
+At time: 7.266934156417847 accuracy is 0.8625 and loss is 0.30887513160705565
+At time: 7.40958833694458 accuracy is 0.853125 and loss is 0.35820486545562746
+At time: 7.56061577796936 accuracy is 0.8640625 and loss is 0.3011366128921509
+At time: 7.718835115432739 accuracy is 0.878125 and loss is 0.2809570789337158
+At time: 7.881380081176758 accuracy is 0.85 and loss is 0.3150970697402954
+At time: 8.049617767333984 accuracy is 0.9015625 and loss is 0.2334592819213867
+At time: 8.225419521331787 accuracy is 0.909375 and loss is 0.21713485717773437
+At time: 8.410823583602905 accuracy is 0.89375 and loss is 0.23300259113311766
+At time: 8.604986667633057 accuracy is 0.928125 and loss is 0.18516941070556642
+At time: 8.81311845779419 accuracy is 0.9046875 and loss is 0.22360646724700928
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8727678571428571
+Not better for 1
+Completing Train Step at 4th epoch...
+At time: 9.290415048599243 accuracy is 0.7921875 and loss is 0.5142367839813232
+At time: 9.421976327896118 accuracy is 0.8375 and loss is 0.40353984832763673
+At time: 9.5594961643219 accuracy is 0.84375 and loss is 0.34570088386535647
+At time: 9.701483011245728 accuracy is 0.846875 and loss is 0.3523591995239258
+At time: 9.850025415420532 accuracy is 0.853125 and loss is 0.32076985836029054
+At time: 10.009961605072021 accuracy is 0.8765625 and loss is 0.2548829555511475
+At time: 10.172147750854492 accuracy is 0.86875 and loss is 0.30926289558410647
+At time: 10.341671466827393 accuracy is 0.909375 and loss is 0.2130444288253784
+At time: 10.520035743713379 accuracy is 0.915625 and loss is 0.2055962085723877
+At time: 10.706376075744629 accuracy is 0.903125 and loss is 0.21158211231231688
+At time: 10.899815559387207 accuracy is 0.9296875 and loss is 0.1616857409477234
+At time: 11.1093270778656 accuracy is 0.915625 and loss is 0.1917702078819275
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8861607142857143
+Achieved new best!
+Completing Train Step at 5th epoch...
+At time: 11.574355363845825 accuracy is 0.8046875 and loss is 0.5017446517944336
+At time: 11.71007227897644 accuracy is 0.8421875 and loss is 0.39486258029937743
+At time: 11.857347249984741 accuracy is 0.859375 and loss is 0.32612385749816897
+At time: 12.006967067718506 accuracy is 0.853125 and loss is 0.3153747320175171
+At time: 12.164875745773315 accuracy is 0.8609375 and loss is 0.301360034942627
+At time: 12.326336860656738 accuracy is 0.89375 and loss is 0.22356657981872557
+At time: 12.49166488647461 accuracy is 0.871875 and loss is 0.2860791444778442
+At time: 12.663700103759766 accuracy is 0.921875 and loss is 0.19678508043289183
+At time: 12.844608068466187 accuracy is 0.9265625 and loss is 0.17939645051956177
+At time: 13.03944706916809 accuracy is 0.9078125 and loss is 0.20270838737487792
+At time: 13.24539852142334 accuracy is 0.9421875 and loss is 0.14396414756774903
+At time: 13.472244262695312 accuracy is 0.9359375 and loss is 0.1547928810119629
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8883928571428571
+Achieved new best!
+Completing Train Step at 6th epoch...
+At time: 13.988888263702393 accuracy is 0.8078125 and loss is 0.46617798805236815
+At time: 14.134095907211304 accuracy is 0.8515625 and loss is 0.35428457260131835
+At time: 14.282387971878052 accuracy is 0.859375 and loss is 0.3065145254135132
+At time: 14.436659097671509 accuracy is 0.86875 and loss is 0.2799086570739746
+At time: 14.595873832702637 accuracy is 0.878125 and loss is 0.26862645149230957
+At time: 14.761139869689941 accuracy is 0.9078125 and loss is 0.19278844594955444
+At time: 14.924834251403809 accuracy is 0.8859375 and loss is 0.26110780239105225
+At time: 15.091626405715942 accuracy is 0.9296875 and loss is 0.16260356903076173
+At time: 15.267582893371582 accuracy is 0.94375 and loss is 0.1548349976539612
+At time: 15.451789140701294 accuracy is 0.9234375 and loss is 0.1812260389328003
+At time: 15.644224166870117 accuracy is 0.9546875 and loss is 0.1382274031639099
+At time: 15.857643365859985 accuracy is 0.95625 and loss is 0.12792593240737915
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8828125
+Not better for 1
+Completing Train Step at 7th epoch...
+At time: 16.350958824157715 accuracy is 0.8296875 and loss is 0.43450222015380857
+At time: 16.481333017349243 accuracy is 0.8515625 and loss is 0.3287056446075439
+At time: 16.617823600769043 accuracy is 0.8578125 and loss is 0.278479266166687
+At time: 16.758866548538208 accuracy is 0.8984375 and loss is 0.23791799545288086
+At time: 16.906928062438965 accuracy is 0.8984375 and loss is 0.23514251708984374
+At time: 17.062111616134644 accuracy is 0.934375 and loss is 0.14611856937408446
+At time: 17.22321915626526 accuracy is 0.9140625 and loss is 0.21186292171478271
+At time: 17.390076637268066 accuracy is 0.9484375 and loss is 0.1214749574661255
+At time: 17.563799619674683 accuracy is 0.9546875 and loss is 0.12647777795791626
+At time: 17.74783945083618 accuracy is 0.9359375 and loss is 0.18717097043991088
+At time: 17.9397554397583 accuracy is 0.9578125 and loss is 0.1613629698753357
+At time: 18.149399757385254 accuracy is 0.9609375 and loss is 0.137398099899292
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8772321428571429
+Not better for 2
+Completing Train Step at 8th epoch...
+At time: 18.61666750907898 accuracy is 0.85 and loss is 0.4033041000366211
+At time: 18.75039005279541 accuracy is 0.8515625 and loss is 0.31625566482543943
+At time: 18.886388778686523 accuracy is 0.8890625 and loss is 0.23790791034698486
+At time: 19.02720832824707 accuracy is 0.9125 and loss is 0.2207608699798584
+At time: 19.174883604049683 accuracy is 0.890625 and loss is 0.2270343065261841
+At time: 19.333557605743408 accuracy is 0.9515625 and loss is 0.11672452688217164
+At time: 19.49543809890747 accuracy is 0.925 and loss is 0.17592703104019164
+At time: 19.661202430725098 accuracy is 0.95625 and loss is 0.1033066987991333
+At time: 19.835716009140015 accuracy is 0.9640625 and loss is 0.07959378361701966
+At time: 20.019111394882202 accuracy is 0.94375 and loss is 0.14586390256881715
+At time: 20.213651180267334 accuracy is 0.9625 and loss is 0.13083372116088868
+At time: 20.423028707504272 accuracy is 0.9671875 and loss is 0.1143722653388977
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8705357142857143
+Not better for 3
+Completing Train Step at 9th epoch...
+At time: 20.899271488189697 accuracy is 0.875 and loss is 0.36483154296875
+At time: 21.030750274658203 accuracy is 0.8796875 and loss is 0.32533447742462157
+At time: 21.166486740112305 accuracy is 0.909375 and loss is 0.1959170937538147
+At time: 21.30757427215576 accuracy is 0.9234375 and loss is 0.17808269262313842
+At time: 21.45749831199646 accuracy is 0.9203125 and loss is 0.1907636046409607
+At time: 21.61121940612793 accuracy is 0.9421875 and loss is 0.13294315338134766
+At time: 21.772933959960938 accuracy is 0.9328125 and loss is 0.12868070602416992
+At time: 21.941317319869995 accuracy is 0.9671875 and loss is 0.07817351818084717
+At time: 22.11588430404663 accuracy is 0.95625 and loss is 0.09660094380378723
+At time: 22.3000590801239 accuracy is 0.9484375 and loss is 0.12638535499572753
+At time: 22.49676489830017 accuracy is 0.9453125 and loss is 0.13372378349304198
+At time: 22.70637583732605 accuracy is 0.9703125 and loss is 0.0839312195777893
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8180803571428571
+Not better for 4
+Completing Train Step at 10th epoch...
+At time: 23.186760187149048 accuracy is 0.8671875 and loss is 0.32608282566070557
+At time: 23.319531202316284 accuracy is 0.875 and loss is 0.2590792655944824
+At time: 23.456923961639404 accuracy is 0.9234375 and loss is 0.16049652099609374
+At time: 23.60208511352539 accuracy is 0.9234375 and loss is 0.1574934482574463
+At time: 23.749446868896484 accuracy is 0.9375 and loss is 0.1416974902153015
+At time: 23.90322780609131 accuracy is 0.9671875 and loss is 0.08752338886260987
+At time: 24.063236951828003 accuracy is 0.9640625 and loss is 0.08496533632278443
+At time: 24.23076629638672 accuracy is 0.9703125 and loss is 0.0805701494216919
+At time: 24.406004905700684 accuracy is 0.959375 and loss is 0.11398361921310425
+At time: 24.589171409606934 accuracy is 0.965625 and loss is 0.09228813052177429
+At time: 24.782593250274658 accuracy is 0.9828125 and loss is 0.08068224191665649
+At time: 24.99363136291504 accuracy is 0.98125 and loss is 0.0633047103881836
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8258928571428571
+Not better for 5
+Completing Train Step at 11th epoch...
+At time: 25.474103689193726 accuracy is 0.89375 and loss is 0.28978939056396485
+At time: 25.6059148311615 accuracy is 0.9171875 and loss is 0.19138011932373047
+At time: 25.745185613632202 accuracy is 0.959375 and loss is 0.10526753664016723
+At time: 25.887433528900146 accuracy is 0.95 and loss is 0.13500654697418213
+At time: 26.03402066230774 accuracy is 0.9609375 and loss is 0.10611073970794678
+At time: 26.187469244003296 accuracy is 0.9671875 and loss is 0.07650983333587646
+At time: 26.34882354736328 accuracy is 0.984375 and loss is 0.05167124271392822
+At time: 26.516135454177856 accuracy is 0.9734375 and loss is 0.06616832017898559
+At time: 26.689340829849243 accuracy is 0.9765625 and loss is 0.0557217001914978
+At time: 26.873213291168213 accuracy is 0.953125 and loss is 0.21688873767852784
+At time: 27.067370891571045 accuracy is 0.95 and loss is 0.18121740818023682
+At time: 27.278598308563232 accuracy is 0.9734375 and loss is 0.070180743932724
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8571428571428571
+Not better for 6
+Completing Train Step at 12th epoch...
+At time: 27.747918128967285 accuracy is 0.8890625 and loss is 0.27004756927490237
+At time: 27.88080644607544 accuracy is 0.9453125 and loss is 0.15475541353225708
+At time: 28.02031397819519 accuracy is 0.9640625 and loss is 0.09689104557037354
+At time: 28.162798643112183 accuracy is 0.9375 and loss is 0.13907079696655272
+At time: 28.309646368026733 accuracy is 0.975 and loss is 0.0796850562095642
+At time: 28.464224100112915 accuracy is 0.9875 and loss is 0.04320480525493622
+At time: 28.62565016746521 accuracy is 0.9875 and loss is 0.03130621314048767
+At time: 28.793643474578857 accuracy is 0.98125 and loss is 0.07220279574394226
+At time: 28.969285011291504 accuracy is 0.9890625 and loss is 0.0294372022151947
+At time: 29.153431177139282 accuracy is 0.9671875 and loss is 0.08731445670127869
+At time: 29.346465826034546 accuracy is 0.9640625 and loss is 0.11540266275405883
+At time: 29.555366039276123 accuracy is 0.9828125 and loss is 0.044408321380615234
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8783482142857143
+Not better for 7
+Completing Train Step at 13th epoch...
+At time: 30.02719521522522 accuracy is 0.9234375 and loss is 0.2141183853149414
+At time: 30.159594774246216 accuracy is 0.9484375 and loss is 0.11977462768554688
+At time: 30.296238660812378 accuracy is 0.9765625 and loss is 0.06450929045677185
+At time: 30.443827390670776 accuracy is 0.9453125 and loss is 0.11717796325683594
+At time: 30.592560291290283 accuracy is 0.9828125 and loss is 0.05008772611618042
+At time: 30.748908281326294 accuracy is 0.9828125 and loss is 0.050519466400146484
+At time: 30.910828828811646 accuracy is 0.9859375 and loss is 0.03971366584300995
+At time: 31.08044409751892 accuracy is 0.9796875 and loss is 0.051576530933380126
+At time: 31.258278608322144 accuracy is 0.99375 and loss is 0.017890655994415285
+At time: 31.443793058395386 accuracy is 0.9875 and loss is 0.029496914148330687
+At time: 31.638959646224976 accuracy is 0.975 and loss is 0.07646293640136718
+At time: 31.846631288528442 accuracy is 0.99375 and loss is 0.025340214371681213
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8716517857142857
+Not better for 8
+Completing Train Step at 14th epoch...
+At time: 32.3197455406189 accuracy is 0.9359375 and loss is 0.18367395401000977
+At time: 32.45288395881653 accuracy is 0.9625 and loss is 0.09859043955802918
+At time: 32.59179186820984 accuracy is 0.990625 and loss is 0.035876336693763736
+At time: 32.7356390953064 accuracy is 0.96875 and loss is 0.08195769786834717
+At time: 32.88311266899109 accuracy is 0.9859375 and loss is 0.06370332837104797
+At time: 33.038094997406006 accuracy is 0.9875 and loss is 0.041371744871139524
+At time: 33.20079493522644 accuracy is 0.9875 and loss is 0.052923768758773804
+At time: 33.372724771499634 accuracy is 0.98125 and loss is 0.04147435426712036
+At time: 33.550549030303955 accuracy is 0.990625 and loss is 0.03296534717082977
+At time: 33.73506474494934 accuracy is 0.9859375 and loss is 0.05470285415649414
+At time: 33.929707288742065 accuracy is 0.9796875 and loss is 0.06827182173728943
+At time: 34.13906478881836 accuracy is 0.9953125 and loss is 0.011388501524925232
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8738839285714286
+Not better for 9
+Completing Train Step at 15th epoch...
+At time: 34.6140832901001 accuracy is 0.9421875 and loss is 0.17851486206054687
+At time: 34.744694232940674 accuracy is 0.9765625 and loss is 0.09171618223190307
+At time: 34.8801429271698 accuracy is 0.9875 and loss is 0.039101061224937436
+At time: 35.024375677108765 accuracy is 0.9546875 and loss is 0.09813212752342224
+At time: 35.17138957977295 accuracy is 0.9859375 and loss is 0.04208560287952423
+At time: 35.323935747146606 accuracy is 0.9671875 and loss is 0.11733601093292237
+At time: 35.48740911483765 accuracy is 0.9734375 and loss is 0.05820849537849426
+At time: 35.658247232437134 accuracy is 0.9796875 and loss is 0.0691685676574707
+At time: 35.838271617889404 accuracy is 0.9890625 and loss is 0.02635675370693207
+At time: 36.024826526641846 accuracy is 0.9859375 and loss is 0.05106590390205383
+At time: 36.234068155288696 accuracy is 0.9890625 and loss is 0.02414593696594238
+At time: 36.459259033203125 accuracy is 0.9921875 and loss is 0.015609820187091828
+Evaluating...
+Done Evaluating: Achieved accuracy of 0.8783482142857143
+Not better for 10
+Model not improving. Stopping earlyat 0.8883928571428571 epochs.
+Done Training. Achieved Best Accuracy of 0.8883928571428571
+mlpattn
+
+
+
+RESULTS:
+[{'params': {'wordvec_source': 'glove', 'wordvec_dim': 300, 'attention_dim': 19, 'data': 'MPQA', 'attn_type': 'MLP', 'rnn_dropout': 0.3145499966711144, 'fix_pretrained': None, 'lr': 0.0005402331285362506, 'tune_wordvecs': False, 'num_layers': 1, 'l2': 0.946904232820719, 'hidden_size': 300, 'batch_size': 32, 'pretrained': None, 'dropout': 0.0663168323006238}, 'best_accuracy': 0.8973214285714286}, {'params': {'wordvec_source': 'glove', 'wordvec_dim': 300, 'attention_dim': 21, 'data': 'MPQA', 'attn_type': 'MLP', 'rnn_dropout': 0.4559471214793347, 'fix_pretrained': None, 'lr': 0.002989555508635944, 'tune_wordvecs': False, 'num_layers': 1, 'l2': 0.16603945030493106, 'hidden_size': 300, 'batch_size': 32, 'pretrained': None, 'dropout': 0.38617301056157805}, 'best_accuracy': 0.8816964285714286}, {'params': {'wordvec_source': 'glove', 'wordvec_dim': 300, 'attention_dim': 35, 'data': 'MPQA', 'attn_type': 'MLP', 'rnn_dropout': 0.06334582436889347, 'fix_pretrained': None, 'lr': 0.0015159694280139388, 'tune_wordvecs': False, 'num_layers': 1, 'l2': 0.704903175964118, 'hidden_size': 300, 'batch_size': 32, 'pretrained': None, 'dropout': 0.6273677663595013}, 'best_accuracy': 0.8939732142857143}, {'params': {'wordvec_source': 'glove', 'wordvec_dim': 300, 'attention_dim': 18, 'data': 'MPQA', 'attn_type': 'MLP', 'rnn_dropout': 0.9319104824198501, 'fix_pretrained': None, 'lr': 0.0006344065267868885, 'tune_wordvecs': False, 'num_layers': 1, 'l2': 0.053434364869829, 'hidden_size': 300, 'batch_size': 32, 'pretrained': None, 'dropout': 0.505297284325885}, 'best_accuracy': 0.8861607142857143}, {'params': {'wordvec_source': 'glove', 'wordvec_dim': 300, 'attention_dim': 21, 'data': 'MPQA', 'attn_type': 'MLP', 'rnn_dropout': 0.5879142447505336, 'fix_pretrained': None, 'lr': 0.00020965094410141226, 'tune_wordvecs': False, 'num_layers': 1, 'l2': 0.8110214061160541, 'hidden_size': 300, 'batch_size': 32, 'pretrained': None, 'dropout': 0.39028966045767177}, 'best_accuracy': 0.8883928571428571}]

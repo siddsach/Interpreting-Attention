@@ -1,0 +1,60 @@
+ROOT_PATH: /home-nfs/siddsach/ml/Interpreting-Attention
+Building Bayesian Optimizer for 
+ data:MPQA 
+ choices:[{'domain': [5e-05, 0.005], 'type': 'continuous', 'name': 'lr'}, {'domain': [0, 1], 'type': 'continuous', 'name': 'rnn_dropout'}, {'domain': [0, 1], 'type': 'continuous', 'name': 'dropout'}, {'domain': [0, 1], 'type': 'continuous', 'name': 'l2'}]
+SETTINGS FOR THIS RUN
+{'tune_wordvecs': False, 'hidden_size': 300, 'num_layers': 1, 'wordvec_source': 'glove', 'pretrained': None, 'dropout': 0.27020209407909823, 'lr': 0.003189030071545342, 'l2': 0.4531966519334327, 'rnn_dropout': 0.6951383056758471, 'attn_type': 'similarity', 'batch_size': 32, 'fix_pretrained': None, 'wordvec_dim': 300, 'tune_attn': True}
+Using CUDA!
+similarity
+Building RNN Classifier...
+
+[93m    Warning: no model found for 'en'[0m
+
+    Only loading the 'en' tokenizer.
+
+Retrieving Data from file: /home-nfs/siddsach/ml/Interpreting-Attention/data/mpqa/subj_clf_labels.pickle...
+Loading Vectors From Memory...
+Using these vectors: ['GloVe']
+Getting GloVe Vectors with 300 dims
+Building Vocab...
+[<torchtext.vocab.Vectors object at 0x7fc95f5b8ba8>]
+Getting Batches...
+Created Iterator with 258 batches
+Getting Batches...
+Created Iterator with 29 batches
+Building model...
+similarity
+Using Attention model with following args:
+{'cuda': True, 'hidden_size': 300, 'num_layers': 1, 'num_classes': 2, 'vocab_size': 15944, 'dropout': 0.27020209407909823, 'input_size': 300, 'rnn_dropout': 0.6951383056758471, 'attn_type': 'similarity', 'batch_size': 32, 'train_word_vecs': False, 'vectors': 
+ 0.0000  0.0000  0.0000  ...   0.0000  0.0000  0.0000
+ 0.0000  0.0000  0.0000  ...   0.0000  0.0000  0.0000
+ 0.0000  0.0000  0.0000  ...   0.0000  0.0000  0.0000
+          ...             ⋱             ...          
+ 0.0514  0.6392 -0.5063  ...   0.0817  0.3416 -0.0271
+ 0.0000  0.0000  0.0000  ...   0.0000  0.0000  0.0000
+-0.0479  0.9828  0.9182  ...   0.0424  0.4554 -0.3210
+[torch.FloatTensor of size 15944x300]
+, 'attention_dim': 350, 'tune_attn': True}
+Not Tuning Word Vectors!
+Begin Training...
+Completing Train Step at 0th epoch...
+Traceback (most recent call last):
+  File "bayesian_optimization.py", line 231, in <module>
+    fix_pretrained = args.fix_pretrained, savepath = args.savepath)
+  File "bayesian_optimization.py", line 76, in __init__
+    exact_feval = True
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/GPyOpt/methods/bayesian_optimization.py", line 117, in __init__
+    self._init_design_chooser()
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/GPyOpt/methods/bayesian_optimization.py", line 192, in _init_design_chooser
+    self.Y, _ = self.objective.evaluate(self.X)
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/GPyOpt/core/task/objective.py", line 50, in evaluate
+    f_evals, cost_evals = self._eval_func(x)
+  File "/home-nfs/siddsach/anaconda3/lib/python3.5/site-packages/GPyOpt/core/task/objective.py", line 74, in _eval_func
+    rlt = self.func(np.atleast_2d(x[i]))
+  File "bayesian_optimization.py", line 160, in getError
+    trainer.train(optimizer)
+  File "/home-nfs/siddsach/ml/Interpreting-Attention/classifier/attention_rnn/trainer.py", line 603, in train
+    optimizer = self.train_step(optimizer, start_time)
+  File "/home-nfs/siddsach/ml/Interpreting-Attention/classifier/attention_rnn/trainer.py", line 539, in train_step
+    if self.weight_saving:
+AttributeError: 'TrainClassifier' object has no attribute 'weight_saving'
