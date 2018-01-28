@@ -92,7 +92,8 @@ class TrainClassifier:
                     clip = CLIP,
                     attn_type = ATTN_TYPE,
                     l2 = L2,
-                    fix_pretrained = None
+                    fix_pretrained = None,
+                    weight_saving = True
                 ):
         self.savepath = savepath
 
@@ -120,6 +121,7 @@ class TrainClassifier:
         self.n_epochs = num_epochs
         self.vector_cache = vector_cache
         self.log_interval = log_interval
+        self.weight_saving = weight_saving
 
         if objective == 'crossentropy':
             self.objective = CrossEntropyLoss()
@@ -399,12 +401,33 @@ class TrainClassifier:
                 'train_word_vecs' : self.tune_wordvecs
             }
 
+            #MAKING MATRIX TO SAVE ATTENTION WEIGHTS
+            self.train_weights = {key: torch.zeros(len(self.train_data), self.max_length) for key in ['text', 'attn']}
+            self.train_weights['hidden'] = torch.zeros(len(self.train_data), self.hidden_size)
+            self.train_weights ['preds'] = torch.zeros(len(self.train_data))
+            self.train_weights['targets'] = torch.zeros(len(self.train_data))
+            if self.test_data is not None:
+                self.test_weights = {key: torch.zeros(len(self.train_data), self.max_length) for key in ['text', 'attn']}
+                self.test_weights['hidden'] = torch.zeros(len(self.train_data), self.hidden_size)
+                self.test_weights['targets'] = torch.zeros(len(self.test_data))
+                self.test_weights['preds'] = torch.zeros(len(self.test_data))
+
+
+            #MAKING MATRIX TO SAVE ATTENTION WEIGHTS
+            self.best_train_weights = {key: torch.zeros(len(self.train_data), self.max_length) for key in ['text', 'attn']}
+            self.best_train_weights['hidden'] = torch.zeros(self.hidden_size)
+            self.best_train_weights['preds'] = torch.zeros(len(self.train_data))
+            self.best_train_weights['targets'] = torch.zeros(len(self.train_data))
+            if self.test_data is not None:
+                self.best_test_weights = {key: torch.zeros(len(self.train_data), self.max_length) for key in ['text', 'attn']}
+                self.best_test_weights['hidden'] = torch.zeros(self.hidden_size)
+                self.best_test_weights['targets'] = torch.zeros(len(self.test_data))
+                self.best_test_weights['preds'] = torch.zeros(len(self.test_data))
+
             if self.attention_dim is None:
                 self.model = VanillaRNN(**args)
                 print('Using Vanilla RNN with following args:\n{}'
                         .format(args))
-                self.train_attns = None
-                self.test_attns = None
 
             else:
                 print(self.attn_type)
@@ -419,24 +442,6 @@ class TrainClassifier:
                         .format(args))
                 self.model = SelfAttentiveRNN(**args)
 
-                #MAKING MATRIX TO SAVE ATTENTION WEIGHTS
-                self.train_attns = {key: torch.zeros(len(self.train_data), self.max_length) for key in ['text', 'attn']}
-                self.train_attns['preds'] = torch.zeros(len(self.train_data))
-                self.train_attns['targets'] = torch.zeros(len(self.train_data))
-                if self.test_data is not None:
-                    self.test_attns = {key: torch.zeros(len(self.train_data), self.max_length) for key in ['text', 'attn']}
-                    self.test_attns['targets'] = torch.zeros(len(self.test_data))
-                    self.test_attns['preds'] = torch.zeros(len(self.test_data))
-
-
-                #MAKING MATRIX TO SAVE ATTENTION WEIGHTS
-                self.best_train_attns = {key: torch.zeros(len(self.train_data), self.max_length) for key in ['text', 'attn']}
-                self.best_train_attns['preds'] = torch.zeros(len(self.train_data))
-                self.best_train_attns['targets'] = torch.zeros(len(self.train_data))
-                if self.test_data is not None:
-                    self.best_test_attns = {key: torch.zeros(len(self.train_data), self.max_length) for key in ['text', 'attn']}
-                    self.best_test_attns['targets'] = torch.zeros(len(self.test_data))
-                    self.best_test_attns['preds'] = torch.zeros(len(self.test_data))
 
             if self.cuda:
                 self.model.cuda()
@@ -489,9 +494,9 @@ class TrainClassifier:
                 pct_correct = float(torch.sum(targets == preds)[0].data[0]/predictions.size(0))
                 accuracies[i] = pct_correct
 
-                if A is not None:
+                if self.weight_saving:
                     #SAVING ATTENTION WEIGHTS
-                    self.save_attns(i, data, A, preds, targets, "test")
+                    self.save_weights(i, data, A, h, preds, targets, "test")
 
                 #CALCULATING LOSS
                 loss = self.objective(predictions, targets)
@@ -532,9 +537,9 @@ class TrainClassifier:
                 pct_correct = float(torch.sum(targets == preds)[0].data[0]/predictions.size(0))
                 accuracies[i % self.log_interval] = pct_correct
 
-                if A is not None:
+                if self.weight_saving:
                     #SAVING ATTENTION WEIGHTS
-                    self.save_attns(i, data, A, preds, targets, 'train')
+                    self.save_weights(i, data, A, h, preds, targets, 'train')
 
                 #CALCULATING AND PROPAGATING LOSS
                 loss = self.objective(predictions, targets)
@@ -617,8 +622,8 @@ class TrainClassifier:
                 print('Achieved new best!')
                 self.best_accuracy = self.eval_accuracy
                 self.best_model = self.model
-                self.best_train_attns = self.train_attns
-                self.best_test_attns = self.test_attns
+                self.best_train_weights = self.train_weights
+                self.best_test_weights = self.test_weights
                 not_better = 0
 
         print('Done Training. Achieved Best Accuracy of {}'.format(self.best_accuracy))
@@ -629,27 +634,33 @@ class TrainClassifier:
 
             print('Finished Training.')
 
-    def save_attns(self, i, text, attns, preds, targets, fold = 'train'):
+    def save_weights(self, i, text, attns, hidden, preds, targets, fold = 'train'):
         index = self.batch_size * i
 
         if fold == 'train':
             #SAVE TEXT
-            self.train_attns['text'][index: index + self.batch_size, :attns.size(1)] = text.data[:, :attns.size(1)]
-            #SAVE ATTENTION WEIGHTS
-            self.train_attns['attn'][index: index + self.batch_size, :attns.size(1)] = attns.data
+            self.train_weights['text'][index: index + self.batch_size, :text.size(1)] = text.data[:, :text.size(1)]
+            #SAVE REPRESENTATIONS
+            self.train_weights['hidden'][index: index + self.batch_size] = hidden.data
+            if attns is not None:
+                #SAVE ATTENTION WEIGHTS
+                self.train_weights['attn'][index: index + self.batch_size, :attns.size(1)] = attns.data
             #SAVE PREDICTIONS
-            self.train_attns['preds'][index: index + self.batch_size] = preds.data
+            self.train_weights['preds'][index: index + self.batch_size] = preds.data
             #SAVE CORRECT ANSWERS
-            self.train_attns['targets'][index: index + self.batch_size] = targets.data
+            self.train_weights['targets'][index: index + self.batch_size] = targets.data
         elif fold == 'test':
             #SAVE TEXT
-            self.test_attns['text'][index: index + self.batch_size, :attns.size(1)] = text.data[:, :attns.size(1)]
-            #SAVE ATTENTION WEIGHTS
-            self.test_attns['attn'][index: index + self.batch_size, :attns.size(1)] = attns.data
+            self.test_weights['text'][index: index + self.batch_size, :text.size(1)] = text.data[:, :text.size(1)]
+            if attns is not None:
+                #SAVE ATTENTION WEIGHTS
+                self.test_weights['attn'][index: index + self.batch_size, :attns.size(1)] = attns.data
+            #SAVE REPRESENTATIONS
+            self.test_weights['hidden'][index: index + self.batch_size] = hidden.data
             #SAVE PREDICTIONS
-            self.test_attns['preds'][index: index + self.batch_size] = preds.data
+            self.test_weights['preds'][index: index + self.batch_size] = preds.data
             #SAVE CORRECT
-            self.test_attns['targets'][index: index + self.batch_size] = targets.data
+            self.test_weights['targets'][index: index + self.batch_size] = targets.data
 
 
     def save_checkpoint(self, checkpointpath, optimizer = None, name = None):
@@ -662,8 +673,8 @@ class TrainClassifier:
                     'accuracies': self.accuracies,
                     'vocab': self.sentence_field.vocab,
                     'labels': self.target_field.vocab,
-                    'train_attns':self.best_train_attns,
-                    'test_attns': self.best_test_attns
+                    'train_weights':self.best_train_weights,
+                    'test_weights': self.best_test_weights
                 }
         savepath = checkpointpath + ''.join(str(datetime.now()).split())
         if name is not None:
@@ -678,8 +689,8 @@ class TrainClassifier:
 
 
     def dump_attns(self, attn_path):
-        if self.test_attns is not None:
-            torch.save(self.test_attns, attn_path)
+        if self.test_weights is not None:
+            torch.save(self.test_weights, attn_path)
 
     def get_pretrained(self):
 

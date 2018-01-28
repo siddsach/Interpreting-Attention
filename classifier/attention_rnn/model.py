@@ -145,7 +145,7 @@ class VanillaRNN(nn.Module):
         proj = self.linear(features)
         probs = self.normalize(proj)
 
-        return probs, hiddens, None
+        return probs, hiddens[0], None
 
 class SelfAttentiveRNN(VanillaRNN):
 
@@ -222,6 +222,6 @@ class SelfAttentiveRNN(VanillaRNN):
         # DECODING ATTENTION EMBEDDED MATRICES TO OUTPUT
         decoded = self.normalize(self.decoder(M))
 
-        return decoded, h, A
+        return decoded, M, A
 
 
