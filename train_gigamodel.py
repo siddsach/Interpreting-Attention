@@ -67,26 +67,34 @@ class Sequence:
         else:
             self.progress["all_threads"][current_thread]["current_fold"] += 1
 
-    def run(self):
+    def run(self, timelimit = False):
         current_thread = self.progress["current_thread"]
 
-        already_downloaded = current_thread < len(self.progress["all_threads"])
-        if not already_downloaded:
+        if timelimit:
+            already_downloaded = current_thread < len(self.progress["all_threads"])
+            if not already_downloaded:
 
-            assert current_thread == len(self.progress["all_threads"])
-            self.progress["all_threads"].append({"folds":[], "current_fold": 0})
-            path = self.thread_paths[current_thread]
-            docs, size = self.download(path)
-            self.split(docs, current_thread, size)
+                assert current_thread == len(self.progress["all_threads"])
+                self.progress["all_threads"].append({"folds":[], "current_fold": 0})
+                path = self.thread_paths[current_thread]
+                docs, size = self.download(path)
+                self.split(docs, current_thread, size)
 
-        self.run_fold(current_thread)
+            self.run_fold(current_thread, timelimit)
+        else:
+            for path in self.thread_paths:
+                self.progress["all_threads"].append(path)
+                docs, size = self.download(path)
+                self.process(docs, self.progress, already_read = True)
 
+        '''
         if self.progress["current_thread"] >= len(self.thread_paths):
             print("FINISHED ITERATION, REINITING CYCLE")
             self.progress["iterations"] += 1
             self.progress["current_thread"] = 0
             for i in range(len(self.progress["all_threads"])):
                 self.progress["all_threads"][i]["current_fold"] = 0
+        '''
 
     def download(self, path):
         print('Downloading from {}...'.format(path))
@@ -150,7 +158,7 @@ class Sequence:
         trainer.save_checkpoint('model.pt')
         print('should be saved')
 
-    def process(self, foldpath, progress):
+    def process(self, fold, progress, already_read = False):
         trainer = TrainLangModel(
                     tune_wordvecs = True,
                     wordvec_source = self.vectors,
@@ -170,9 +178,12 @@ class Sequence:
         if train_loss is not None:
             trainer.current_loss = train_loss
 
-        with open(foldpath, 'r') as socket:
-            text = socket.read()
-            trainer.prepare_data(text, already_read = True, vocab = vocab)
+        if not already_read:
+            with open(fold, 'r') as socket:
+                text = socket.read()
+                trainer.prepare_data(text, already_read = True, vocab = vocab)
+        else:
+            trainer.prepare_data(fold, already_read = True, vocab = vocab)
 
         trainer.init_model(checkpoint_params = params)
         trainer.train_step(None, trainer.model, START)
