@@ -28,7 +28,7 @@ class Sequence:
         if dataset == 'gigaword':
             self.data_dir = 'data/gigaword'
             path = "https://s3.amazonaws.com/gigaword/thread{}.txt"
-            total_files = 10
+            total_files = 15
             self.thread_paths = [path.format(i+1) for i in range(total_files)]
         elif dataset == 'reviews':
             self.data_dir = 'data/reviews'
@@ -88,7 +88,7 @@ class Sequence:
             for i in range(len(self.progress["all_threads"])):
                 self.progress["all_threads"][i]["current_fold"] = 0
 
-    def download(self, path):
+    def download(self, path, generate = None):
         print('Downloading from {}...'.format(path))
         bashCommand = "wget " + path + " -P " + self.data_dir
         process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
@@ -99,18 +99,31 @@ class Sequence:
         reader = open(threadpath, 'r')
         size = os.path.getsize(threadpath)
         docs = None
-        if self.dataset == 'gigaword':
-            docs = [el.split("\t") for el in reader.read().split("\n")]
-            docs = [el[2] if (len(el)==3 and el[0][:3] in self.sources) else "" for el in docs]
-            docs = "".join(docs)
+        if generate is not None:
+            if self.dataset == 'gigaword':
+                while True:
+                    data = reader.read(generate)
+                    if not data:
+                        break
+                    docs = [el.split("\t") for el in data.split("\n")]
+                    docs = [el[2] if (len(el)==3 in self.sources) else "" for el in docs]
+                    docs = "".join(docs)
+                    yield docs
+        '''
         else:
-            docs = reader.read()
-
+            if self.dataset == 'gigaword':
+                docs = [el.split("\t") for el in reader.read().split("\n")]
+                docs = [el[2] if (len(el)==3 and el[0][:3] in self.sources) else "" for el in docs]
+                docs = "".join(docs)
+            else:
+                docs = reader.read()
+    
         self.delete(threadpath)
 
         print('Done.')
 
         return docs, size
+        '''
 
     def split(self, docs, current_thread, size):
         print("file has size of {}".format(size))
@@ -138,12 +151,14 @@ class Sequence:
     def build_vocab(self):
         print('Building vocab for full dataset...')
         all_text = ""
-        for address in self.thread_paths:
-            text, size = self.download(address)
-            all_text += text
-
+        examples = []
         trainer = TrainLangModel(wordvec_source = self.vectors, savepath = self.savepath)
-        trainer.load_data(all_text, True)
+        for address in self.thread_paths:
+            text = self.download(address, generate = 100000)
+            examples = trainer.load_data(text, more = True, examples = examples, already_read = True)
+            del text
+        trainer.load_data(None, more = False, examples = examples, already_read = True)
+
         trainer.get_vectors(vocab = None)
         trainer.init_model()
         print('here')
@@ -187,7 +202,7 @@ if __name__ == "__main__":
                         help='location of pretrained init')
     parser.add_argument('--max_size',  type=int, default = 1000000000,
                         help='location of pretrained init')
-    parser.add_argument('--vectors',  type=str, default = 'glove',
+    parser.add_argument('--vectors',  type=str, default = '',
                         help='location of pretrained init')
     ARGS = parser.parse_args()
     Sequence(dataset = ARGS.data, vectors = ARGS.vectors, timelimit = ARGS.timelimit, max_size = ARGS.max_size)
