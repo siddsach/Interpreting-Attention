@@ -17,7 +17,7 @@ class Sequence:
                 max_size = 1000000,
                 dataset = 'gigaword',
                 vectors = 'glove',
-                sources = ['NYT', 'WPB', 'LTW', 'APW']
+                sources = ['nyt', 'wpb', 'ltw', 'apw']
             ):
         current_path = os.getcwd()
         self.timelimit = timelimit
@@ -25,7 +25,11 @@ class Sequence:
         self.vectors = vectors
         self.sources = sources
 
-        if dataset == 'gigaword':
+        if dataset == 'test':
+            self.data_dir = 'data/gigaword'
+            path = "https://s3.amazonaws.com/gigaword/gigaword_cleaned_train.txt"
+            self.thread_paths = [path]
+        elif dataset == 'gigaword':
             self.data_dir = 'data/gigaword'
             path = "https://s3.amazonaws.com/gigaword/thread{}.txt"
             total_files = 15
@@ -85,6 +89,8 @@ class Sequence:
             for path in self.thread_paths:
                 self.progress["all_threads"].append(path)
                 docs, size = self.download(path)
+                print('initing')
+                print(type(docs))
                 self.process(docs, self.progress, already_read = True)
 
         '''
@@ -114,24 +120,28 @@ class Sequence:
                     if not data:
                         break
                     docs = [el.split("\t") for el in data.split("\n")]
-                    docs = [el[2] if (len(el)==3 in self.sources) else "" for el in docs]
+                    docs = [el[2] if (len(el)==3) else "" for el in docs]
                     docs = "".join(docs)
                     yield docs
-        '''
+            elif self.dataset == 'test':
+                while True:
+                    data = reader.read(generate)
+                    print("DATA")
+                    print(data)
+                    if not data:
+                        break
+                    yield data
         else:
             if self.dataset == 'gigaword':
+	        data = reader.read()
                 docs = [el.split("\t") for el in reader.read().split("\n")]
-                docs = [el[2] if (len(el)==3 and el[0][:3] in self.sources) else "" for el in docs]
-                docs = "".join(docs)
+                docs = [el[2] if (len(el)==3) else "" for el in docs]
+                docs = " ".join(docs)
             else:
                 docs = reader.read()
     
         self.delete(threadpath)
-
-        print('Done.')
-
         return docs, size
-        '''
 
     def split(self, docs, current_thread, size):
         print("file has size of {}".format(size))
@@ -162,7 +172,7 @@ class Sequence:
         examples = []
         trainer = TrainLangModel(wordvec_source = self.vectors, savepath = self.savepath)
         for address in self.thread_paths:
-            text = self.download(address, generate = 100000)
+            text = self.download(address, generate = 1000000)
             examples = trainer.load_data(text, more = True, examples = examples, already_read = True)
             del text
         trainer.load_data(None, more = False, examples = examples, already_read = True)
@@ -184,20 +194,25 @@ class Sequence:
         vocab = None
         params = None
         train_loss = None
-        if progress["started"]:
-            current = torch.load(self.savepath + 'model.pt')
-            vocab = current["vocab"]
-            params = current["state_dict"]
-            train_loss = current["train_loss"]
+        current = torch.load(self.savepath + 'model.pt')
+        vocab = current["vocab"]
+        params = current["state_dict"]
+        train_loss = current["train_loss"]
 
         if train_loss is not None:
             trainer.current_loss = train_loss
+        print('here')
+        print(type(fold))
 
         if not already_read:
             with open(fold, 'r') as socket:
                 text = socket.read()
+                print("VOCAB")
+                print(vocab)
                 trainer.prepare_data(text, already_read = True, vocab = vocab)
         else:
+            print('should be str')
+            print(type(fold))
             trainer.prepare_data(fold, already_read = True, vocab = vocab)
 
         trainer.init_model(checkpoint_params = params)
