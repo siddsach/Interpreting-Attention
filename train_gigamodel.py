@@ -7,8 +7,11 @@ import os
 import json
 import math
 import torch
+from torchtext import data
 import argparse
 from multiprocessing import Pool
+import psutil
+from collections import Counter
 
 
 class Sequence:
@@ -27,13 +30,13 @@ class Sequence:
 
         if dataset == 'test':
             self.data_dir = 'data/gigaword'
-            path = "https://s3.amazonaws.com/gigaword/gigaword_cleaned_train.txt"
-            self.thread_paths = [path]
+            path = "https://s3.amazonaws.com/gigaword/gigaword_cleaned_{}.txt"
+            self.thread_paths = [path.format(fold) for fold in ['train', 'val', 'test']]
         elif dataset == 'gigaword':
             self.data_dir = 'data/gigaword'
             path = "https://s3.amazonaws.com/gigaword/thread{}.txt"
             total_files = 15
-            self.thread_paths = [path.format(i+1) for i in range(total_files)]
+            self.thread_paths = [path.format(i+1) for i in range(3, total_files)]
         elif dataset == 'reviews':
             self.data_dir = 'data/reviews'
             total_files = 1
@@ -88,9 +91,7 @@ class Sequence:
         else:
             for path in self.thread_paths:
                 self.progress["all_threads"].append(path)
-                docs, size = self.download(path)
-                print('initing')
-                print(type(docs))
+                docs = self.download(path)
                 self.process(docs, self.progress, already_read = True)
 
         '''
@@ -113,35 +114,41 @@ class Sequence:
         reader = open(threadpath, 'r')
         size = os.path.getsize(threadpath)
         docs = None
+        print(generate)
         if generate is not None:
-            if self.dataset == 'gigaword':
-                while True:
-                    data = reader.read(generate)
-                    if not data:
-                        break
-                    docs = [el.split("\t") for el in data.split("\n")]
-                    docs = [el[2] if (len(el)==3) else "" for el in docs]
-                    docs = "".join(docs)
-                    yield docs
-            elif self.dataset == 'test':
-                while True:
-                    data = reader.read(generate)
-                    print("DATA")
-                    print(data)
-                    if not data:
-                        break
-                    yield data
+            num_folds = math.ceil(size/generate)
+            return self.get_folds(reader, generate)
         else:
+            print('reading doc...')
             if self.dataset == 'gigaword':
-	        data = reader.read()
-                docs = [el.split("\t") for el in reader.read().split("\n")]
-                docs = [el[2] if (len(el)==3) else "" for el in docs]
+                data = reader.read()
+                docs = [el.split("\t") for el in data.split("\n")]
+                docs = [el[2] for el in docs if len(el) == 3]
                 docs = " ".join(docs)
             else:
                 docs = reader.read()
+            print('done')
+            self.delete(threadpath)
+            return docs
     
-        self.delete(threadpath)
-        return docs, size
+
+    def get_folds(self, reader, generate):
+        if self.dataset == 'gigaword':
+    	    while True:
+    	        data = reader.read(generate)
+    	        if not data:
+    	    	     break
+    	        docs = [el.split("\t") for el in data.split("\n")]
+    	        docs = [el[2] if (len(el)==3) else "" for el in docs]
+    	        docs = "".join(docs)
+    	        yield docs
+
+        elif self.dataset == 'test':
+    	    while True:
+    	        data = reader.read(generate)
+    	        if not data:
+    	    	    break
+    	        yield data
 
     def split(self, docs, current_thread, size):
         print("file has size of {}".format(size))
@@ -166,21 +173,33 @@ class Sequence:
         process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
         output, error = process.communicate()
 
-    def build_vocab(self):
+    def get_datasets(self):
         print('Building vocab for full dataset...')
-        all_text = ""
-        examples = []
-        trainer = TrainLangModel(wordvec_source = self.vectors, savepath = self.savepath)
-        for address in self.thread_paths:
-            text = self.download(address, generate = 1000000)
-            examples = trainer.load_data(text, more = True, examples = examples, already_read = True)
-            del text
-        trainer.load_data(None, more = False, examples = examples, already_read = True)
 
-        trainer.get_vectors(vocab = None)
-        trainer.init_model()
-        print('here')
-        trainer.save_checkpoint('model.pt')
+        for address in self.thread_paths:
+            examples = [''] * 3000
+            text = self.download(address, generate = 100000000)
+            field = data.Field()
+            fields = [('text', field)]
+            for i, fold in enumerate(text):
+                print('Reading fold:{}'.format(i))
+                pid = os.getpid()
+                py = psutil.Process(pid)
+                memoryUse = py.memory_info()[0]/2.**30  # memory use in GB...I think
+                print('memory use:', memoryUse)
+                examples[i] = data.Example.fromlist([fold], fields)
+            examples = [ex for ex in examples if ex != '']
+            dataset = data.Dataset(examples, fields)
+            field.build_vocab(dataset)
+            yield field.vocab.freqs
+
+    def build_vocab(self):
+        datasets = self.get_datasets()
+        counter = Counter()
+        for i, d in enumerate(datasets):
+            counter = counter + d
+
+        torch.save(counter, '{}_vocab.pt'.format(self.dataset))
         print('should be saved')
 
     def process(self, fold, progress, already_read = False):
@@ -188,43 +207,49 @@ class Sequence:
                     tune_wordvecs = True,
                     wordvec_source = self.vectors,
                     time_limit = self.timelimit,
-                    savepath = self.savepath
+                    savepath = self.savepath,
+                    max_vocab = 100000
                 )
 
-        vocab = None
         params = None
         train_loss = None
-        current = torch.load(self.savepath + 'model.pt')
-        vocab = current["vocab"]
-        params = current["state_dict"]
-        train_loss = current["train_loss"]
+        if os.path.exists(self.savepath + 'model.pt'):
+            current = torch.load(self.savepath + 'model.pt')
+            params = current["state_dict"]
+            train_loss = current["train_loss"]
+
+        counter = torch.load('vocab.pt')
 
         if train_loss is not None:
             trainer.current_loss = train_loss
-        print('here')
-        print(type(fold))
 
-        if not already_read:
-            with open(fold, 'r') as socket:
-                text = socket.read()
-                print("VOCAB")
-                print(vocab)
-                trainer.prepare_data(text, already_read = True, vocab = vocab)
-        else:
-            print('should be str')
-            print(type(fold))
-            trainer.prepare_data(fold, already_read = True, vocab = vocab)
+        max_size = (2**29-1)
+        num_folds = (len(fold) // max_size) + 1
+        for i in range(num_folds):
+            print(i)
+            text = fold[max_size*i:max_size*(i+1)]
+            if not already_read:
+                with open(fold, 'r') as socket:
+                    text = socket.read()
+                    print("VOCAB")
+                    print(vocab)
+                    trainer.prepare_data(text, already_read = True, vocab = counter)
+            else:
+                print('fold:{}'.format(i))
+                print('size:{}'.format(max_size))
+                trainer.prepare_data(text, already_read = True, vocab = counter)
 
-        trainer.init_model(checkpoint_params = params)
-        trainer.train_step(None, trainer.model, START)
+            trainer.init_model(checkpoint_params = params)
+            trainer.train_step(None, trainer.model, START)
 
-        trainer.save_checkpoint(name = 'model.pt')
+            trainer.save_checkpoint(name = 'model.pt')
+        del trainer
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Tuning Hyperparameters')
     parser.add_argument('--data',  type=str, default = 'reviews',
                         help='location of pretrained init')
-    parser.add_argument('--timelimit',  type=int, default = 3.75*60*60,
+    parser.add_argument('--timelimit',  type=int, default = None,
                         help='location of pretrained init')
     parser.add_argument('--max_size',  type=int, default = 1000000000,
                         help='location of pretrained init')
@@ -232,5 +257,4 @@ if __name__ == "__main__":
                         help='location of pretrained init')
     ARGS = parser.parse_args()
     Sequence(dataset = ARGS.data, vectors = ARGS.vectors, timelimit = ARGS.timelimit, max_size = ARGS.max_size)
-
 

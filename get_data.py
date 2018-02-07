@@ -15,7 +15,7 @@ class Download:
                 wiki = False,
                 gigaword = False,
                 gigawordsmall = False,
-                imdb = True,
+                imdb = False,
                 mpqa_subj = False
             ):
         self.glove = glove

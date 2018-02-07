@@ -1,9 +1,10 @@
 from torchtext import data, datasets
-from torchtext.vocab import Vectors, CharNGram
+from torchtext.vocab import Vocab, Vectors, CharNGram
 import torch
 from torch.nn import CrossEntropyLoss
 from torch.autograd import Variable
 from torch.optim import Adam, lr_scheduler
+from collections import Counter
 from .model import LangModel
 from time import time
 #from nce import NCELoss
@@ -12,6 +13,8 @@ import math
 from datetime import datetime
 import argparse
 import sys
+import os
+import psutil
 
 current_path = os.getcwd()
 project_path = current_path#[:len(current_path)-len('/pretraining/langmodel')]
@@ -102,7 +105,8 @@ class TrainLangModel:
                     anneal = ANNEAL,
                     current_batch = 0,
                     charlevel = False,
-                    time_limit = None
+                    time_limit = None,
+                    max_vocab = MAX_VOCAB
                 ):
 
         if torch.cuda.is_available() and use_cuda:
@@ -121,7 +125,9 @@ class TrainLangModel:
         self.rnn_dropout = rnn_dropout
         self.few_batches = few_batches
         self.time_limit = time_limit
-        if self.tine_limit is not None:
+        self.max_vocab = max_vocab
+
+        if self.time_limit is not None:
             print("AVAILABLE TIME:{}".format(self.time_limit))
 
         self.num_epochs = num_epochs
@@ -166,7 +172,7 @@ class TrainLangModel:
 
 
     #IF already_read is False, data is the name of a dataset, else it is the dataset itself
-    def load_data(self, dataset, already_read = False):
+    def load_data(self, dataset, more = False, examples = None, already_read = True):
         print("Preparing Data Loaders")
         self.sentence_field = data.Field(
                     sequential = True,
@@ -179,6 +185,7 @@ class TrainLangModel:
                     lower = True,
                     tokenize = 'spacy'
                 )
+        fields = [('text', self.sentence_field)]
 
         if not already_read:
 
@@ -237,32 +244,38 @@ class TrainLangModel:
                         self.sentence_field, newline_eos = False)
             else:
                 self.test_sentences = None
-        else:
-            fields = [('text', self.sentence_field)]
+        elif more:
+	
 
-            num_char = len(dataset)
-            print('Reading in data with {} chars...'.format(num_char))
-            num_folds = num_char // 2**28 + 1
-            print("{} folds".format(num_folds))
-            start = time()
-            examples = []
-            print('DATA LENGTH: {}'.format(len(dataset)))
+            if examples is None:
+                examples = []
 
-            if num_folds == 0:
-                examples = [data.Example.fromlist([dataset], fields)]
-            else:
-                fold_size = math.ceil(num_char/num_folds)
-                print("fold size:{}".format(fold_size))
-                for i in range(num_folds):
+            already_split = False
+            if already_split:
+                for i, fold in enumerate(dataset):
                     print('Reading fold:{}'.format(i))
-                    fold = dataset[fold_size*i:fold_size*(i+1)]
+                    pid = os.getpid()
+                    py = psutil.Process(pid)
+                    memoryUse = py.memory_info()[0]/2.**30  # memory use in GB...I think
+                    print('memory use:', memoryUse)
                     examples.append(data.Example.fromlist([fold], fields))
+                self.train_sentences = data.Dataset(examples, fields)
+                self.sentence_field.build_vocab(self.train_sentences)
+                return self.sentence_field.freqs
+                '''
+                print("EXAMPLES")
+                print(len(examples))
+                print([ex.text[:100] for ex in examples])
+                print("EXAMPLES END")
+                '''
+            else:
+                examples.append(data.Example.fromlist([dataset], fields))#[i*fold_size:(i+1)*fold_size 
+
             one = time()
-            print("READ EXAMPLES IN {}".format(one - start))
+            #print("READ EXAMPLES IN {}".format(one - start))
             self.train_sentences = data.Dataset(examples, fields)
-            print("LOADED DATASET IN {}".format(one - time()))
-            print("Parsed dataset with size of :{}".format(sys.getsizeof(self.train_sentences)))
-            print('Done.')
+
+        
 
     def get_vectors(self, vocab):
         sources = None
@@ -278,9 +291,13 @@ class TrainLangModel:
             sources = []
 
         print('Building Vocab...')
-        if vocab is not None:
+
+        if isinstance(vocab, Vocab):
+            print("Using Pretrained Vocab")
             self.sentence_field.vocab = vocab
+            print(len(self.sentence_field.vocab.itos))
         else:
+            print('wrong')
             vecs = []
             print('Loading Vectors From Memory...')
             if self.pretrained_vecs:
@@ -305,15 +322,19 @@ class TrainLangModel:
                         vecs.append(gigavec)
                         self.wordvec_dim += 300
 
-            self.sentence_field.build_vocab(self.train_sentences, vectors = vecs, \
-                    max_size = MAX_VOCAB, min_freq = MIN_FREQ)
-            print('Found {} tokens'.format(len(self.sentence_field.vocab)))
+            
+            if isinstance(vocab, Counter):
+                self.sentence_field.vocab = Vocab(vocab, vectors = vecs, max_size = self.max_vocab)
+            else:
+                self.sentence_field.build_vocab(self.train_sentences, vectors = vecs, \
+                        max_size = self.max_vocab, min_freq = MIN_FREQ)
+                print('Found {} tokens'.format(len(self.sentence_field.vocab)))
+
 
         if self.tie_weights:
             self.hidden_size = self.wordvec_dim
 
     def get_iterator(self, dataset):
-        print('Getting Batches...')
 
         if self.cuda:
             iterator = data.BPTTIterator(dataset, sort_key = None,\
@@ -384,6 +405,35 @@ class TrainLangModel:
             model = model.cuda()
 
         return model
+
+    def prepare_data(self, data, already_read = False, vocab = None):
+        self.load_data(data, already_read = already_read, more = True, examples = None)
+        self.get_vectors(vocab)
+        print('train examples')
+        print(len(self.train_sentences.examples))
+        print(len(self.train_sentences.examples[0].text))
+        self.train_iterator = self.get_iterator(self.train_sentences)
+
+    def init_model(self, checkpoint_params = None, best_params = None):
+        self.model = self.get_model(checkpoint_params)
+        self.model.train()
+
+        self.best_loss = 10000000000
+        self.best_model = self.get_model(best_params)
+
+        optimizer = None
+        scheduler = None
+        if self.optim == 'adam':
+
+            parameters = filter(lambda p: p.requires_grad, \
+                    self.model.parameters())
+            optimizer = Adam(parameters, lr = self.lr, betas = (0, 0.999),\
+                    eps = 10**-9)
+
+            scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode = 'min',\
+                    factor = 0.1)
+
+        return optimizer, scheduler
 
 
     def repackage_hidden(self, h):
@@ -499,31 +549,6 @@ class TrainLangModel:
         return perplexity
 
 
-    def prepare_data(self, data, already_read = False, vocab = None):
-        self.load_data(data, already_read)
-        self.get_vectors(vocab)
-        self.train_iterator = self.get_iterator(self.train_sentences)
-
-    def init_model(self, checkpoint_params = None, best_params = None):
-        self.model = self.get_model(checkpoint_params)
-        self.model.train()
-
-        self.best_loss = 10000000000
-        self.best_model = self.get_model(best_params)
-
-        optimizer = None
-        scheduler = None
-        if self.optim == 'adam':
-
-            parameters = filter(lambda p: p.requires_grad, \
-                    self.model.parameters())
-            optimizer = Adam(parameters, lr = self.lr, betas = (0, 0.999),\
-                    eps = 10**-9)
-
-            scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, mode = 'min',\
-                    factor = 0.1)
-
-        return optimizer, scheduler
 
     def train(self, optimizer, scheduler):
         start_time = time()
@@ -702,3 +727,39 @@ if __name__ == '__main__':
         trainer.current_loss = current['train_loss']
         trainer.best_loss = current['best_loss']
         trainer.train(optimizer, scheduler)
+
+
+
+
+
+
+'''
+fields = [('text', self.sentence_field)]
+
+num_char = len(dataset)
+print('Reading in data with {} chars...'.format(num_char))
+num_folds = num_char // 2**27 + 1
+print("{} folds".format(num_folds))
+start = time()
+examples = []
+print('DATA LENGTH: {}'.format(len(dataset)))
+
+if num_folds == 0:
+examples = [data.Example.fromlist([dataset], fields)]
+else:
+fold_size = math.ceil(num_char/num_folds)
+print("fold size:{}".format(fold_size))
+for i in range(num_folds):
+    print('Reading fold:{}'.format(i))
+    fold = dataset[0:fold_size]
+    examples.append(data.Example.fromlist([fold], fields))
+    dataset = dataset[fold_size:]
+
+
+one = time()
+print("READ EXAMPLES IN {}".format(one - start))
+self.train_sentences = data.Dataset(examples, fields)
+print("LOADED DATASET IN {}".format(one - time()))
+print("Parsed dataset with size of :{}".format(sys.getsizeof(self.train_sentences)))
+print('Done.')
+'''
